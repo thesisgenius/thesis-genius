@@ -1,2 +1,1 @@
-# web-server
-CIS430 - Simple Webserver Repo
+# thesis-genius web-site (thesis-genius.com) repository
