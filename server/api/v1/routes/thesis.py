@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from server.models.thesis import Thesis
-from server.app import DB
+from server.app import db
 
 thesis_bp_v1 = Blueprint("thesis_v1", __name__)
 
@@ -17,6 +17,6 @@ def get_theses():
 def add_thesis():
     data = request.json
     new_thesis = Thesis(title=data["title"], content=data["content"])
-    DB.session.add(new_thesis)
-    DB.session.commit()
+    db.session.add(new_thesis)
+    db.session.commit()
     return jsonify({"message": "Thesis added successfully!"}), 201

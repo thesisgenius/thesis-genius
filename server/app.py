@@ -1,19 +1,37 @@
-from flask import Flask, jsonify
+import os
+import sys
+from flask import Flask
+from dotenv import load_dotenv
 from flask_sqlalchemy import SQLAlchemy
-from flask_cors import CORS
-from config import Config
+from config import config_dict
 
-app = Flask(__name__)
-app.config.from_object(Config)
 
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 # Initialize extensions
-DB = SQLAlchemy(app)
-CORS(app)
+db = SQLAlchemy()
 
-# Importing routes
-from api.v1 import v1 as v1_blueprint
-app.register_blueprint(v1_blueprint)
+def create_app():
+    load_dotenv()
+    """Application Factory Pattern."""
+    app = Flask(__name__)
 
+    # Load configuration
+    app.config.from_object(config_dict["development"])
+
+    # Initialize SQLAlchemy with the app
+    db.init_app(app)
+
+    # Import and register the v1 API Blueprint dynamically
+    from server.api.v1 import v1
+    app.register_blueprint(v1, url_prefix="/v1/api")
+
+    # Create database tables within the application context
+    with app.app_context():
+        db.create_all()
+
+    return app
 
 if __name__ == "__main__":
+    app = create_app()
     app.run(debug=True)

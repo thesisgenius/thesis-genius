@@ -1,9 +1,11 @@
-from ..app import DB
+from server.app import db
+from datetime import datetime
 
-class Thesis(DB.Model):
-    id = DB.Column(DB.Integer, primary_key=True)
-    title = DB.Column(DB.String(120), nullable=False)
-    content = DB.Column(DB.Text, nullable=False)
+class Thesis(db.Model):
+    __tablename__ = 'theses'
 
-    def __repr__(self):
-        return f"<Thesis {self.title}>"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
