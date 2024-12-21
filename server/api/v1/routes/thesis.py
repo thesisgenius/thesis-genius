@@ -1,11 +1,11 @@
 from flask import Blueprint, jsonify, request
-from models.thesis import Thesis
-from ..app import DB
+from server.models.thesis import Thesis
+from server.app import DB
 
-api_bp = Blueprint("api", __name__)
+thesis_bp_v1 = Blueprint("thesis_v1", __name__)
 
 # Get all theses
-@api_bp.route("/thesis", methods=["GET"])
+@thesis_bp_v1.route("/thesis", methods=["GET"])
 def get_theses():
     theses = Thesis.query.all()
     theses_list = [{"id": t.id, "title": t.title, "content": t.content} for t in theses]
@@ -13,7 +13,7 @@ def get_theses():
 
 
 # Add a new thesis
-@api_bp.route("/thesis", methods=["POST"])
+@thesis_bp_v1.route("/thesis", methods=["POST"])
 def add_thesis():
     data = request.json
     new_thesis = Thesis(title=data["title"], content=data["content"])

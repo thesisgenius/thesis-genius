@@ -1,8 +1,14 @@
-import os
-
 class Config:
-    SECRET_KEY = os.environ.get("SECRET_KEY", "your_secret_key")
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "DATABASE_URI", "sqlite:///database.db"
-    )
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    DEBUG = False
+    TESTING = False
+    DATABASE_URI = 'mysql://user@localhost/db'
+
+class DevelopmentConfig(Config):
+    DEBUG = True
+
+class TestingConfig(Config):
+    TESTING = True
+
+class ProductionConfig(Config):
+    DATABASE_URI = 'mysql://user@prod/db'
+

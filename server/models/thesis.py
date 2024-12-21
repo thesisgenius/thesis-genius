@@ -1,4 +1,4 @@
-from app import DB
+from ..app import DB
 
 class Thesis(DB.Model):
     id = DB.Column(DB.Integer, primary_key=True)

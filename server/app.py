@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from config import Config
@@ -11,12 +11,9 @@ DB = SQLAlchemy(app)
 CORS(app)
 
 # Importing routes
-from routes.api import api_bp
-app.register_blueprint(api_bp, url_prefix="/api")
+from api.v1 import v1 as v1_blueprint
+app.register_blueprint(v1_blueprint)
 
-@app.route("/")
-def home():
-    return jsonify({"message": "Welcome to the Thesis Writing API!"})
 
 if __name__ == "__main__":
     app.run(debug=True)
