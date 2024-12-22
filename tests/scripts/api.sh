@@ -5,9 +5,13 @@ BASE_URL="http://127.0.0.1:5000/v1/api/users"
 
 # Usage function
 function usage() {
+    echo
     echo "Usage: $0 [--tests <test1,test2,...|test1 test2 ...>]"
-    echo "Example: $0 --tests test_register_user,test_login_user"
-    echo "Runs the specified tests. If no tests are provided, all tests will run."
+    echo
+    echo "    Example: $0 --tests test_register_user,test_login_user"
+    echo
+    echo "Description: "
+    echo "    Runs the specified tests. If no tests are provided, all tests will run."
 }
 
 # Helper function to print test result
@@ -148,7 +152,13 @@ function run_tests() {
 }
 
 # Default: Run all tests if no arguments provided
-ALL_TESTS=(test_register_user test_register_duplicate_user test_login_user test_login_invalid_user test_get_user_profile)
+ALL_TESTS=( \
+  test_register_user \
+  test_register_duplicate_user \
+  test_login_user \
+  test_login_invalid_user \
+  test_get_user_profile \
+)
 
 # Parse arguments
 if [ "$#" -eq 0 ]; then

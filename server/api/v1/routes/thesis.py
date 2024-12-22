@@ -1,8 +1,10 @@
 from flask import Blueprint, jsonify, request
+
+from server import db
 from server.models.thesis import Thesis
-from server.app import db
 
 thesis_bp_v1 = Blueprint("thesis_v1", __name__)
+
 
 # Get all theses
 @thesis_bp_v1.route("/thesis", methods=["GET"])

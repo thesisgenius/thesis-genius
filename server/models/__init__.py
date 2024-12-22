@@ -1,3 +1,3 @@
-from .user import User
-from .thesis import Thesis
-from .forum import Forum
+from server.models.forum import Forum
+from server.models.thesis import Thesis
+from server.models.user import User

@@ -1,10 +1,13 @@
+import os
+import sys
+
 import pytest
 
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from server.app import create_app, db
+from server import db
+from server.app import create_app
+
 
 @pytest.fixture
 def client():
@@ -16,72 +19,75 @@ def client():
             db.create_all()  # Create tables for testing
         yield client
 
+
 def test_register_user(client):
     """Test registering a new user."""
-    response = client.post("/v1/api/users/register", json={
-        "email": "test@example.com",
-        "password": "password123"
-    })
+    response = client.post(
+        "/v1/api/users/register",
+        json={"email": "test@example.com", "password": "password123"},
+    )
     assert response.status_code == 201
     assert response.get_json()["message"] == "User registered successfully"
+
 
 def test_register_duplicate_user(client):
     """Test registering a duplicate user."""
     # Register the first user
-    client.post("/v1/api/users/register", json={
-        "email": "duplicate@example.com",
-        "password": "password123"
-    })
+    client.post(
+        "/v1/api/users/register",
+        json={"email": "duplicate@example.com", "password": "password123"},
+    )
 
     # Attempt to register the same user again
-    response = client.post("/v1/api/users/register", json={
-        "email": "duplicate@example.com",
-        "password": "password123"
-    })
+    response = client.post(
+        "/v1/api/users/register",
+        json={"email": "duplicate@example.com", "password": "password123"},
+    )
     assert response.status_code == 400
     assert "error" in response.get_json()
+
 
 def test_login_user(client):
     """Test logging in with valid credentials."""
     # First, register a user
-    client.post("/v1/api/users/register", json={
-        "email": "login@example.com",
-        "password": "password123"
-    })
+    client.post(
+        "/v1/api/users/register",
+        json={"email": "login@example.com", "password": "password123"},
+    )
 
     # Attempt to log in
-    response = client.post("/v1/api/users/login", json={
-        "email": "login@example.com",
-        "password": "password123"
-    })
+    response = client.post(
+        "/v1/api/users/login",
+        json={"email": "login@example.com", "password": "password123"},
+    )
     assert response.status_code == 200
     assert "token" in response.get_json()
 
+
 def test_login_invalid_user(client):
     """Test logging in with invalid credentials."""
-    response = client.post("/v1/api/users/login", json={
-        "email": "invalid@example.com",
-        "password": "wrongpassword"
-    })
+    response = client.post(
+        "/v1/api/users/login",
+        json={"email": "invalid@example.com", "password": "wrongpassword"},
+    )
     assert response.status_code == 401
     assert response.get_json()["error"] == "Invalid credentials"
+
 
 def test_get_user_profile(client):
     """Test retrieving the user profile."""
     # Register and log in a user
-    client.post("/v1/api/users/register", json={
-        "email": "profile@example.com",
-        "password": "password123"
-    })
-    login_response = client.post("/v1/api/users/login", json={
-        "email": "profile@example.com",
-        "password": "password123"
-    })
+    client.post(
+        "/v1/api/users/register",
+        json={"email": "profile@example.com", "password": "password123"},
+    )
+    login_response = client.post(
+        "/v1/api/users/login",
+        json={"email": "profile@example.com", "password": "password123"},
+    )
     token = login_response.get_json()["token"]
 
     # Get the profile using the token
-    response = client.get("/v1/api/users/profile", headers={
-        "x-access-token": token
-    })
+    response = client.get("/v1/api/users/profile", headers={"x-access-token": token})
     assert response.status_code == 200
     assert response.get_json()["email"] == "profile@example.com"
