@@ -7,13 +7,11 @@ from server.config import config_dict
 # Initialize extensions
 db = SQLAlchemy()
 
-load_dotenv()
-
 
 def create_app():
     """Application Factory Pattern."""
     api_app = Flask(__name__)
-
+    load_dotenv()
     # Load configuration
     import os
 

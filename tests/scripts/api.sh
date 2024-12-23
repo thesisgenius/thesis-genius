@@ -51,7 +51,7 @@ function api_request() {
 
     # Extract the response body
     local body
-    body=$(echo "$response" | sed 's/HTTP_CODE:[0-9]*$//')
+    body=$(echo "$response" |  sed -n '/{/,/}/p')
 
     # Return the status code and body as a space-separated string
     echo "$http_code $body"

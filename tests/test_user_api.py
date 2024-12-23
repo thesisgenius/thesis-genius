@@ -1,16 +1,18 @@
 import os
 import sys
 
+import jwt
 import pytest
+from dotenv import load_dotenv
+from server import db
+from server.app import create_app
+from flask import current_app
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from server import db
-from server.app import create_app
-
-
 @pytest.fixture
 def client():
+    load_dotenv()
     os.environ["FLASK_ENV"] = "testing"  # Ensure the app uses the testing config
     app = create_app()
 
@@ -88,6 +90,13 @@ def test_get_user_profile(client):
     token = login_response.get_json()["token"]
 
     # Get the profile using the token
-    response = client.get("/v1/api/users/profile", headers={"x-access-token": token})
+    access_token = jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=["HS256"])
+    assert access_token["id"]
+    response = client.get(
+        "/v1/api/users/profile",
+        headers={
+            "x-access-token": access_token
+        },
+    )
     assert response.status_code == 200
     assert response.get_json()["email"] == "profile@example.com"

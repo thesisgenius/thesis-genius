@@ -1,4 +1,6 @@
-from datetime import datetime
+import os
+import secrets
+from datetime import datetime, timedelta
 
 import jwt
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -34,12 +36,13 @@ class User(db.Model):
         """Login a user and return a JWT token if successful."""
         user = User.query.filter_by(email=email).first()
         if user and check_password_hash(user.password, password):
-            token = jwt.JWT.encode(
+            encoding_key = os.getenv("SECRET_KEY", secrets.token_hex(20))
+            token = jwt.encode(
                 {
                     "id": user.id,
-                    "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1),
+                    "exp": datetime.now() + timedelta(hours=1),
                 },
-                app.config["SECRET_KEY"],
+                key=encoding_key,
                 algorithm="HS256",
             )
             return token
