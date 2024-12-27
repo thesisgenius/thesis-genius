@@ -24,7 +24,7 @@ def client():
 
 def test_create_thesis(client):
     response = client.post(
-        "/v1/api/thesis/update",
+        "/v1/api/thesis/",
         json={
             "title": "Test Thesis",
             "author": "John Doe",
@@ -42,7 +42,7 @@ def test_create_thesis(client):
 def test_get_all_theses(client):
     # Create a sample thesis first
     client.post(
-        "/v1/api/thesis/update",
+        "/v1/api/thesis/",
         json={
             "title": "Test Thesis",
             "author": "John Doe",
@@ -63,7 +63,7 @@ def test_get_all_theses(client):
 def test_get_single_thesis(client):
     # Create a sample thesis first
     post_response = client.post(
-        "/v1/api/thesis/update",
+        "/v1/api/thesis/",
         json={
             "title": "Test Thesis",
             "author": "John Doe",
@@ -93,7 +93,7 @@ def test_get_single_thesis(client):
 def test_update_thesis(client):
     # Create a sample thesis first
     post_response = client.post(
-        "/v1/api/thesis/update",
+        "/v1/api/thesis/",
         json={
             "title": "Test Thesis",
             "author": "John Doe",
@@ -123,7 +123,7 @@ def test_update_thesis(client):
 def test_delete_thesis(client):
     # Create a sample thesis first
     post_response = client.post(
-        "/v1/api/thesis",
+        "/v1/api/thesis/",
         json={
             "title": "Test Thesis",
             "author": "John Doe",

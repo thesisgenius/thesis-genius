@@ -9,7 +9,7 @@ thesis_bp_v1 = Blueprint("thesis_v1", __name__, url_prefix="/thesis")
 
 
 # Create Thesis
-@thesis_bp_v1.route("/update", methods=["POST"])
+@thesis_bp_v1.route("/", methods=["POST"])
 def create_thesis():
     data = request.get_json()
     if not data:
@@ -73,8 +73,8 @@ def get_all_theses():
 
 # Retrieve Single Thesis
 @thesis_bp_v1.route("/<int:id>", methods=["GET"])
-def get_thesis(thesis_id):
-    thesis = Thesis.query.get(thesis_id)
+def get_thesis(id):
+    thesis = db.session.get(Thesis, id)
     if not thesis:
         abort(404, description="Thesis not found.")
     return jsonify(
@@ -96,7 +96,7 @@ def get_thesis(thesis_id):
 # Update Thesis
 @thesis_bp_v1.route("/<int:id>", methods=["PUT"])
 def update_thesis(id):
-    thesis = Thesis.query.get(id)
+    thesis = db.session.get(Thesis, id)
     if not thesis:
         abort(404, description="Thesis not found.")
 
@@ -125,7 +125,7 @@ def update_thesis(id):
 # Delete Thesis
 @thesis_bp_v1.route("/<int:id>", methods=["DELETE"])
 def delete_thesis(id):
-    thesis = Thesis.query.get(id)
+    thesis = db.session.get(Thesis, id)
     if not thesis:
         abort(404, description="Thesis not found.")
 
