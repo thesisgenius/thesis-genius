@@ -5,39 +5,38 @@ BLACK := black
 ISORT := isort
 RUFF := ruff
 
-# Install dependencies
-install:
-    $(PIP) install -r requirements.txt
+##@ Targets
+install: ## Install dependencies (requirements.txt)
+	@$(PIP) install -r requirements.txt
 
-# Run formatters
-format:
-    $(BLACK) .
-    $(ISORT) .
 
-# Check formatting
-lint:
-    $(BLACK) --check .
-    $(ISORT) --check-only .
-    $(RUFF) check .
+format: ## Run formatters
+	@$(BLACK) .
+	@$(ISORT) .
 
-# Run tests
-test:
-    $(PYTHON) -m unittest discover -s tests
 
-# Clean up
-clean:
-    find . -name "*.pyc" -delete
-    find . -name "__pycache__" -delete
+lint: ## Check formatting
+	@$(BLACK) --check .
+	@$(ISORT) --check-only .
+	@$(RUFF) check .
 
-# Run everything (lint, test, etc.)
-all: check test
+
+test: ## Run tests
+	@$(PYTHON) -m unittest discover -s tests
+
+
+clean: ## Clean up pychache
+	find . -name "*.pyc" -delete
+	find . -name "__pycache__" -delete
+
+
+all: check test ## Run everything (lint, test, etc.)
 
 # ===========> Makefile config
 .DEFAULT_GOAL := help
 SHELL = bash
 
 ##@ Help
-
 # The help target prints out all targets with their descriptions organized
 # beneath their categories. The categories are represented by '##@' and the
 # target descriptions by '##'. The awk commands is responsible for reading the
@@ -51,3 +50,6 @@ SHELL = bash
 .PHONY: help
 help: ## Display this help
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
+%:
+	@:
