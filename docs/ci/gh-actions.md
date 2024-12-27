@@ -1,5 +1,21 @@
 ## GitHub Actions
 
+
+```shell
+thesis-genius/
+├── .github/
+│   ├── workflows/
+│   │   ├── ci.yml               # CI pipeline (linting, tests)
+│   │   ├── deploy.yml           # Deployment pipeline
+│   │   ├── codeql-analysis.yml  # Security scanning
+│   │   └── release.yml          # Release pipeline
+│   ├── actions/
+│   │   └── custom-action/       # Custom actions if needed
+│   └── dependabot.yml           # Dependency management automation
+```
+
+
+
 ### Local Testing with Act (Optional)
 
 Before pushing changes to GitHub, you can use Act, a tool for running GitHub Actions locally:

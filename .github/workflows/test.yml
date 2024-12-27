@@ -9,20 +9,27 @@ on:
       - 'JIRA-*'
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    uses: thesisgenius/thesis-genius/.github/workflows/python.yml@main
+  setup-python:
+    uses: ./.github/workflows/python.yml
     strategy:
       matrix:
-        python-version: [3.12]
+        python-version: [ 3.12 ]
     with:
       python-version: ${{ matrix.python-version }} # Pass matrix version
+
+  test:
+    needs: setup-python
+    runs-on: ubuntu-latest
     steps:
-      # Step 5: Run tests with coverage
+      # Step 1: Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Run tests with coverage
       - name: Run tests
         run: pytest --cov-branch --cov-report=xml --cov=server tests/
 
-      # Step 6: Upload coverage to Codecov
+      # Step 3: Upload coverage to Codecov
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:

@@ -9,14 +9,16 @@ on:
       - 'JIRA-*'
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    uses: thesisgenius/thesis-genius/.github/workflows/python.yml@main
+  setup-python:
+    uses: ./.github/workflows/python.yml
     strategy:
       matrix:
-        python-version: [3.12]
+        python-version: [ 3.12 ]
     with:
       python-version: ${{ matrix.python-version }} # Pass matrix version
+  lint:
+    needs: setup-python
+    runs-on: ubuntu-latest
     steps:
       - name: Run Linting
         run: make lint
