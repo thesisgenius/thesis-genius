@@ -19,17 +19,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@main
 
-      # Step 3: Set up Python environment
+      # Step 2: Set up Python environment
       - name: Setup Python
         uses: ./.github/workflows/python.yml
         with:
           python-version: ${{ matrix.python-version }}
 
-      # Step 4: Run tests with coverage
+      # Step 3: Run tests with coverage
       - name: Run tests
         run: pytest --cov-branch --cov-report=xml --cov=server tests/
 
-      # Step 5: Upload coverage to Codecov
+      # Step 4: Upload coverage to Codecov
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:

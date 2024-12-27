@@ -11,10 +11,6 @@ jobs:
   python:
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Checkout code
-      - name: Checkout code
-        uses: actions/checkout@main
-
       # Step 2: Set up Python environment
       - name: Setup Python
         uses: actions/setup-python@v4
