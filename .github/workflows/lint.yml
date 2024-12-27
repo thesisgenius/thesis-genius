@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@main
 
       - name: Setup Python
-        uses: ./.github/workflows/python.yml
+        uses: ./.github/workflows/python.yml@main
         with:
           python-version: ${{ matrix.python-version }}
 
