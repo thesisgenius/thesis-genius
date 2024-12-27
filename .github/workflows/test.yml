@@ -11,25 +11,18 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    uses: thesisgenius/thesis-genius/.github/workflows/python.yml@main
     strategy:
       matrix:
         python-version: [3.12]
+    with:
+      python-version: ${{ matrix.python-version }} # Pass matrix version
     steps:
-      # Step 1: Checkout code
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # Step 2: Set up Python environment
-      - name: Setup Python
-        uses: thesisgenius/thesis-genius/.github/workflows/python.yml@main
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      # Step 3: Run tests with coverage
+      # Step 5: Run tests with coverage
       - name: Run tests
         run: pytest --cov-branch --cov-report=xml --cov=server tests/
 
-      # Step 4: Upload coverage to Codecov
+      # Step 6: Upload coverage to Codecov
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:

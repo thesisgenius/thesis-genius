@@ -11,17 +11,12 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    uses: thesisgenius/thesis-genius/.github/workflows/python.yml@main
     strategy:
       matrix:
         python-version: [3.12]
+    with:
+      python-version: ${{ matrix.python-version }} # Pass matrix version
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: thesisgenius/thesis-genius/.github/workflows/python.yml@main
-        with:
-          python-version: ${{ matrix.python-version }}
-
       - name: Run Linting
         run: make lint
