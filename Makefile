@@ -6,31 +6,41 @@ ISORT := isort
 RUFF := ruff
 
 ##@ Targets
+all: check test ## Run everything (lint, test, etc.)
+
+.PHONY: install
 install: ## Install dependencies (requirements.txt)
 	@$(PIP) install -r requirements.txt
 
+##@ Linting
+.PHONY: black
+black:
+	$(BLACK) .
 
-format: ## Run formatters
-	@$(BLACK) .
-	@$(ISORT) .
+.PHONY: isort
+isort:
+	$(ISORT) .
 
+.PHONY: ruff
+ruff:
+	$(RUFF) check .
 
-lint: ## Check formatting
+.PHONY: lint
+lint: black isort ruff ## Run black, isort, and ruff Python code linters
+
+check: ## Check formatting
 	@$(BLACK) --check .
 	@$(ISORT) --check-only .
 	@$(RUFF) check .
 
-
+##@ Testing
 test: ## Run tests
 	@$(PYTHON) -m unittest discover -s tests
 
-
+##@ Cleanup
 clean: ## Clean up pychache
 	find . -name "*.pyc" -delete
 	find . -name "__pycache__" -delete
-
-
-all: check test ## Run everything (lint, test, etc.)
 
 # ===========> Makefile config
 .DEFAULT_GOAL := help
