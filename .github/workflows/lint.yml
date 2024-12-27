@@ -15,20 +15,16 @@ jobs:
         uses: actions/checkout@main
 
       - name: Set up Python
-        uses: actions/checkout@main
+        uses: actions/setup-python@v4
         with:
           python-version: 3.12
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install black isort ruff
+          pip install -r requirements.txt
+          # Optional: Install Make if it's not included by default
+          sudo apt-get update && sudo apt-get install -y make
 
-      - name: Run black
-        run: black --check .
-
-      - name: Run isort
-        run: isort --check-only .
-
-      - name: Run ruff
-        run: ruff check .
+      - name: Run Linting
+        run: make lint
