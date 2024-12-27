@@ -1,6 +1,6 @@
 import os
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import jwt
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -14,7 +14,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     @staticmethod
     def register(data):

@@ -3,6 +3,7 @@ from functools import wraps
 import jwt
 from flask import current_app, jsonify, request
 
+from server import db
 from server.models.user import User
 
 
@@ -16,7 +17,7 @@ def token_required(f):
             data = jwt.decode(
                 token, current_app.config["SECRET_KEY"], algorithms=["HS256"]
             )
-            current_user = User.query.get(data["id"])
+            current_user = db.session.get(User, data["id"])
             if not current_user:
                 return jsonify({"error": "Invalid token!"}), 401
         except Exception as e:

@@ -10,6 +10,7 @@ cryptography==44.0.0
 Flask==3.1.0
 Flask-Cors==5.0.0
 Flask-SQLAlchemy==3.1.1
+freezegun==1.5.1
 idna==3.10
 iniconfig==2.0.0
 isort==5.13.2
@@ -26,9 +27,11 @@ PyJWT==2.10.1
 PyMySQL==1.1.1
 pytest==8.3.4
 pytest-cov==6.0.0
+python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
 requests==2.32.3
 ruff==0.8.4
+six==1.17.0
 SQLAlchemy==2.0.36
 typing_extensions==4.12.2
 urllib3==2.3.0
