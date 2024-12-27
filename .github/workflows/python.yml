@@ -8,17 +8,20 @@ on:
         type: string
 
 jobs:
-  setup:
+  python:
     runs-on: ubuntu-latest
-
     steps:
-      # Step 1: Set up Python environment
+      # Step 1: Checkout code
+      - name: Checkout code
+        uses: actions/checkout@main
+
+      # Step 2: Set up Python environment
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ inputs.python-version }}
 
-      # Step 2: Cache pip dependencies
+      # Step 3: Cache pip dependencies
       - name: Cache pip
         uses: actions/cache@v3
         with:
@@ -27,7 +30,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      # Step 3: Install dependencies
+      # Step 4: Install dependencies
       - name: Install dependencies
         run: |
           sudo apt-get update
