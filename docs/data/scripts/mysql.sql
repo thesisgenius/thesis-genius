@@ -16,12 +16,17 @@ CREATE TABLE users (
 -- Create theses table
 CREATE TABLE theses (
                         id INT AUTO_INCREMENT PRIMARY KEY,
-                        user_id INT NOT NULL,
                         title VARCHAR(255) NOT NULL,
-                        content TEXT NOT NULL,
+                        author VARCHAR(255) NOT NULL,
+                        abstract TEXT,
+                        status VARCHAR(50) DEFAULT 'In Progress',
+                        submission_date DATE,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        user_id INT NOT NULL,
                         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+
 
 -- Create forums table
 CREATE TABLE forums (
@@ -39,9 +44,9 @@ INSERT INTO users (email, password) VALUES
                                         ('user2@example.com', 'hashed_password_2');
 
 -- Insert test data for theses
-INSERT INTO theses (user_id, title, content) VALUES
-                                                 (1, 'Thesis Title 1', 'Content for thesis 1'),
-                                                 (2, 'Thesis Title 2', 'Content for thesis 2');
+INSERT INTO theses (user_id, title, author, abstract, status, submission_date) VALUES
+                                                                                   (1, 'Thesis Title 1', 'John Doe', 'Abstract for thesis 1', 'In Progress', '2024-12-22'),
+                                                                                   (2, 'Thesis Title 2', 'Jane Doe', 'Abstract for thesis 2', 'Completed', '2024-12-20');
 
 -- Insert test data for forums
 INSERT INTO forums (user_id, title, body) VALUES

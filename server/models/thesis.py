@@ -7,7 +7,8 @@ class Thesis(db.Model):
     __tablename__ = "theses"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     title = db.Column(db.String(255), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    author = db.Column(db.String(255), nullable=False)
+    abstract = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(50), default="In Progress")
+    submission_date = db.Column(db.Date, nullable=True)
