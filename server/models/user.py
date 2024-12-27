@@ -36,7 +36,7 @@ class User(db.Model):
         """Login a user and return a JWT token if successful."""
         user = User.query.filter_by(email=email).first()
         if user and check_password_hash(user.password, password):
-            encoding_key = os.getenv("SECRET_KEY", secrets.token_hex(20))
+            encoding_key = os.getenv("SECRET_KEY", "dev")
             token = jwt.encode(
                 {
                     "id": user.id,
