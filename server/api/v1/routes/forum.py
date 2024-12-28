@@ -15,8 +15,31 @@ def get_forum():
 @forum_bp_v1.route("/posts", methods=["GET"])
 def get_forums():
     forums = db.session.query(Forum).all()
-    return jsonify(
-        [
+    return (
+        jsonify(
+            [
+                {
+                    "id": forum.id,
+                    "user_id": forum.user_id,
+                    "title": forum.title,
+                    "description": forum.description,
+                    "body": forum.body,
+                    "created_at": forum.created_at,
+                }
+                for forum in forums
+            ]
+        ),
+        200,
+    )
+
+
+@forum_bp_v1.route("/posts/<int:forum_id>", methods=["GET"])
+def get_forum_with_id(forum_id):
+    forum = db.session.get(Forum, forum_id)
+    if not forum:
+        return jsonify({"error": "Forum not found"}), 404
+    return (
+        jsonify(
             {
                 "id": forum.id,
                 "user_id": forum.user_id,
@@ -25,26 +48,9 @@ def get_forums():
                 "body": forum.body,
                 "created_at": forum.created_at,
             }
-            for forum in forums
-        ]
-    ), 200
-
-
-@forum_bp_v1.route("/posts/<int:forum_id>", methods=["GET"])
-def get_forum_with_id(forum_id):
-    forum = db.session.get(Forum, forum_id)
-    if not forum:
-        return jsonify({"error": "Forum not found"}), 404
-    return jsonify(
-        {
-            "id": forum.id,
-            "user_id": forum.user_id,
-            "title": forum.title,
-            "description": forum.description,
-            "body": forum.body,
-            "created_at": forum.created_at,
-        }
-    ), 200
+        ),
+        200,
+    )
 
 
 @forum_bp_v1.route("/posts", methods=["POST"])
