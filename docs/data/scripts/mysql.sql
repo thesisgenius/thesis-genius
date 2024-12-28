@@ -33,6 +33,7 @@ CREATE TABLE forums (
                         id INT AUTO_INCREMENT PRIMARY KEY,
                         user_id INT NOT NULL,
                         title VARCHAR(255) NOT NULL,
+                        description VARCHAR(255),
                         body TEXT NOT NULL,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -48,7 +49,9 @@ INSERT INTO theses (user_id, title, author, abstract, status, submission_date) V
                                                                                    (1, 'Thesis Title 1', 'John Doe', 'Abstract for thesis 1', 'In Progress', '2024-12-22'),
                                                                                    (2, 'Thesis Title 2', 'Jane Doe', 'Abstract for thesis 2', 'Completed', '2024-12-20');
 
--- Insert test data for forums
-INSERT INTO forums (user_id, title, body) VALUES
-                                              (1, 'Forum Post 1', 'Body content for forum post 1'),
-                                              (2, 'Forum Post 2', 'Body content for forum post 2');
+-- Insert forums into forums table
+INSERT INTO forums (user_id, title, description, body, created_at)
+VALUES
+    (1, 'Welcome to the Forum', 'Sample post 1','This is the first forum post!', NOW()),
+    (2, 'Discussion about Thesis', 'Sample post 2', 'Share your ideas and feedback.', NOW());
+
