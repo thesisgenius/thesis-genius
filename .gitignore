@@ -12,3 +12,4 @@ instance/
 # Pyinstaller Binary Build Output
 dist/
 build/
+app.spec
