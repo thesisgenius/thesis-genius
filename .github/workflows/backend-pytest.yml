@@ -8,6 +8,10 @@ on:
     branches:
       - main  # Tests run on pushes to the main branch (e.g., merges)
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   pytest:
     runs-on: ubuntu-latest
