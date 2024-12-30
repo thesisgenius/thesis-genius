@@ -1,12 +1,12 @@
-# Variables
-PYTHON := python
-PIP := $(PYTHON) -m pip
-BLACK := black
-ISORT := isort
-RUFF := ruff
+APP_NAME_BACKEND := thesisgenius-api
+VERSION := $(shell git describe --tags --always --dirty)
+DOCKER_IMAGE := ghcr.io/$(GITHUB_USERNAME)/$(APP_NAME)
+DIST_DIR := dist
 
-##@ Targets
-all: check test ## Run everything (lint, test, etc.)
+# Supported architectures
+ARCHS := amd64 arm64
+
+##@ Build
 
 .PHONY: install
 install: ## Install dependencies (requirements.txt)
@@ -15,36 +15,50 @@ install: ## Install dependencies (requirements.txt)
 ##@ Linting
 .PHONY: black
 black:
-	$(BLACK) .
+	@black .
 
 .PHONY: isort
 isort:
-	$(ISORT) .
+	@isort .
 
 .PHONY: ruff
 ruff:
-	$(RUFF) check .
+	@ruff check .
 
 .PHONY: lint
 lint: black isort ruff ## Run black, isort, and ruff Python code linters
 
-check: ## Check formatting
-	@$(BLACK) --check .
-	@$(ISORT) --check-only .
-	@$(RUFF) check .
+.PHONY: check
+check: ## Lint check formatting
+	@black --check .
+	@isort --check-only .
+	@ruff check .
+
+##@ Tools
+
+.PHONY: tools
+tools: ## Installs various supporting Python development tools.
+	@$(SHELL) $(CURDIR)/build-support/scripts/devtools.sh
+
+.PHONY: lint-tools
+lint-tools: ## Install tools for linting
+	@$(SHELL) $(CURDIR)/build-support/scripts/devtools.sh -lint
 
 ##@ Testing
 test: ## Run tests
 	@$(PYTHON) -m unittest discover -s tests
 
 ##@ Cleanup
-clean: ## Clean up pychache
+clean: ## Clean up pychache and build artifacts
 	find . -name "*.pyc" -delete
 	find . -name "__pycache__" -delete
+	rm -rf $(DIST_DIR)
 
 # ===========> Makefile config
 .DEFAULT_GOAL := help
 SHELL = bash
+PYTHON := python
+PIP := $(PYTHON) -m pip
 
 ##@ Help
 # The help target prints out all targets with their descriptions organized
