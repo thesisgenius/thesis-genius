@@ -37,7 +37,7 @@
 
 1. Run SQL script
    ```shell
-   mysql -u thesis_dev -p'dev_password' thesis_app_dev < mysql.sql
+   mysql -u thesis_dev -p'dev_password' thesis_app_dev < docs/data/mysql.sql
    ```
    
 ## 4. Verify 
