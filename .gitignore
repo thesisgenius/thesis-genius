@@ -10,6 +10,6 @@ instance/
 .env
 
 # Pyinstaller Binary Build Output
-dist/
-build/
+**dist/
+**build/
 app.spec

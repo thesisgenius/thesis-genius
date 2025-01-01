@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Base URL for the API
-BASE_URL="http://127.0.0.1:5000/v1/api/users"
+BASE_URL="http://127.0.0.1:8557/v1/api/users"
 
 # Usage function
 function usage() {
@@ -168,7 +168,7 @@ else
         --tests)
             if [ -z "$2" ]; then
                 usage
-                exit 1
+                return 1
             fi
             # Split the tests argument into an array (comma or space separated)
             IFS=', ' read -r -a SELECTED_TESTS <<< "$2"
@@ -176,7 +176,7 @@ else
             ;;
         *)
             usage
-            exit 1
+            return 1
             ;;
     esac
 fi

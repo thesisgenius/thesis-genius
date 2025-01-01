@@ -11,10 +11,10 @@ db = SQLAlchemy()
 def create_app():
     """Application Factory Pattern."""
     api_app = Flask(__name__)
-    load_dotenv()
+
     # Load configuration
     import os
-
+    load_dotenv()
     api_app.config.from_object(config_dict[os.environ["FLASK_ENV"]])
 
     # Initialize SQLAlchemy with the app
