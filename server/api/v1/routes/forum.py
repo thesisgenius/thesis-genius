@@ -2,7 +2,7 @@
 from flask import Blueprint, jsonify, request
 
 from server import db
-from server.models.forum import Forum
+from server.models.forum import Post
 
 forum_bp_v1 = Blueprint("forum_v1", __name__, url_prefix="/forum")
 
@@ -14,7 +14,7 @@ def get_forum():
 
 @forum_bp_v1.route("/posts", methods=["GET"])
 def get_forums():
-    forums = db.session.query(Forum).all()
+    forums = db.session.query(Post).all()
     return (
         jsonify(
             [
@@ -35,9 +35,9 @@ def get_forums():
 
 @forum_bp_v1.route("/posts/<int:forum_id>", methods=["GET"])
 def get_forum_with_id(forum_id):
-    forum = db.session.get(Forum, forum_id)
+    forum = db.session.get(Post, forum_id)
     if not forum:
-        return jsonify({"error": "Forum not found"}), 404
+        return jsonify({"error": "Post not found"}), 404
     return (
         jsonify(
             {
@@ -59,7 +59,7 @@ def create_forum():
     if not data or "user_id" not in data or "title" not in data or "body" not in data:
         return jsonify({"error": "Invalid input"}), 400
 
-    new_forum = Forum(
+    new_forum = Post(
         user_id=data["user_id"],
         title=data["title"],
         description=data.get("description"),
@@ -68,14 +68,14 @@ def create_forum():
     db.session.add(new_forum)
     db.session.commit()
 
-    return jsonify({"message": "Forum created", "forum_id": new_forum.id}), 201
+    return jsonify({"message": "Post created", "forum_id": new_forum.id}), 201
 
 
 @forum_bp_v1.route("/posts/<int:forum_id>", methods=["PUT"])
 def update_forum(forum_id):
-    forum = db.session.get(Forum, forum_id)
+    forum = db.session.get(Post, forum_id)
     if not forum:
-        return jsonify({"error": "Forum not found"}), 404
+        return jsonify({"error": "Post not found"}), 404
 
     data = request.get_json()
     if "title" in data:
@@ -86,15 +86,15 @@ def update_forum(forum_id):
         forum.body = data["body"]
 
     db.session.commit()
-    return jsonify({"message": "Forum updated"}), 200
+    return jsonify({"message": "Post updated"}), 200
 
 
 @forum_bp_v1.route("/posts/<int:forum_id>", methods=["DELETE"])
 def delete_forum(forum_id):
-    forum = db.session.get(Forum, forum_id)
+    forum = db.session.get(Post, forum_id)
     if not forum:
-        return jsonify({"error": "Forum not found"}), 404
+        return jsonify({"error": "Post not found"}), 404
 
     db.session.delete(forum)
     db.session.commit()
-    return jsonify({"message": "Forum deleted"}), 200
+    return jsonify({"message": "Post deleted"}), 200

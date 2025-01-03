@@ -5,7 +5,8 @@ import jwt
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from server import db
-
+from server.utils import log
+logger = log.get_logger(__name__)
 
 class User(db.Model):
     __tablename__ = "users"
@@ -27,7 +28,7 @@ class User(db.Model):
             db.session.commit()
             return new_user
         except Exception as e:
-            print(f"Error registering user: {e}")
+            logger.error(f"Error registering user: {e}")
             return None
 
     @staticmethod

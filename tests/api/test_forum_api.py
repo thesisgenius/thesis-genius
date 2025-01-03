@@ -42,7 +42,7 @@ def test_create_forum(client):
         },
     )
     assert response.status_code == 201
-    assert response.get_json()["message"] == "Forum created"
+    assert response.get_json()["message"] == "Post created"
 
 
 def test_get_forum(client):
