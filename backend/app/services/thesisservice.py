@@ -3,6 +3,7 @@ from peewee import IntegrityError
 from ..models.data import Thesis
 from ..utils.db import model_to_dict
 
+
 class ThesisService:
     def __init__(self, logger):
         """

@@ -7,6 +7,7 @@ from ..utils.auth import jwt_required
 
 thesis_bp = Blueprint("thesis_api", __name__, url_prefix="/api/thesis")
 
+
 @thesis_bp.route("/theses", methods=["GET"])
 @jwt_required
 def list_theses():

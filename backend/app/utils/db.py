@@ -1,4 +1,3 @@
-from flask import current_app as app
 from peewee import MySQLDatabase, Proxy, SqliteDatabase
 
 # Create a database proxy to allow initialization later
@@ -31,15 +30,18 @@ def initialize_database(app):
         # Connect to the database and create tables
         app.logger.info("Connecting to the database...")
         with database_proxy:
-            from ..models.data import Post, Settings, Thesis, User, PostComment
+            from ..models.data import Post, PostComment, Settings, Thesis, User
 
-            database_proxy.create_tables([User, Thesis, Post, Settings, PostComment], safe=True)
+            database_proxy.create_tables(
+                [User, Thesis, Post, Settings, PostComment], safe=True
+            )
         app.logger.info("Database initialization complete.")
     except Exception as e:
         app.logger.error(f"Database initialization failed: {e}")
         raise
 
     return db
+
 
 def model_to_dict(model):
     """

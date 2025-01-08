@@ -8,8 +8,6 @@ from ..utils.auth import jwt_required
 forum_bp = Blueprint("forum_api", __name__, url_prefix="/api/forum")
 
 
-
-
 @forum_bp.route("/posts", methods=["GET"])
 def list_posts():
     """
@@ -68,7 +66,10 @@ def create_post():
         user_id = g.user_id
         post = forum_service.create_post(user_id, {"title": title, "content": content})
         if post:
-            return jsonify({"success": True, "title": post["title"], "content": content}), 201
+            return (
+                jsonify({"success": True, "title": post["title"], "content": content}),
+                201,
+            )
         return jsonify({"success": False, "message": "Failed to create post"}), 400
     except Exception as e:
         app.logger.error(f"Error creating post: {e}")

@@ -3,6 +3,7 @@ from peewee import IntegrityError
 from ..models.data import Post, PostComment
 from ..utils.db import model_to_dict
 
+
 class ForumService:
     def __init__(self, logger):
         """
@@ -27,7 +28,9 @@ class ForumService:
         """
         try:
             post = Post.get_or_none(Post.id == post_id)
-            return model_to_dict(post) if post else None  # Return the post as a dictionary
+            return (
+                model_to_dict(post) if post else None
+            )  # Return the post as a dictionary
         except Exception as e:
             self.logger.error(f"Failed to fetch post {post_id}: {e}")
             return None

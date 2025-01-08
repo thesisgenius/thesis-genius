@@ -7,6 +7,7 @@ from ..utils.auth import jwt_required
 
 user_bp = Blueprint("user_api", __name__, url_prefix="/api/user")
 
+
 @user_bp.route("/profile", methods=["GET"])
 @jwt_required
 def get_user_profile():

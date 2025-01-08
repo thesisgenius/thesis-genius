@@ -1,9 +1,8 @@
 from flask import Flask
 from flask_cors import CORS
 
-from .utils.db import database_proxy, initialize_database
-
 from .routes import register_routes
+from .utils.db import database_proxy, initialize_database
 
 
 def create_app(config_name="testing"):
@@ -17,7 +16,7 @@ def create_app(config_name="testing"):
 
     initialize_database(app)
 
-    # Enable CORS
+    # Enable CORS for frontend development
     CORS(app)
 
     # Register API routes
