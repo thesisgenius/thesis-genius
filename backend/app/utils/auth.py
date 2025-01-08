@@ -1,25 +1,31 @@
-import jwt
-from functools import wraps
-from flask import current_app, g, jsonify, request
 from datetime import datetime, timedelta, timezone
-from backend import UserService
-
-user_service = UserService()
+from functools import wraps
+import jwt
+from flask import current_app, g, jsonify, request
 
 def generate_token(user_id):
-    """Generate a JWT token."""
-    payload = {
-        "user_id": user_id,
-        "exp": datetime.now(timezone.utc) + timedelta(hours=1),  # Token expires in 1 hour
-    }
-    secret_key = current_app.config["SECRET_KEY"]  # Access SECRET_KEY within the function
-    return jwt.encode(payload, secret_key, algorithm="HS256")
+    """
+    Generate a JWT token for the given user ID.
+    """
+    try:
+        payload = {
+            "user_id": user_id,
+            "exp": datetime.now(timezone.utc) + timedelta(hours=1),
+            "iat": datetime.now(timezone.utc)
+        }
+        token = jwt.encode(payload, current_app.config["SECRET_KEY"], algorithm="HS256")
+        return token
+    except Exception as e:
+        current_app.logger.error(f"Failed to generate token for user {user_id}: {e}")
+        return None
 
 
 def validate_token(token):
     """Validate a JWT token."""
     try:
-        secret_key = current_app.config["SECRET_KEY"]  # Access SECRET_KEY within the function
+        secret_key = current_app.config[
+            "SECRET_KEY"
+        ]  # Access SECRET_KEY within the function
         payload = jwt.decode(token, secret_key, algorithms=["HS256"])
         return payload["user_id"]
     except jwt.ExpiredSignatureError:
@@ -51,7 +57,6 @@ def jwt_required(f):
         return f(*args, **kwargs)
 
     return decorated_function
-
 
 
 def load_user():

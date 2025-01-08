@@ -1,36 +1,9 @@
 from datetime import datetime, timezone
 
-from flask import current_app as app
-from peewee import (AutoField, BooleanField, CharField, DatabaseProxy,
-                    DateTimeField, ForeignKeyField, Model, MySQLDatabase,
-                    SqliteDatabase, TextField)
+from peewee import (AutoField, BooleanField, CharField, DateTimeField,
+                    ForeignKeyField, Model, TextField)
 
-# Proxy for lazy initialization
-database_proxy = DatabaseProxy()
-
-def initialize_database(config):
-    """
-    Initialize the correct database based on the provided configuration.
-    """
-    conn_info = config["DB_CONNECTION_INFO"]
-
-    if conn_info["engine"] == "mysql":
-        db = MySQLDatabase(
-            conn_info["name"],
-            user=conn_info["user"],
-            password=conn_info["password"],
-            host=conn_info["host"],
-            port=int(conn_info["port"]),
-        )
-    elif conn_info["engine"] == "sqlite":
-        db = SqliteDatabase(conn_info["name"])
-    else:
-        raise ValueError(f"Unsupported database engine: {conn_info['engine']}")
-
-    # Bind the database proxy
-    database_proxy.initialize(db)
-
-    return db
+from ..utils.db import database_proxy
 
 
 class BaseModel(Model):
@@ -56,7 +29,8 @@ class User(BaseModel):
     def get_id(self):
         return str(self.id)
 
-class Theses(BaseModel):
+
+class Thesis(BaseModel):
     id = AutoField()
     title = CharField()
     abstract = TextField()

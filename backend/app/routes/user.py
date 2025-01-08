@@ -1,58 +1,95 @@
-from flask import Blueprint, jsonify, request, render_template, flash, redirect, url_for, g
-from backend.app.services.userservice import UserService
-from backend.app.utils.auth import jwt_required
+from flask import Blueprint
+from flask import current_app as app
+from flask import g, jsonify, request
 
-user_bp = Blueprint("user_api", __name__, url_prefix="/api/v1/user",
-                    template_folder="templates",
-                    static_folder="static",)
+from ..services.userservice import UserService
+from ..utils.auth import jwt_required
 
-# Instantiate UserService
-user_service = UserService()
+user_bp = Blueprint("user_api", __name__, url_prefix="/api/user")
 
 @user_bp.route("/profile", methods=["GET"])
 @jwt_required
-def user_profile():
+def get_user_profile():
     """
     Fetch the authenticated user's profile data.
     """
-    user_id = g.user_id  # Get the user ID from the middleware
-    user_data = user_service.get_user_data(user_id)
-    if not user_data:
-        flash("User not found", "error")
-        return redirect(url_for("auth.login"))  # Redirect to login page if user not found
-    return render_template("user/profile.html", user=user_data)
+    # Instantiate UserService
+    user_service = UserService(app.logger)
+    try:
+        user_id = g.user_id
+        user_data = user_service.get_user_data(user_id)
+        if not user_data:
+            return jsonify({"success": False, "message": "User not found"}), 404
 
-
-@user_bp.route("/profile/edit", methods=["GET", "POST"])
-@jwt_required
-def edit_profile():
-    """
-    Fetch and update the authenticated user's profile data.
-    """
-    user_id = g.user_id
-    if request.method == "POST":
-        update_data = {
-            "name": request.form["name"],
-            "email": request.form["email"],
-        }
-        success = user_service.update_user_data(user_id, update_data)
-        if success:
-            flash("Profile updated successfully!", "success")
-            return redirect(url_for(".user_profile"))
-        flash("Failed to update profile.", "error")
-    user_data = user_service.get_user_data(user_id)
-    return render_template("user/edit_profile.html", user=user_data)
+        return jsonify({"success": True, "user": user_data}), 200
+    except Exception as e:
+        app.logger.error(f"Error fetching user profile: {e}")
+        return jsonify({"success": False, "message": "An internal error occurred"}), 500
 
 
 @user_bp.route("/profile", methods=["PUT"])
 @jwt_required
-def update_profile():
+def update_user_profile():
     """
-    Update the authenticated user's profile data (API endpoint).
+    Update the authenticated user's profile data.
     """
-    user_id = g.user_id
-    update_data = request.json
-    success = user_service.update_user_data(user_id, update_data)
-    if success:
-        return jsonify({"message": "Profile updated successfully."}), 200
-    return jsonify({"error": "Failed to update profile."}), 400
+    # Instantiate UserService
+    user_service = UserService(app.logger)
+    try:
+        user_id = g.user_id
+        data = request.json
+        if not data:
+            return jsonify({"success": False, "message": "Invalid payload"}), 400
+
+        updated_data = {
+            "name": data.get("name"),
+            "email": data.get("email"),
+        }
+
+        if not updated_data["name"] or not updated_data["email"]:
+            return (
+                jsonify({"success": False, "message": "Name and email are required"}),
+                400,
+            )
+
+        success = user_service.update_user_data(user_id, updated_data)
+        if success:
+            return (
+                jsonify({"success": True, "message": "Profile updated successfully"}),
+                200,
+            )
+
+        return jsonify({"success": False, "message": "Failed to update profile"}), 400
+    except Exception as e:
+        app.logger.error(f"Error updating user profile: {e}")
+        return jsonify({"success": False, "message": "An internal error occurred"}), 500
+
+
+@user_bp.route("/deactivate", methods=["POST"])
+@jwt_required
+def deactivate_user():
+    """
+    Deactivate the authenticated user's account.
+    """
+    # Instantiate UserService
+    user_service = UserService(app.logger)
+    try:
+        user_id = g.user_id
+        success = user_service.deactivate_user(user_id)
+        if success:
+            return (
+                jsonify(
+                    {
+                        "success": True,
+                        "message": "User account deactivated successfully",
+                    }
+                ),
+                200,
+            )
+        return (
+            jsonify({"success": False, "message": "Failed to deactivate user account"}),
+            400,
+        )
+    except Exception as e:
+        app.logger.error(f"Error deactivating user account: {e}")
+        return jsonify({"success": False, "message": "An internal error occurred"}), 500

@@ -1,74 +1,109 @@
-from flask import Blueprint, jsonify, request, render_template, g, current_app as app
-from backend.app.services.userservice import UserService
-from backend.app.utils.auth import jwt_required
+from flask import Blueprint
+from flask import current_app as app
+from flask import g, jsonify, request
 
-auth_bp = Blueprint(
-    "auth",
-    __name__,
-    url_prefix="/api/v1/auth",
-    template_folder="templates",
-    static_folder="static",
-)
-user_service = UserService()
+from ..services.userservice import UserService
+from ..utils.auth import jwt_required
 
-@auth_bp.route('/signup', methods=['GET'])
-def signup():
-    return render_template('signup.html')
+auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
-# Render the signin page (GET)
-@auth_bp.route('/signin', methods=['GET'])
-def signin_page():
-    return render_template('signin.html')
 
-# Handle signin logic (POST)
-@auth_bp.route('/signin', methods=['POST'])
+@auth_bp.route("/signin", methods=["POST"])
 def signin():
     """
     API endpoint for user sign-in.
     """
-    # Parse JSON payload
-    app.logger.info(f"Headers: {request.headers}")
-    app.logger.info(f"Payload: {request.get_data()}")
-    if not request.is_json:  # Check if the request contains JSON
-        return jsonify({"success": False, "message": "Invalid Content-Type. Expected application/json"}), 415
+    # Instantiate the UserService
+    user_service = UserService(app.logger)
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"success": False, "message": "Missing request body"}), 400
 
-    data = request.json
-    email = data.get('email')
-    password = data.get('password')
+        email = data.get("email")
+        password = data.get("password")
 
-    # Authenticate the user
-    user = user_service.authenticate_user(email=email, password=password)
-    if user:
-        token = user_service.generate_token(user['id'])  # Generate JWT token
-        return jsonify({"success": True, "token": token}), 200
-    else:
+        if not email or not password:
+            return (
+                jsonify(
+                    {"success": False, "message": "Email and password are required"}
+                ),
+                400,
+            )
+
+        user = user_service.authenticate_user(email=email, password=password)
+        if user:
+            token = user_service.generate_token(user["id"])
+            return jsonify({"success": True, "token": token}), 200
+
         return jsonify({"success": False, "message": "Invalid credentials"}), 401
+    except Exception as e:
+        app.logger.error(f"Error during sign-in: {e}")
+        return jsonify({"success": False, "message": "An internal error occurred"}), 500
 
 
-# Sign-out route (Stateless)
-@auth_bp.route('/signout', methods=['POST'])
-@jwt_required
-def signout():
-    user_service.logout(g.user_id)  # Assuming `g.user_id` is set by middleware
-    return jsonify({"success": True, "message": "Logged out successfully"}), 200
-
-# Register route
-@auth_bp.route('/register', methods=['POST'])
+@auth_bp.route("/register", methods=["POST"])
 def register():
     """
     API endpoint for user registration.
     """
-    data = request.json  # Parse JSON payload
-    name = data.get('name')
-    email = data.get('email')
-    password = data.get('password')
+    # Instantiate the UserService
+    user_service = UserService(app.logger)
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"success": False, "message": "Missing request body"}), 400
 
-    # Call UserService to handle registration logic
-    success = user_service.create_user(name=name, email=email, password=password)
-    if success:
-        return jsonify({"success": True, "message": "User registered successfully!"}), 201
-    else:
-        return jsonify({"success": False, "message": "Registration failed. Email might already be in use."}), 400
+        name = data.get("name")
+        email = data.get("email")
+        password = data.get("password")
+
+        if not name or not email or not password:
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "Name, email, and password are required",
+                    }
+                ),
+                400,
+            )
+
+        success = user_service.create_user(name=name, email=email, password=password)
+        if success:
+            return (
+                jsonify({"success": True, "message": "User registered successfully"}),
+                201,
+            )
+
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Registration failed. Email might already be in use",
+                }
+            ),
+            400,
+        )
+    except Exception as e:
+        app.logger.error(f"Error during registration: {e}")
+        return jsonify({"success": False, "message": "An internal error occurred"}), 500
 
 
-
+@auth_bp.route("/signout", methods=["POST"])
+@jwt_required
+def signout():
+    """
+    API endpoint for user sign-out.
+    """
+    # Instantiate the UserService
+    user_service = UserService(app.logger)
+    try:
+        user_id = g.user_id
+        user_service.logout(
+            user_id
+        )  # Assuming `logout` is a valid method in UserService
+        return jsonify({"success": True, "message": "Logged out successfully"}), 200
+    except Exception as e:
+        app.logger.error(f"Error during sign-out: {e}")
+        return jsonify({"success": False, "message": "An internal error occurred"}), 500

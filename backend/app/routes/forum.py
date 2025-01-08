@@ -1,93 +1,124 @@
-from flask import Blueprint, request, render_template, flash, redirect, url_for, g
-from backend import ForumService
-from backend import jwt_required
+from flask import Blueprint
+from flask import current_app as app
+from flask import g, jsonify, request
 
-forum_bp = Blueprint(
-    "forum_api",
-    __name__,
-    url_prefix="/api/v1/forum",
-    template_folder="templates",
-    static_folder="static",
-)
+from ..services.forumservice import ForumService
+from ..utils.auth import jwt_required
 
-forum_service = ForumService()
+forum_bp = Blueprint("forum_api", __name__, url_prefix="/api/forum")
 
-@forum_bp.route("/forum", methods=["GET"])
+
+
+
+@forum_bp.route("/posts", methods=["GET"])
 def list_posts():
     """
-    Display all forum posts.
+    Fetch all forum posts.
     """
-    posts = forum_service.get_all_posts()
-    return render_template("forum/list.html", posts=posts)
+    # Instantiate ForumService
+    forum_service = ForumService(app.logger)
+    try:
+        posts = forum_service.get_all_posts()
+        return jsonify({"success": True, "posts": posts}), 200
+    except Exception as e:
+        app.logger.error(f"Error fetching posts: {e}")
+        return jsonify({"success": False, "message": "Failed to fetch posts"}), 500
 
 
-@forum_bp.route("/forum/<int:post_id>", methods=["GET"])
+@forum_bp.route("/posts/<int:post_id>", methods=["GET"])
 def view_post(post_id):
     """
-    View a single forum post and its comments.
+    Fetch a single forum post and its comments.
     """
-    post = forum_service.get_post_by_id(post_id)
-    if not post:
-        flash("Post not found.", "error")
-        return redirect(url_for("forum_api.list_posts"))
+    # Instantiate ForumService
+    forum_service = ForumService(app.logger)
+    try:
+        post = forum_service.get_post_by_id(post_id)
+        if not post:
+            return jsonify({"success": False, "message": "Post not found"}), 404
 
-    comments = forum_service.get_post_comments(post_id)
-    return render_template("forum/view.html", post=post, comments=comments)
+        comments = forum_service.get_post_comments(post_id)
+        return jsonify({"success": True, "post": post, "comments": comments}), 200
+    except Exception as e:
+        app.logger.error(f"Error fetching post {post_id}: {e}")
+        return jsonify({"success": False, "message": "Failed to fetch post"}), 500
 
 
-@forum_bp.route("/forum/create", methods=["GET", "POST"])
+@forum_bp.route("/posts", methods=["POST"])
 @jwt_required
 def create_post():
     """
     Create a new forum post.
     """
-    user_id = g.user_id
-    if request.method == "POST":
-        title = request.form["title"]
-        content = request.form["content"]
+    # Instantiate ForumService
+    forum_service = ForumService(app.logger)
+    try:
+        data = request.json
+        title = data.get("title")
+        content = data.get("content")
 
-        post_data = {"title": title, "content": content}
-        post = forum_service.create_post(user_id, post_data)
+        if not title or not content:
+            return (
+                jsonify(
+                    {"success": False, "message": "Title and content are required"}
+                ),
+                400,
+            )
 
+        user_id = g.user_id
+        post = forum_service.create_post(user_id, {"title": title, "content": content})
         if post:
-            flash("Post created successfully!", "success")
-            return redirect(url_for("forum_api.list_posts"))
-        else:
-            flash("Failed to create post. Please try again.", "error")
+            return jsonify({"success": True, "title": post["title"], "content": content}), 201
+        return jsonify({"success": False, "message": "Failed to create post"}), 400
+    except Exception as e:
+        app.logger.error(f"Error creating post: {e}")
+        return jsonify({"success": False, "message": "An internal error occurred"}), 500
 
-    return render_template("forum/create.html")
 
-
-@forum_bp.route("/forum/<int:post_id>/comment", methods=["POST"])
+@forum_bp.route("/posts/<int:post_id>/comments", methods=["POST"])
 @jwt_required
 def add_comment(post_id):
     """
     Add a comment to a forum post.
     """
-    user_id = g.user_id
-    content = request.form["content"]
-    comment_data = {"content": content}
-    comment = forum_service.add_comment_to_post(user_id, post_id, comment_data)
+    # Instantiate ForumService
+    forum_service = ForumService(app.logger)
+    try:
+        data = request.json
+        content = data.get("content")
 
-    if comment:
-        flash("Comment added successfully!", "success")
-    else:
-        flash("Failed to add comment. Please try again.", "error")
+        if not content:
+            return jsonify({"success": False, "message": "Content is required"}), 400
 
-    return redirect(url_for("forum_api.view_post", post_id=post_id))
+        user_id = g.user_id
+        comment = forum_service.add_comment_to_post(
+            user_id, post_id, {"content": content}
+        )
+        if comment:
+            return jsonify({"success": True, "comment": comment["content"]}), 201
+        return jsonify({"success": False, "message": "Failed to add comment"}), 400
+    except Exception as e:
+        app.logger.error(f"Error adding comment to post {post_id}: {e}")
+        return jsonify({"success": False, "message": "An internal error occurred"}), 500
 
 
-@forum_bp.route("/forum/<int:post_id>/delete", methods=["POST"])
+@forum_bp.route("/posts/<int:post_id>", methods=["DELETE"])
 @jwt_required
 def delete_post(post_id):
     """
     Delete a forum post.
     """
-    user_id = g.user_id
-    success = forum_service.delete_post(post_id, user_id)
-    if success:
-        flash("Post deleted successfully.", "success")
-    else:
-        flash("Failed to delete post. Please try again.", "error")
-
-    return redirect(url_for("forum_api.list_posts"))
+    # Instantiate ForumService
+    forum_service = ForumService(app.logger)
+    try:
+        user_id = g.user_id
+        success = forum_service.delete_post(post_id, user_id)
+        if success:
+            return (
+                jsonify({"success": True, "message": "Post deleted successfully"}),
+                200,
+            )
+        return jsonify({"success": False, "message": "Failed to delete post"}), 400
+    except Exception as e:
+        app.logger.error(f"Error deleting post {post_id}: {e}")
+        return jsonify({"success": False, "message": "An internal error occurred"}), 500

@@ -1,137 +1,109 @@
-import jwt
+from peewee import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
-from flask import current_app as app
-from datetime import datetime, timezone, timedelta
-from backend import User
+
+from ..models.data import User
+from ..utils.auth import generate_token
+from ..utils.db import model_to_dict
+
 
 class UserService:
-    def __init__(self):
-        pass
+    def __init__(self, logger):
+        """
+        Initialize the UserService with a logger instance.
+        """
+        self.logger = logger
 
-    def login(self, email, password):
+    def authenticate_user(self, email, password):
         """
-        Authenticate a user and return a JWT token if successful.
+        Authenticate a user by their email and password.
         """
-        user = User.get_or_none(User.email == email)
-        if not user or not check_password_hash(user.password, password):
-            app.logger.warning("Invalid credentials for user login")
-            return None  # Return None if authentication fails
+        try:
+            user = User.get_or_none(User.email == email)
+            if user and check_password_hash(user.password, password):
+                self.logger.info(f"User {user.id} authenticated successfully.")
+                return model_to_dict(user)
+            self.logger.warning(f"Authentication failed for email: {email}")
+            return None
+        except Exception as e:
+            self.logger.error(f"Error during authentication: {e}")
+            return None
 
-        # Generate JWT token
-        token = self.generate_token(user.id)
-        app.logger.info(f"User {user.id} logged in successfully.")
-        return token
-
-    def logout(self, user_id):
+    def create_user(self, name, email, password):
         """
-        Placeholder for logout logic.
+        Create a new user with the given name, email, and password.
         """
-        app.logger.info(f"User {user_id} logged out.")
-        # For JWT-based authentication, logout is client-side (invalidate the token locally).
+        try:
+            hashed_password = generate_password_hash(password)
+            user = User.create(name=name, email=email, password=hashed_password)
+            self.logger.info(f"User created successfully: {user.id}")
+            return True
+        except IntegrityError:
+            self.logger.warning(f"User creation failed: Email {email} already exists.")
+            return False
+        except Exception as e:
+            self.logger.error(f"Error creating user: {e}")
+            return False
 
     def get_user_data(self, user_id):
         """
         Fetch user data by ID.
         """
         try:
-            user = User.get_by_id(user_id)
-            return {
-                "id": user.id,
-                "name": user.name,
-                "email": user.email,
-                "is_admin": user.is_admin,
-                "is_active": user.is_active,
-                "created_at": user.created_at,
-                "updated_at": user.updated_at,
-            }
-        except User.DoesNotExist:
-            app.logger.error(f"User with ID {user_id} does not exist.")
+            user = User.get_or_none(User.id == user_id)
+            if user:
+                self.logger.info(f"User {user.id} data fetched successfully.")
+                return model_to_dict(user)  # Return the user as a dictionary
+            self.logger.warning(f"User with ID {user_id} not found.")
             return None
-
-    def get_user_data(self, user_id):
-        """
-        Fetch user data by ID.
-        """
-        try:
-            user = User.get_by_id(user_id)
-            return {
-                "id": user.id,
-                "name": user.name,
-                "email": user.email,
-                "is_admin": user.is_admin,
-                "created_at": user.created_at,
-            }
-        except User.DoesNotExist:
+        except Exception as e:
+            self.logger.error(f"Error fetching user data for ID {user_id}: {e}")
             return None
-
-        
 
     def update_user_data(self, user_id, update_data):
         """
         Update user profile data.
         """
-        update_data["updated_at"] = datetime.now(timezone.utc)  # Update timestamp
-        query = User.update(**update_data).where(User.id == user_id)
-        updated_rows = query.execute()
-        return updated_rows > 0  # Return True if any rows were updated
-
-    def create_user(self, name, email, password, is_admin=False):
-        """
-        Create a new user.
-        """
-        hashed_password = generate_password_hash(password)
         try:
-            User.create(
-                name=name,
-                email=email,
-                password=hashed_password,
-                is_admin=is_admin,
-                created_at=datetime.now(),
-                updated_at=datetime.now(),
-            )
-            return True
+            query = User.update(**update_data).where(User.id == user_id)
+            updated_rows = query.execute()
+            if updated_rows > 0:
+                self.logger.info(f"User {user_id} updated successfully.")
+                return True
+            self.logger.warning(f"No rows updated for user {user_id}.")
+            return False
+        except IntegrityError as e:
+            self.logger.error(f"IntegrityError updating user {user_id}: {e}")
+            return False
         except Exception as e:
-            app.logger.error(f"Error creating user: {e}")
+            self.logger.error(f"Error updating user {user_id}: {e}")
             return False
 
-    def authenticate_user(self, email, password):
+    def deactivate_user(self, user_id):
         """
-        Authenticate a user.
-        """
-        user = User.get_or_none(User.email == email)
-        if user and check_password_hash(user.password, password):
-            return {
-                "id": user.id,
-                "name": user.name,
-                "email": user.email,
-                "is_admin": user.is_admin,
-            }
-        return None
-
-
-    # JWT Utilities
-    def generate_token(self, user_id):
-        """
-        Generate a JWT token for the user.
-        """
-        secret_key = app.config["SECRET_KEY"]  # Access config inside method
-        payload = {
-            "user_id": user_id,
-            "exp": datetime.utcnow() + timedelta(hours=1),
-            "iat": datetime.utcnow(),
-        }
-        return jwt.encode(payload, secret_key, algorithm="HS256")
-
-    def validate_token(self, token):
-        """
-        Validate a JWT token and return the user ID if valid.
+        Deactivate a user account by setting is_active to False.
         """
         try:
-            payload = jwt.decode(token, self.secret_key, algorithms=["HS256"])
-            return payload.get("user_id")
-        except jwt.ExpiredSignatureError:
-            app.logger.warning("Token has expired.")
-            return None
-        except jwt.InvalidTokenError:
-            app.logger.warning("Invalid token.")
+            user = User.get_or_none(User.id == user_id)
+            if not user:
+                self.logger.warning(f"User with ID {user_id} not found.")
+                return False
+
+            user.is_active = False
+            user.save()
+            self.logger.info(f"User {user_id} deactivated successfully.")
+            return True
+        except Exception as e:
+            self.logger.error(f"Error deactivating user {user_id}: {e}")
+            return False
+
+    def generate_token(self, user_id):
+        """
+        Generate a JWT token for the specified user ID.
+        """
+        try:
+            token = generate_token(user_id)
+            self.logger.info(f"Token generated for user {user_id}.")
+            return token
+        except Exception as e:
+            self.logger.error(f"Error generating token for user {user_id}: {e}")
             return None

@@ -1,91 +1,133 @@
-from flask import Blueprint, request, render_template, flash, redirect, url_for, g
-from backend.app.services.thesisservice import ThesisService
-from backend.app.utils.auth import jwt_required
+from flask import Blueprint
+from flask import current_app as app
+from flask import g, jsonify, request
 
-thesis_bp = Blueprint(
-    "thesis_api",
-    __name__,
-    url_prefix="/api/v1/thesis",
-    template_folder="templates",
-    static_folder="static",
-)
+from ..services.thesisservice import ThesisService
+from ..utils.auth import jwt_required
 
-thesis_service = ThesisService()
+thesis_bp = Blueprint("thesis_api", __name__, url_prefix="/api/thesis")
 
 @thesis_bp.route("/theses", methods=["GET"])
 @jwt_required
 def list_theses():
     """
-    Display all theses created by the current user.
+    Fetch all theses created by the authenticated user.
     """
-    user_id = g.user_id
-    theses = thesis_service.get_user_theses(user_id)
-    return render_template("thesis/list.html", theses=theses)
+    # Instantiate ThesisService
+    thesis_service = ThesisService(app.logger)
+    try:
+        user_id = g.user_id
+        theses = thesis_service.get_user_theses(user_id)
+        return jsonify({"success": True, "theses": theses}), 200
+    except Exception as e:
+        app.logger.error(f"Error fetching theses for user {user_id}: {e}")
+        return jsonify({"success": False, "message": "Failed to fetch theses"}), 500
 
 
-@thesis_bp.route("/thesis/create", methods=["GET", "POST"])
+@thesis_bp.route("/thesis", methods=["POST"])
 @jwt_required
 def create_thesis():
     """
     Create a new thesis.
     """
-    user_id = g.user_id
-    if request.method == "POST":
-        title = request.form["title"]
-        abstract = request.form["abstract"]
-        status = request.form["status"]
+    # Instantiate ThesisService
+    thesis_service = ThesisService(app.logger)
+    try:
+        data = request.json
+        title = data.get("title")
+        abstract = data.get("abstract")
+        status = data.get("status")
 
+        if not title or not abstract or not status:
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "Title, abstract, and status are required",
+                    }
+                ),
+                400,
+            )
+
+        user_id = g.user_id
         success = thesis_service.create_thesis(
             user_id, {"title": title, "abstract": abstract, "status": status}
         )
         if success:
-            flash("Thesis created successfully!", "success")
-            return redirect(url_for("thesis_api.list_theses"))
-        else:
-            flash("Failed to create thesis. Please try again.", "error")
+            return (
+                jsonify({"success": True, "message": "Thesis created successfully"}),
+                201,
+            )
+        return jsonify({"success": False, "message": "Failed to create thesis"}), 400
+    except Exception as e:
+        app.logger.error(f"Error creating thesis: {e}")
+        return jsonify({"success": False, "message": "An internal error occurred"}), 500
 
-    return render_template("thesis/create.html")
 
-
-@thesis_bp.route("/thesis/<int:thesis_id>/edit", methods=["GET", "POST"])
+@thesis_bp.route("/thesis/<int:thesis_id>", methods=["PUT"])
 @jwt_required
 def edit_thesis(thesis_id):
     """
-    Edit an existing thesis.
+    Update an existing thesis.
     """
-    user_id = g.user_id
-    thesis = thesis_service.get_thesis_by_id(thesis_id, user_id)
-    if not thesis:
-        flash("You do not have permission to edit this thesis.", "error")
-        return redirect(url_for("thesis_api.list_theses"))
+    # Instantiate ThesisService
+    thesis_service = ThesisService(app.logger)
+    try:
+        user_id = g.user_id
+        data = request.json
+        if not data:
+            return jsonify({"success": False, "message": "Invalid payload"}), 400
 
-    if request.method == "POST":
         updated_data = {
-            "title": request.form["title"],
-            "abstract": request.form["abstract"],
-            "status": request.form["status"],
+            "title": data.get("title"),
+            "abstract": data.get("abstract"),
+            "status": data.get("status"),
         }
+
+        if (
+            not updated_data["title"]
+            or not updated_data["abstract"]
+            or not updated_data["status"]
+        ):
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "Title, abstract, and status are required",
+                    }
+                ),
+                400,
+            )
+
         success = thesis_service.update_thesis(thesis_id, user_id, updated_data)
         if success:
-            flash("Thesis updated successfully!", "success")
-            return redirect(url_for("thesis_api.list_theses"))
-        else:
-            flash("Failed to update thesis. Please try again.", "error")
+            return (
+                jsonify({"success": True, "message": "Thesis updated successfully"}),
+                200,
+            )
+        return jsonify({"success": False, "message": "Failed to update thesis"}), 400
+    except Exception as e:
+        app.logger.error(f"Error updating thesis {thesis_id}: {e}")
+        return jsonify({"success": False, "message": "An internal error occurred"}), 500
 
-    return render_template("thesis/edit_profile.html", thesis=thesis)
 
-
-@thesis_bp.route("/thesis/<int:thesis_id>/delete", methods=["POST"])
+@thesis_bp.route("/thesis/<int:thesis_id>", methods=["DELETE"])
 @jwt_required
 def delete_thesis(thesis_id):
     """
-    Delete a thesis.
+    Delete an existing thesis.
     """
-    user_id = g.user_id
-    success = thesis_service.delete_thesis(thesis_id, user_id)
-    if success:
-        flash("Thesis deleted successfully!", "success")
-    else:
-        flash("Failed to delete thesis. Please try again.", "error")
-
-    return redirect(url_for("thesis_api.list_theses"))
+    # Instantiate ThesisService
+    thesis_service = ThesisService(app.logger)
+    try:
+        user_id = g.user_id
+        success = thesis_service.delete_thesis(thesis_id, user_id)
+        if success:
+            return (
+                jsonify({"success": True, "message": "Thesis deleted successfully"}),
+                200,
+            )
+        return jsonify({"success": False, "message": "Failed to delete thesis"}), 400
+    except Exception as e:
+        app.logger.error(f"Error deleting thesis {thesis_id}: {e}")
+        return jsonify({"success": False, "message": "An internal error occurred"}), 500
