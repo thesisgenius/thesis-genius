@@ -6,7 +6,7 @@ from .utils.db import database_proxy, initialize_database
 from .routes import register_routes
 
 
-def create_app(config_name="development"):
+def create_app(config_name="testing"):
     """
     Flask application factory.
     """
