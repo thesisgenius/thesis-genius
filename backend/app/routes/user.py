@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request, render_template, flash, redirect, url_for, g
-from backend.services.userservice import UserService
-from backend.utils.auth import jwt_required
+from backend.app.services.userservice import UserService
+from backend.app.utils.auth import jwt_required
 
 user_bp = Blueprint("user_api", __name__, url_prefix="/api/v1/user",
                     template_folder="templates",

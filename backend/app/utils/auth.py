@@ -2,7 +2,7 @@ import jwt
 from functools import wraps
 from flask import current_app, g, jsonify, request
 from datetime import datetime, timedelta, timezone
-from backend.services.userservice import UserService
+from backend import UserService
 
 user_service = UserService()
 

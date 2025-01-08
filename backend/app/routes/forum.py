@@ -1,6 +1,6 @@
 from flask import Blueprint, request, render_template, flash, redirect, url_for, g
-from backend.services.forumservice import ForumService
-from backend.utils.auth import jwt_required
+from backend import ForumService
+from backend import jwt_required
 
 forum_bp = Blueprint(
     "forum_api",

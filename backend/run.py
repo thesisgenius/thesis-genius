@@ -1,8 +1,7 @@
 import os
-from backend import create_app
+from app import create_app
 
-
-def main():
+if __name__ == "__main__":
     """
     Entry point to start the Flask application.
     """

@@ -3,53 +3,36 @@
 Codebase repository hosting ThesisGenius.com
 
 ```text
-thesis-genius
-├── LICENSE
-├── Makefile
-├── README.md
-├── client
-│   └── placeholder
-├── docs
-│   ├── backend
-│   │   └── environment.md
-│   ├── ci
-│   │   └── gh-actions.md
-│   └── data
-│       ├── database-dev.md
-│       └── scripts
-│           └── mysql.sql
-├── instance
-├── requirements.txt
-├── server
-│   ├── __init__.py
-│   ├── api
-│   │   └── v1
-│   │       ├── __init__.py
-│   │       └── routes
-│   │           ├── __init__.py
-│   │           ├── forum.py
-│   │           ├── thesis.py
-│   │           └── user.py
-│   ├── app.py
-│   ├── config.py
-│   ├── models
-│   │   ├── __init__.py
-│   │   ├── forum.py
-│   │   ├── thesis.py
-│   │   └── user.py
-│   ├── static
-│   ├── storage
-│   ├── templates
-│   └── utils
-│       ├── __init__.py
-│       └── auth.py
-└── tests
-    ├── __init__.py
-    ├── scripts
-    │   └── api.sh
-    ├── test_forum_api.py
-    ├── test_thesis_api.py
-    └── test_user_api.py
+thesis-genius/
+├── backend/                # Backend Flask application
+│   ├── app/                # Core Flask app
+│   │   ├── __init__.py     # Flask app factory
+│   │   ├── routes.py       # API routes
+│   │   ├── models/         # Database models
+│   │   ├── services/       # Business logic
+│   │   ├── utils/          # Helper utilities
+│   │   └── tests/          # Backend tests
+│   ├── instance/           # Config files (optional)
+│   ├── requirements.txt    # Python dependencies
+│   └── run.py              # Run the Flask application
+│
+├── frontend/               # Frontend React application
+│   ├── public/             # Static files (e.g., index.html, favicon.ico)
+│   ├── src/                # React source code
+│   │   ├── components/     # Reusable React components
+│   │   ├── pages/          # Route-specific pages (SignIn, Dashboard, etc.)
+│   │   ├── services/       # API service layer for interacting with Flask
+│   │   ├── App.jsx         # Main React component
+│   │   ├── index.jsx       # Entry point for React app
+│   │   └── styles/         # Global and component-specific styles
+│   ├── package.json        # Frontend dependencies
+│   ├── vite.config.js      # Configuration (if using Vite)
+│   └── .env                # Environment variables for React
+│
+├── .gitignore              # Ignored files for Git
+├── README.md               # Project overview and setup instructions
+└── docker-compose.yml      # Optional: Docker configuration
+
 ```
 
 * Front-End: React (JavaScript)

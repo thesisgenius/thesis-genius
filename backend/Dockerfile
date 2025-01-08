@@ -26,7 +26,7 @@ LABEL name=${BIN_NAME} \
       summary="ThesisGenius provides AI integrated API thesis-genius.com." \
       description="ThesisGenius provides AI integrated API thesis-genius.com."
 
-COPY LICENSE /usr/share/doc/$PRODUCT_NAME/LICENSE.txt
+COPY ../LICENSE /usr/share/doc/$PRODUCT_NAME/LICENSE.txt
 
 # Install Python dependencies
 COPY requirements.txt .
@@ -36,7 +36,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ server/
 
 # Copy the default (dev) .env file for environment variables
-COPY build-support/docker/.env .
+COPY ../build-support/docker/.env .
 
 # Expose application port
 EXPOSE ${FLASK_PORT}

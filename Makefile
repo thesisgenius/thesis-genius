@@ -1,4 +1,4 @@
-APP_NAME := thesisgenius-api
+APP_NAME := thesisgenius-backend
 VERSION := $(shell git describe --tags --always --dirty)
 DOCKERHUB_UN ?= $(shell whoami)
 
@@ -9,19 +9,20 @@ ARCHS := amd64 arm64
 ##@ Build
 
 # Build Docker images for all platforms
-.PHONY: docker-dev-api
-docker-dev-api:
+.PHONY: docker-dev-backend
+docker-dev-backend:
 	@docker buildx use default && docker buildx build \
 		--platform linux/$(LOCAL_ARCH) \
-		--build-arg APPLICATION_PORT=$(API_APP_PORT) \
+		--build-arg APPLICATION_PORT=$(BACKEND_APP_PORT) \
 		--build-arg VERSION=dev \
-		--tag $(API_DEV_IMAGE):local \
-		--target dev-api \
-		--load .
+		--tag $(BACKEND_DEV_IMAGE):local \
+		--target dev-backend \
+		--load \
+		$(CURDIR)/backend
 
-.PHONY: docker-dev-api-run
-docker-dev-api-run:
-	@docker run -d -p $(API_APP_PORT):$(API_APP_PORT) --name $(APP_NAME)-dev $(API_DEV_IMAGE):local
+.PHONY: docker-dev-backend-run
+docker-dev-backend-run:
+	@docker run -d -p $(BACKEND_APP_PORT):$(BACKEND_APP_PORT) --name $(APP_NAME)-dev $(BACKEND_DEV_IMAGE):local
 
 ##@ Linting
 .PHONY: lint
@@ -62,9 +63,9 @@ SHELL = bash
 PYTHON := python
 PIP := $(PYTHON) -m pip
 
-# API Variables
-API_DEV_IMAGE ?= $(DOCKERHUB_UN)/$(APP_NAME)-dev
-API_APP_PORT ?= 8557
+# BACKEND Variables
+BACKEND_DEV_IMAGE ?= $(DOCKERHUB_UN)/$(APP_NAME)-dev
+BACKEND_APP_PORT ?= 8557
 
 ##@ Help
 # The help target prints out all targets with their descriptions organized

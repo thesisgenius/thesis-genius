@@ -39,7 +39,7 @@ jobs:
 
       # Step 4: Run tests with coverage
       - name: Run tests
-        run: pytest --cov-branch --cov-report=xml --cov=server tests/api/
+        run: pytest --cov-branch --cov-report=xml --cov=backend tests/api/
 
       # Step 4: Upload coverage to Codecov
       - name: Upload coverage to Codecov
