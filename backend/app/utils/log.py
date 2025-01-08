@@ -1,5 +1,4 @@
 import logging
-import argparse
 
 # ANSI escape codes for colored output
 RESET = "\033[0m"
@@ -8,6 +7,7 @@ RED = "\033[31m"
 INTENSE_YELLOW = "\033[33;1m"
 LIGHT_CYAN = "\033[36;1m"
 LIGHT_YELLOW = "\033[93m"
+
 
 class CustomFormatter(logging.Formatter):
     """
@@ -56,7 +56,8 @@ def get_logger(name: str = None, log_level: str = "INFO") -> logging.Logger:
         # Optional: File handler for logs
         file_handler = logging.FileHandler("/tmp/application.log")
         file_handler.setLevel(logging.DEBUG)
-        file_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+        file_handler.setFormatter(
+            logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+        )
         logger.addHandler(file_handler)
     return logger
-
