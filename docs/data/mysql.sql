@@ -1,7 +1,7 @@
 USE thesis_app_dev;
 
 -- Drop existing tables (if any) to reset the database
-DROP TABLE IF EXISTS forums;
+DROP TABLE IF EXISTS posts;
 DROP TABLE IF EXISTS theses;
 DROP TABLE IF EXISTS users;
 
@@ -29,7 +29,7 @@ CREATE TABLE theses (
 
 
 -- Create forums table
-CREATE TABLE forums (
+CREATE TABLE posts (
                         id INT AUTO_INCREMENT PRIMARY KEY,
                         user_id INT NOT NULL,
                         title VARCHAR(255) NOT NULL,
@@ -50,7 +50,7 @@ INSERT INTO theses (user_id, title, author, abstract, status, submission_date) V
                                                                                    (2, 'Thesis Title 2', 'Jane Doe', 'Abstract for thesis 2', 'Completed', '2024-12-20');
 
 -- Insert forums into forums table
-INSERT INTO forums (user_id, title, description, body, created_at)
+INSERT INTO posts (user_id, title, description, body, created_at)
 VALUES
     (1, 'Welcome to the Forum', 'Sample post 1','This is the first forum post!', NOW()),
     (2, 'Discussion about Thesis', 'Sample post 2', 'Share your ideas and feedback.', NOW());

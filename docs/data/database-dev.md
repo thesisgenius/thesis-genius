@@ -28,7 +28,7 @@
     UNINSTALL COMPONENT 'file://component_validate_password';
     CREATE DATABASE thesis_app_dev;
     CREATE USER 'thesis_dev'@'localhost' IDENTIFIED BY 'dev_password';
-    GRANT ALL PRIVILEGES ON thesis_app_dev.* TO 'thesis_dev'@'localhost';
+    GRANT ALL PRIVILEGES ON *.* TO 'thesis_dev'@'localhost';
     FLUSH PRIVILEGES;
     ```
    
