@@ -66,7 +66,7 @@ def update_user_profile():
         return jsonify({"success": False, "message": "An internal error occurred"}), 500
 
 
-@user_bp.route("/deactivate", methods=["POST"])
+@user_bp.route("/deactivate", methods=["PUT"])
 @jwt_required
 def deactivate_user():
     """
@@ -79,12 +79,7 @@ def deactivate_user():
         success = user_service.deactivate_user(user_id)
         if success:
             return (
-                jsonify(
-                    {
-                        "success": True,
-                        "message": "User account deactivated successfully",
-                    }
-                ),
+                jsonify({"success": True, "message": "User account deactivated successfully",}),
                 200,
             )
         return (
@@ -93,4 +88,22 @@ def deactivate_user():
         )
     except Exception as e:
         app.logger.error(f"Error deactivating user account: {e}")
+        return jsonify({"success": False, "message": "An internal error occurred"}), 500
+
+@user_bp.route("/activate", methods=["PUT"])
+@jwt_required
+def activate_user():
+    """
+    Activate the authenticated user's account.
+    """
+    # Instantiate UserService
+    user_service = UserService(app.logger)
+    try:
+        user_id = g.user_id
+        success = user_service.activate_user(user_id)
+        if success:
+            return jsonify({"success": True, "message": "User account activated successfully"}), 200
+        return jsonify({"success": False, "message": "Failed to activate user account"}), 400
+    except Exception as e:
+        app.logger.error(f"Error activating user account: {e}")
         return jsonify({"success": False, "message": "An internal error occurred"}), 500

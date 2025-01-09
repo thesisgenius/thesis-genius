@@ -86,3 +86,13 @@ def test_add_comment_to_post(client):
     }, headers={"Authorization": f"Bearer {token}"})
     assert comment_response.status_code == 201
     assert comment_response.json["success"] is True
+
+def test_add_comment_unauthorized(client):
+    """
+    Test adding a comment to a post without authentication.
+    """
+    response = client.post("/api/forum/posts/1/comments", json={
+        "content": "This is a test comment."
+    })
+    assert response.status_code == 401
+    assert response.json["success"] is False

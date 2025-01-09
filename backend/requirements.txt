@@ -3,6 +3,7 @@ altgraph==0.17.4
 appnope==0.1.4
 asttokens==3.0.0
 attrs==24.3.0
+Authlib==1.4.0
 backcall==0.2.0
 beautifulsoup4==4.12.3
 black==24.10.0

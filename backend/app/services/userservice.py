@@ -19,6 +19,9 @@ class UserService:
         """
         try:
             user = User.get_or_none(User.email == email)
+            if not user.is_active:
+                self.logger.warning(f"User {user.id} is deactivated.")
+                return None
             if user and check_password_hash(user.password, password):
                 self.logger.info(f"User {user.id} authenticated successfully.")
                 return model_to_dict(user)
@@ -96,6 +99,24 @@ class UserService:
             self.logger.error(f"Error deactivating user {user_id}: {e}")
             return False
 
+    def activate_user(self, user_id):
+        """
+        Reactivate a user account by setting is_active to True.
+        """
+        try:
+            user = User.get_or_none(User.id == user_id)
+            if not user:
+                self.logger.warning(f"User with ID {user_id} not found.")
+                return False
+
+            user.is_active = True
+            user.save()
+            self.logger.info(f"User {user_id} activated successfully.")
+            return True
+        except Exception as e:
+            self.logger.error(f"Error activating user {user_id}: {e}")
+            return False
+
     def generate_token(self, user_id):
         """
         Generate a JWT token for the specified user ID.
@@ -107,3 +128,23 @@ class UserService:
         except Exception as e:
             self.logger.error(f"Error generating token for user {user_id}: {e}")
             return None
+
+    def logout(self, user_id, token):
+        """
+        Log out the user by invalidating their current session.
+        """
+        try:
+            user = User.get_or_none(User.id == user_id)
+            if not user:
+                self.logger.warning(f"Logout failed: User with ID {user_id} not found.")
+                return False
+
+            # Invalidate the user session (e.g., remove from a session store or blacklist JWT)
+            # Add token to blacklist
+            from ..models.data import TokenBlacklist
+            TokenBlacklist.create(token=token)
+            self.logger.info(f"User {user_id} logged out successfully, JWT token invalidated.")
+            return True
+        except Exception as e:
+            self.logger.error(f"Error logging out user {user_id}: {e}")
+            return False

@@ -30,10 +30,10 @@ def initialize_database(app):
         # Connect to the database and create tables
         app.logger.info("Connecting to the database...")
         with database_proxy:
-            from ..models.data import Post, PostComment, Settings, Thesis, User
+            from ..models.data import Post, PostComment, Settings, Thesis, User, TokenBlacklist
 
             database_proxy.create_tables(
-                [Post, PostComment, Settings, Thesis, User], safe=True
+                [Post, PostComment, Settings, Thesis, User, TokenBlacklist], safe=True
             )
         app.logger.info("Database initialization complete.")
     except Exception as e:

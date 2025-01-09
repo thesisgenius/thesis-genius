@@ -5,6 +5,7 @@ import jwt
 from flask import current_app as app
 from flask import g, jsonify, request
 
+from ..models.data import TokenBlacklist
 
 def generate_token(user_id):
     """
@@ -22,6 +23,8 @@ def generate_token(user_id):
         app.logger.error(f"Failed to generate token for user {user_id}: {e}")
         return None
 
+def is_token_blacklisted(token):
+    return TokenBlacklist.get_or_none(TokenBlacklist.token == token) is not None
 
 def validate_token(token):
     """Validate a JWT token."""
@@ -44,6 +47,8 @@ def jwt_required(f):
             return jsonify({"success": False, "message": "Token is missing"}), 401
 
         try:
+            if is_token_blacklisted(token):
+                return jsonify({"success": False, "message": "Token is expired and blacklisted"}), 401
             secret_key = app.config["SECRET_KEY"]
             payload = jwt.decode(token, secret_key, algorithms=["HS256"])
             g.user_id = payload["user_id"]
