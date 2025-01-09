@@ -35,7 +35,6 @@ class Thesis(BaseModel):
     title = CharField()
     abstract = TextField()
     status = CharField()
-    submission_date = DateTimeField()
     created_at = DateTimeField(default=datetime.now(timezone.utc))
     updated_at = DateTimeField(default=datetime.now(timezone.utc))
     user = ForeignKeyField(User, backref="theses")
