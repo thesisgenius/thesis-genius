@@ -4,7 +4,7 @@ import sys
 import pytest
 
 from backend.app import create_app
-from backend.app.models.data import Post, Thesis, User
+from backend.app.models.data import Post, PostComment, Settings, Thesis, User
 
 from ..utils.db import database_proxy
 
@@ -22,9 +22,9 @@ def app():
     # Initialize the SQLite test database
     with app.app_context():
         database_proxy.connect()
-        database_proxy.create_tables([User, Thesis, Post], safe=True)
+        database_proxy.create_tables([Post, PostComment, Settings, Thesis, User], safe=True)
         yield app
-        database_proxy.drop_tables([User, Thesis, Post])
+        database_proxy.drop_tables([Post, PostComment, Settings, Thesis, User])
         database_proxy.close()
 
 

@@ -67,7 +67,7 @@ def create_post():
         post = forum_service.create_post(user_id, {"title": title, "content": content})
         if post:
             return (
-                jsonify({"success": True, "title": post["title"], "content": content}),
+                jsonify({"success": True, "title": post["title"], "content": content, "id": post["id"]}),
                 201,
             )
         return jsonify({"success": False, "message": "Failed to create post"}), 400

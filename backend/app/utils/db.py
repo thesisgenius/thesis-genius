@@ -33,7 +33,7 @@ def initialize_database(app):
             from ..models.data import Post, PostComment, Settings, Thesis, User
 
             database_proxy.create_tables(
-                [User, Thesis, Post, Settings, PostComment], safe=True
+                [Post, PostComment, Settings, Thesis, User], safe=True
             )
         app.logger.info("Database initialization complete.")
     except Exception as e:
