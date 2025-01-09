@@ -47,3 +47,14 @@ def test_login_invalid_credentials(client):
     )
     assert response.status_code == 401
     assert response.json["success"] is False
+
+def test_register_missing_fields(client):
+    """
+    Test registration with missing required fields.
+    """
+    response = client.post("/api/auth/register", json={
+        "email": "test@example.com"  # Missing 'name' and 'password'
+    })
+    assert response.status_code == 400
+    assert response.json["success"] is False
+    assert "message" in response.json
