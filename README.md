@@ -100,7 +100,7 @@ thesis-genius/
 
 #### 1. **Clone the Repository**
 ```bash
-git clone https://github.com/your-username/thesis-genius.git
+git clone https://github.com/thesisgenius/thesis-genius.git
 cd thesis-genius
 ```
 

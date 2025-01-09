@@ -1,12 +1,17 @@
-import sys
 import os
+import sys
+
 import pytest
+
 from backend.app import create_app
-from backend.app.models.data import User, Thesis, Post
+from backend.app.models.data import Post, Thesis, User
+
 from ..utils.db import database_proxy
 
 # Add the backend directory to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+
+
 @pytest.fixture
 def app():
     """
@@ -22,12 +27,14 @@ def app():
         database_proxy.drop_tables([User, Thesis, Post])
         database_proxy.close()
 
+
 @pytest.fixture
 def client(app):
     """
     Provide a test client for the app.
     """
     return app.test_client()
+
 
 @pytest.fixture
 def runner(app):
