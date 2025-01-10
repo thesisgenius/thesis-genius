@@ -3,7 +3,7 @@ from flask import current_app as app
 from flask import g, jsonify, request
 
 from ..services.userservice import UserService
-from ..utils.auth import jwt_required
+from ..utils.auth import jwt_required, admin_required
 
 user_bp = Blueprint("user_api", __name__, url_prefix="/api/user")
 
@@ -76,7 +76,11 @@ def deactivate_user():
     user_service = UserService(app.logger)
     try:
         user_id = g.user_id
-        success = user_service.deactivate_user(user_id)
+        token = request.headers.get("Authorization", "").replace("Bearer ", "")
+
+        if not token:
+            return jsonify({"success": False, "message": "Token is missing"}), 400
+        success = user_service.deactivate_user(user_id, token)
         if success:
             return (
                 jsonify({"success": True, "message": "User account deactivated successfully",}),
@@ -90,20 +94,23 @@ def deactivate_user():
         app.logger.error(f"Error deactivating user account: {e}")
         return jsonify({"success": False, "message": "An internal error occurred"}), 500
 
-@user_bp.route("/activate", methods=["PUT"])
+@user_bp.route("/activate/<int:user_id>", methods=["PUT"])
 @jwt_required
-def activate_user():
+@admin_required
+def activate_user(user_id):
     """
-    Activate the authenticated user's account.
+    Allow an admin to activate a user's account.
     """
-    # Instantiate UserService
     user_service = UserService(app.logger)
-    try:
-        user_id = g.user_id
-        success = user_service.activate_user(user_id)
-        if success:
-            return jsonify({"success": True, "message": "User account activated successfully"}), 200
-        return jsonify({"success": False, "message": "Failed to activate user account"}), 400
-    except Exception as e:
-        app.logger.error(f"Error activating user account: {e}")
-        return jsonify({"success": False, "message": "An internal error occurred"}), 500
+    target_user = user_service.get_user_data(user_id)
+
+    if not target_user or target_user["is_active"]:
+        return jsonify({"success": False, "message": "User is already active or not found"}), 400
+
+    success = user_service.activate_user(user_id)
+    if success:
+        return jsonify({"success": True, "message": "User activated successfully"}), 200
+
+    return jsonify({"success": False, "message": "Failed to activate user"}), 400
+
+

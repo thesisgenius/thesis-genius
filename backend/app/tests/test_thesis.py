@@ -1,3 +1,5 @@
+import pytest
+
 def test_create_thesis(client):
     """
     Test creating a thesis.
@@ -30,7 +32,6 @@ def test_create_thesis(client):
     )
     assert response.status_code == 201
     assert response.json["success"] is True
-
 
 def test_get_theses(client):
     """

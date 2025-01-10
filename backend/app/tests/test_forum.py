@@ -1,3 +1,5 @@
+import pytest
+
 def test_create_post(client):
     """
     Test creating a forum post.
@@ -26,7 +28,6 @@ def test_create_post(client):
     )
     assert response.status_code == 201
     assert response.json["success"] is True
-
 
 def test_get_posts(client):
     """

@@ -70,15 +70,6 @@ class PostComment(BaseModel):
         table_name = "post_comments"
         indexes = ((("id", "user_id"), True),)
 
-class TokenBlacklist(BaseModel):
-    id          = AutoField()
-    token       = CharField(unique=True)
-    created_at  = DateTimeField(default=datetime.now(timezone.utc))
-
-    class Meta:
-        table_name = "token_blacklist"
-        indexes = ((("id", "token"), True),)
-
 
 class Settings(BaseModel):
     id = AutoField(primary_key=True)  # Auto-incrementing primary key

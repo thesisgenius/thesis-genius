@@ -81,7 +81,7 @@ class UserService:
             self.logger.error(f"Error updating user {user_id}: {e}")
             return False
 
-    def deactivate_user(self, user_id):
+    def deactivate_user(self, user_id, token):
         """
         Deactivate a user account by setting is_active to False.
         """
@@ -90,6 +90,10 @@ class UserService:
             if not user:
                 self.logger.warning(f"User with ID {user_id} not found.")
                 return False
+
+            from ..utils.redis_helper import blacklist_token
+            blacklist_token(token)
+            self.logger.info(f"User {user_id} logged out successfully, JWT token invalidated.")
 
             user.is_active = False
             user.save()
@@ -139,10 +143,8 @@ class UserService:
                 self.logger.warning(f"Logout failed: User with ID {user_id} not found.")
                 return False
 
-            # Invalidate the user session (e.g., remove from a session store or blacklist JWT)
-            # Add token to blacklist
-            from ..models.data import TokenBlacklist
-            TokenBlacklist.create(token=token)
+            from ..utils.redis_helper import blacklist_token
+            blacklist_token(token)
             self.logger.info(f"User {user_id} logged out successfully, JWT token invalidated.")
             return True
         except Exception as e:

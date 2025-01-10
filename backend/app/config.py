@@ -16,6 +16,12 @@ class Config:
         "host": None,
         "port": None,
     }
+    REDIS_CONNECTION_INFO = {
+        "host": "localhost",
+        "port": 6379,
+        "db": 0,
+    }
+
 
 
 class DevelopmentConfig(Config):

@@ -5,7 +5,6 @@ import jwt
 from flask import current_app as app
 from flask import g, jsonify, request
 
-from ..models.data import TokenBlacklist
 
 def generate_token(user_id):
     """
@@ -22,9 +21,6 @@ def generate_token(user_id):
     except Exception as e:
         app.logger.error(f"Failed to generate token for user {user_id}: {e}")
         return None
-
-def is_token_blacklisted(token):
-    return TokenBlacklist.get_or_none(TokenBlacklist.token == token) is not None
 
 def validate_token(token):
     """Validate a JWT token."""
@@ -47,6 +43,7 @@ def jwt_required(f):
             return jsonify({"success": False, "message": "Token is missing"}), 401
 
         try:
+            from ..utils.redis_helper import is_token_blacklisted
             if is_token_blacklisted(token):
                 return jsonify({"success": False, "message": "Token is expired and blacklisted"}), 401
             secret_key = app.config["SECRET_KEY"]
@@ -62,6 +59,24 @@ def jwt_required(f):
 
         return f(*args, **kwargs)
 
+    return decorated_function
+
+def admin_required(f):
+    """
+    Middleware to ensure the user has admin privileges.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not g.user_id:
+            return jsonify({"success": False, "message": "Unauthorized"}), 401
+
+        # Check if the user is an admin
+        from ..models.data import User
+        user = User.get_or_none(User.id == g.user_id)
+        if not user or not user.is_admin:
+            return jsonify({"success": False, "message": "Admin access required"}), 403
+
+        return f(*args, **kwargs)
     return decorated_function
 
 

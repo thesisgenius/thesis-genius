@@ -1,7 +1,7 @@
 from flask import Blueprint
 from flask import current_app as app
 from flask import g, jsonify, request
-
+from datetime import datetime, timezone
 from ..services.userservice import UserService
 from ..utils.auth import jwt_required
 
@@ -33,7 +33,13 @@ def signin():
 
         user = user_service.authenticate_user(email=email, password=password)
         if user:
+            # Generate a new JWT token
             token = user_service.generate_token(user["id"])
+
+            # Log login details
+            app.logger.info(f"User {user['id']} logged in successfully at {datetime.now(timezone.utc)}")
+
+            # Return token to client
             return jsonify({"success": True, "token": token}), 200
 
         return jsonify({"success": False, "message": "Invalid credentials"}), 401
