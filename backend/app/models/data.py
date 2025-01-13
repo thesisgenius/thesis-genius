@@ -29,6 +29,14 @@ class User(BaseModel):
     def get_id(self):
         return str(self.id)
 
+    def refresh_from_db(self):
+        """
+        Refresh the model instance with the latest data from the database.
+        """
+        fresh_instance = User.get(User.id == self.id)
+        for field in self._meta.sorted_field_names:
+            setattr(self, field, getattr(fresh_instance, field))
+
 
 class Thesis(BaseModel):
     id = AutoField()

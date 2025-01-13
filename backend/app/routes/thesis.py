@@ -16,8 +16,8 @@ def list_theses():
     """
     # Instantiate ThesisService
     thesis_service = ThesisService(app.logger)
+    user_id = g.user_id
     try:
-        user_id = g.user_id
         theses = thesis_service.get_user_theses(user_id)
         return jsonify({"success": True, "theses": theses}), 200
     except Exception as e:

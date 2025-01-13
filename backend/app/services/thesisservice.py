@@ -1,4 +1,4 @@
-from peewee import IntegrityError
+import peewee
 
 from ..models.data import Thesis
 from ..utils.db import model_to_dict
@@ -11,16 +11,39 @@ class ThesisService:
         """
         self.logger = logger
 
-    def get_user_theses(self, user_id):
+    def get_user_theses(self, user_id, status=None, order_by=None):
         """
-        Fetch all theses created by the specified user.
+        Fetch all theses created by the specified user with optional filters and sorting.
         """
         try:
-            theses = Thesis.select().where(Thesis.user == user_id).dicts()
-            return list(theses)  # Convert QuerySet to a list of dictionaries
+            query = Thesis.select().where(Thesis.user == user_id)
+            if status:
+                query = query.where(Thesis.status == status)
+            if order_by:
+                query = query.order_by(order_by)
+            return list(query.dicts())
+        except peewee.PeeweeException as db_error:
+            self.logger.error(f"Database error fetching theses for user {user_id}: {db_error}")
+            raise
         except Exception as e:
-            self.logger.error(f"Failed to fetch theses for user {user_id}: {e}")
-            return []
+            self.logger.error(f"Unexpected error fetching theses for user {user_id}: {e}")
+            raise
+
+    def get_user_theses_paginated(self, user_id, page=1, per_page=10):
+        """
+        Fetch theses created by the specified user with pagination.
+        """
+        try:
+            query = Thesis.select().where(Thesis.user == user_id).dicts()
+            total = query.count()  # Total number of records
+            theses = query.paginate(page, per_page)
+            return list(theses), total  # Return theses and total count
+        except peewee.PeeweeException as db_error:
+            self.logger.error(f"Database error fetching theses for user {user_id}: {db_error}")
+            raise
+        except Exception as e:
+            self.logger.error(f"Unexpected error fetching theses for user {user_id}: {e}")
+            raise
 
     def get_thesis_by_id(self, thesis_id, user_id=None):
         """
@@ -44,7 +67,7 @@ class ThesisService:
             thesis = Thesis.create(user=user_id, **thesis_data)
             self.logger.info(f"Thesis created successfully: {thesis.id}")
             return model_to_dict(thesis)  # Return the thesis as a dictionary
-        except IntegrityError as e:
+        except peewee.IntegrityError as e:
             self.logger.error(f"IntegrityError creating thesis: {e}")
             return None
         except Exception as e:
@@ -67,7 +90,7 @@ class ThesisService:
             else:
                 self.logger.warning(f"No rows updated for thesis {thesis_id}.")
                 return None
-        except IntegrityError as e:
+        except peewee.IntegrityError as e:
             self.logger.error(f"IntegrityError updating thesis {thesis_id}: {e}")
             return None
         except Exception as e:

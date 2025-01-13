@@ -19,12 +19,18 @@ class UserService:
         """
         try:
             user = User.get_or_none(User.email == email)
+            if not user:
+                self.logger.warning(f"User with email {email} not found.")
+                return None
+
             if not user.is_active:
                 self.logger.warning(f"User {user.id} is deactivated.")
                 return None
-            if user and check_password_hash(user.password, password):
+
+            if check_password_hash(user.password, password):
                 self.logger.info(f"User {user.id} authenticated successfully.")
                 return model_to_dict(user)
+
             self.logger.warning(f"Authentication failed for email: {email}")
             return None
         except Exception as e:

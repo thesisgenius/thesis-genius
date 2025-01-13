@@ -132,7 +132,7 @@ cd thesis-genius
     ```
 - Start the development server:
     ```bash
-    npm run dev
+    npm run dev --host
     ```
 - The frontend will be available at `http://localhost:5173`.
 

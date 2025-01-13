@@ -1,11 +1,11 @@
 import os
-
 from app import create_app
 from dotenv import load_dotenv
 
-if __name__ == "__main__":
+
+def main():
     """
-    Entry point to start the Flask application.
+    Main entry point for the Flask application.
     """
     try:
         load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
@@ -16,3 +16,7 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Failed to start the application: {e}")
         raise
+
+
+if __name__ == "__main__":
+    main()

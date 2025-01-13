@@ -1,99 +1,164 @@
 import pytest
 
-def test_create_post(client):
+@pytest.fixture
+def user_token(client):
+    """
+    Fixture to register and log in a user, returning a valid JWT token.
+    """
+    client.post(
+        "/api/auth/register",
+        json={
+            "name": "Test User",
+            "email": "test@example.com",
+            "password": "password123",
+        },
+    )
+    login_response = client.post(
+        "/api/auth/signin",
+        json={"email": "test@example.com", "password": "password123"},
+    )
+    token = login_response.json["token"]
+    assert token is not None
+    return token
+
+
+@pytest.fixture
+def create_post(client, user_token):
+    """
+    Fixture to create a post and return the post data.
+    """
+    response = client.post(
+        "/api/forum/posts",
+        json={"title": "Fixture Post", "content": "This is a fixture post."},
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert response.status_code == 201
+    return response.json
+
+
+@pytest.fixture
+def create_comment(client, user_token, create_post):
+    """
+    Fixture to create a comment on a post and return the comment data.
+    """
+    post_id = create_post["id"]
+    response = client.post(
+        f"/api/forum/posts/{post_id}/comments",
+        json={"content": "This is a fixture comment."},
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert response.status_code == 201
+    return response.json
+
+
+def test_create_post(client, user_token):
     """
     Test creating a forum post.
     """
-    # Register and log in a user
-    client.post(
-        "/api/auth/register",
-        json={
-            "name": "Test User",
-            "email": "test@example.com",
-            "password": "password123",
-        },
-    )
-    login_response = client.post(
-        "/api/auth/signin",
-        json={"email": "test@example.com", "password": "password123"},
-    )
-    token = login_response.json["token"]
-    assert token is not None
-
-    # Create a post
     response = client.post(
         "/api/forum/posts",
         json={"title": "Test Post", "content": "This is a test post."},
-        headers={"Authorization": f"Bearer {token}"},
+        headers={"Authorization": f"Bearer {user_token}"},
     )
     assert response.status_code == 201
     assert response.json["success"] is True
+    assert "id" in response.json
+    assert response.json["post"] == "Test Post"
 
-def test_get_posts(client):
-    """
-    Test fetching forum posts.
-    """
-    # Register and log in a user
-    client.post(
-        "/api/auth/register",
-        json={
-            "name": "Test User",
-            "email": "test@example.com",
-            "password": "password123",
-        },
-    )
-    login_response = client.post(
-        "/api/auth/signin",
-        json={"email": "test@example.com", "password": "password123"},
-    )
-    token = login_response.json["token"]
-    assert token is not None
 
-    # Fetch posts
-    response = client.get(
-        "/api/forum/posts", headers={"Authorization": f"Bearer {token}"}
+def test_create_post_missing_fields(client, user_token):
+    """
+    Test creating a post with missing fields.
+    """
+    response = client.post(
+        "/api/forum/posts",
+        json={"title": "Incomplete Post"},
+        headers={"Authorization": f"Bearer {user_token}"},
     )
+    assert response.status_code == 400
+    assert response.json["success"] is False
+    assert "Title and content are required" in response.json["message"]
+
+
+def test_list_posts(client, create_post):
+    """
+    Test fetching forum posts with pagination.
+    """
+    response = client.get("/api/forum/posts?page=1&per_page=10")
     assert response.status_code == 200
+    assert response.json["success"] is True
     assert isinstance(response.json["posts"], list)
+    assert len(response.json["posts"]) > 0
+    assert "page" in response.json
+    assert "per_page" in response.json
+    assert "total" in response.json
 
-def test_add_comment_to_post(client):
+
+def test_view_post(client, create_post, create_comment):
+    """
+    Test fetching a single post with its comments.
+    """
+    post_id = create_post["id"]
+    response = client.get(f"/api/forum/posts/{post_id}?page=1&per_page=10")
+    assert response.status_code == 200
+    assert response.json["success"] is True
+    assert "post" in response.json
+    assert "comments" in response.json
+    assert len(response.json["comments"]["comments"]) > 0
+
+
+def test_add_comment_to_post(client, create_post, user_token):
     """
     Test adding a comment to a forum post.
     """
-    # Register and log in a user
-    client.post("/api/auth/register", json={
-        "name": "Test User",
-        "email": "test@example.com",
-        "password": "password123"
-    })
-    login_response = client.post("/api/auth/signin", json={
-        "email": "test@example.com",
-        "password": "password123"
-    })
-    token = login_response.json["token"]
-    assert token is not None
+    post_id = create_post["id"]
+    response = client.post(
+        f"/api/forum/posts/{post_id}/comments",
+        json={"content": "This is a test comment."},
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert response.status_code == 201
+    assert response.json["success"] is True
+    assert response.json["comment"] == "This is a test comment."
 
-    # Create a post
-    post_response = client.post("/api/forum/posts", json={
-        "title": "Test Post",
-        "content": "This is a test post."
-    }, headers={"Authorization": f"Bearer {token}"})
-    post_id = post_response.json["id"]
-    assert post_id is not None
 
-    # Add a comment to the post
-    comment_response = client.post(f"/api/forum/posts/{post_id}/comments", json={
-        "content": "This is a test comment."
-    }, headers={"Authorization": f"Bearer {token}"})
-    assert comment_response.status_code == 201
-    assert comment_response.json["success"] is True
+def test_add_comment_missing_content(client, create_post, user_token):
+    """
+    Test adding a comment to a post with missing content.
+    """
+    post_id = create_post["id"]
+    response = client.post(
+        f"/api/forum/posts/{post_id}/comments",
+        json={},
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert response.status_code == 400
+    assert response.json["success"] is False
+    assert "Content is required" in response.json["message"]
 
-def test_add_comment_unauthorized(client):
+
+def test_add_comment_unauthorized(client, create_post):
     """
     Test adding a comment to a post without authentication.
     """
-    response = client.post("/api/forum/posts/1/comments", json={
-        "content": "This is a test comment."
-    })
+    post_id = create_post["id"]
+    response = client.post(
+        f"/api/forum/posts/{post_id}/comments",
+        json={"content": "This is a test comment."},
+    )
     assert response.status_code == 401
     assert response.json["success"] is False
+
+
+def test_delete_post(client, create_post, user_token):
+    """
+    Test deleting a forum post.
+    """
+    post_id = create_post["id"]
+    response = client.delete(
+        f"/api/forum/posts/{post_id}",
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert response.status_code == 200
+    assert response.json["success"] is True
+    assert "Post deleted successfully" in response.json["message"]
