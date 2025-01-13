@@ -19,9 +19,18 @@ class UserService:
         """
         try:
             user = User.get_or_none(User.email == email)
-            if user and check_password_hash(user.password, password):
+            if not user:
+                self.logger.warning(f"User with email {email} not found.")
+                return None
+
+            if not user.is_active:
+                self.logger.warning(f"User {user.id} is deactivated.")
+                return None
+
+            if check_password_hash(user.password, password):
                 self.logger.info(f"User {user.id} authenticated successfully.")
                 return model_to_dict(user)
+
             self.logger.warning(f"Authentication failed for email: {email}")
             return None
         except Exception as e:
@@ -78,7 +87,7 @@ class UserService:
             self.logger.error(f"Error updating user {user_id}: {e}")
             return False
 
-    def deactivate_user(self, user_id):
+    def deactivate_user(self, user_id, token):
         """
         Deactivate a user account by setting is_active to False.
         """
@@ -88,12 +97,37 @@ class UserService:
                 self.logger.warning(f"User with ID {user_id} not found.")
                 return False
 
+            from ..utils.redis_helper import blacklist_token
+
+            blacklist_token(token)
+            self.logger.info(
+                f"User {user_id} logged out successfully, JWT token invalidated."
+            )
+
             user.is_active = False
             user.save()
             self.logger.info(f"User {user_id} deactivated successfully.")
             return True
         except Exception as e:
             self.logger.error(f"Error deactivating user {user_id}: {e}")
+            return False
+
+    def activate_user(self, user_id):
+        """
+        Reactivate a user account by setting is_active to True.
+        """
+        try:
+            user = User.get_or_none(User.id == user_id)
+            if not user:
+                self.logger.warning(f"User with ID {user_id} not found.")
+                return False
+
+            user.is_active = True
+            user.save()
+            self.logger.info(f"User {user_id} activated successfully.")
+            return True
+        except Exception as e:
+            self.logger.error(f"Error activating user {user_id}: {e}")
             return False
 
     def generate_token(self, user_id):
@@ -107,3 +141,24 @@ class UserService:
         except Exception as e:
             self.logger.error(f"Error generating token for user {user_id}: {e}")
             return None
+
+    def logout(self, user_id, token):
+        """
+        Log out the user by invalidating their current session.
+        """
+        try:
+            user = User.get_or_none(User.id == user_id)
+            if not user:
+                self.logger.warning(f"Logout failed: User with ID {user_id} not found.")
+                return False
+
+            from ..utils.redis_helper import blacklist_token
+
+            blacklist_token(token)
+            self.logger.info(
+                f"User {user_id} logged out successfully, JWT token invalidated."
+            )
+            return True
+        except Exception as e:
+            self.logger.error(f"Error logging out user {user_id}: {e}")
+            return False

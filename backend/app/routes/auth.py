@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from flask import Blueprint
 from flask import current_app as app
 from flask import g, jsonify, request
@@ -33,7 +35,15 @@ def signin():
 
         user = user_service.authenticate_user(email=email, password=password)
         if user:
+            # Generate a new JWT token
             token = user_service.generate_token(user["id"])
+
+            # Log login details
+            app.logger.info(
+                f"User {user['id']} logged in successfully at {datetime.now(timezone.utc)}"
+            )
+
+            # Return token to client
             return jsonify({"success": True, "token": token}), 200
 
         return jsonify({"success": False, "message": "Invalid credentials"}), 401
@@ -99,11 +109,19 @@ def signout():
     # Instantiate the UserService
     user_service = UserService(app.logger)
     try:
+        # Extract user ID and token from the context
         user_id = g.user_id
-        user_service.logout(
-            user_id
-        )  # Assuming `logout` is a valid method in UserService
-        return jsonify({"success": True, "message": "Logged out successfully"}), 200
+        token = request.headers.get("Authorization", "").replace("Bearer ", "")
+
+        if not token:
+            return jsonify({"success": False, "message": "Token is missing"}), 400
+
+        # Call the logout method
+        success = user_service.logout(user_id, token)
+        if success:
+            return jsonify({"success": True, "message": "Logged out successfully"}), 200
+        else:
+            return jsonify({"success": False, "message": "Failed to log out"}), 400
     except Exception as e:
         app.logger.error(f"Error during sign-out: {e}")
         return jsonify({"success": False, "message": "An internal error occurred"}), 500

@@ -3,6 +3,7 @@ altgraph==0.17.4
 appnope==0.1.4
 asttokens==3.0.0
 attrs==24.3.0
+Authlib==1.4.0
 backcall==0.2.0
 beautifulsoup4==4.12.3
 black==24.10.0
@@ -20,6 +21,7 @@ defusedxml==0.7.1
 docopt==0.6.2
 execnet==2.1.1
 executing==2.1.0
+fakeredis==2.26.2
 fastjsonschema==2.21.1
 Flask==3.1.0
 Flask-Cors==5.0.0
@@ -69,16 +71,19 @@ PyJWT==2.10.1
 PyMySQL==1.1.1
 pytest==8.3.4
 pytest-cov==6.0.0
+pytest-docker==3.1.1
 pytest-xdist==3.6.1
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
 pyzmq==26.2.0
+redis==5.2.1
 referencing==0.35.1
 requests==2.32.3
 rpds-py==0.22.3
 ruff==0.8.4
 setuptools==75.6.0
 six==1.17.0
+sortedcontainers==2.4.0
 soupsieve==2.6
 SQLAlchemy==2.0.36
 stack-data==0.6.3

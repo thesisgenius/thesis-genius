@@ -37,4 +37,6 @@ jobs:
 
       # Step 5: Run linting
       - name: Run Linting
-        run: make lint
+        run: |
+          make setup-venv
+          make lint

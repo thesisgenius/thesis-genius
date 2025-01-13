@@ -11,13 +11,18 @@ forum_bp = Blueprint("forum_api", __name__, url_prefix="/api/forum")
 @forum_bp.route("/posts", methods=["GET"])
 def list_posts():
     """
-    Fetch all forum posts.
+    Fetch all forum posts with pagination.
     """
-    # Instantiate ForumService
     forum_service = ForumService(app.logger)
     try:
-        posts = forum_service.get_all_posts()
-        return jsonify({"success": True, "posts": posts}), 200
+        page = request.args.get("page", default=1, type=int)
+        per_page = request.args.get("per_page", default=10, type=int)
+        order_by = request.args.get("order_by", default="created_at.desc")
+
+        posts_data = forum_service.get_all_posts(
+            page=page, per_page=per_page, order_by=order_by
+        )
+        return jsonify({"success": True, **posts_data}), 200
     except Exception as e:
         app.logger.error(f"Error fetching posts: {e}")
         return jsonify({"success": False, "message": "Failed to fetch posts"}), 500
@@ -26,17 +31,22 @@ def list_posts():
 @forum_bp.route("/posts/<int:post_id>", methods=["GET"])
 def view_post(post_id):
     """
-    Fetch a single forum post and its comments.
+    Fetch a single forum post and its comments with pagination.
     """
-    # Instantiate ForumService
     forum_service = ForumService(app.logger)
     try:
         post = forum_service.get_post_by_id(post_id)
         if not post:
             return jsonify({"success": False, "message": "Post not found"}), 404
 
-        comments = forum_service.get_post_comments(post_id)
-        return jsonify({"success": True, "post": post, "comments": comments}), 200
+        # Pagination for comments
+        page = request.args.get("page", default=1, type=int)
+        per_page = request.args.get("per_page", default=10, type=int)
+
+        comments_data = forum_service.get_post_comments(
+            post_id, page=page, per_page=per_page
+        )
+        return jsonify({"success": True, "post": post, "comments": comments_data}), 200
     except Exception as e:
         app.logger.error(f"Error fetching post {post_id}: {e}")
         return jsonify({"success": False, "message": "Failed to fetch post"}), 500
@@ -48,14 +58,10 @@ def create_post():
     """
     Create a new forum post.
     """
-    # Instantiate ForumService
     forum_service = ForumService(app.logger)
     try:
         data = request.json
-        title = data.get("title")
-        content = data.get("content")
-
-        if not title or not content:
+        if not data or "title" not in data or "content" not in data:
             return (
                 jsonify(
                     {"success": False, "message": "Title and content are required"}
@@ -64,10 +70,19 @@ def create_post():
             )
 
         user_id = g.user_id
-        post = forum_service.create_post(user_id, {"title": title, "content": content})
+        post = forum_service.create_post(
+            user_id, {"title": data["title"], "content": data["content"]}
+        )
         if post:
             return (
-                jsonify({"success": True, "title": post["title"], "content": content}),
+                jsonify(
+                    {
+                        "success": True,
+                        "post": data["title"],
+                        "user": user_id,
+                        "id": post["id"],
+                    }
+                ),
                 201,
             )
         return jsonify({"success": False, "message": "Failed to create post"}), 400
@@ -82,18 +97,15 @@ def add_comment(post_id):
     """
     Add a comment to a forum post.
     """
-    # Instantiate ForumService
     forum_service = ForumService(app.logger)
     try:
         data = request.json
-        content = data.get("content")
-
-        if not content:
+        if not data or "content" not in data:
             return jsonify({"success": False, "message": "Content is required"}), 400
 
         user_id = g.user_id
         comment = forum_service.add_comment_to_post(
-            user_id, post_id, {"content": content}
+            user_id, post_id, {"content": data["content"]}
         )
         if comment:
             return jsonify({"success": True, "comment": comment["content"]}), 201
@@ -109,7 +121,6 @@ def delete_post(post_id):
     """
     Delete a forum post.
     """
-    # Instantiate ForumService
     forum_service = ForumService(app.logger)
     try:
         user_id = g.user_id
@@ -119,7 +130,10 @@ def delete_post(post_id):
                 jsonify({"success": True, "message": "Post deleted successfully"}),
                 200,
             )
-        return jsonify({"success": False, "message": "Failed to delete post"}), 400
+        return (
+            jsonify({"success": False, "message": "Post not found or unauthorized"}),
+            404,
+        )
     except Exception as e:
         app.logger.error(f"Error deleting post {post_id}: {e}")
         return jsonify({"success": False, "message": "An internal error occurred"}), 500
