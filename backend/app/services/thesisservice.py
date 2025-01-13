@@ -23,10 +23,14 @@ class ThesisService:
                 query = query.order_by(order_by)
             return list(query.dicts())
         except peewee.PeeweeException as db_error:
-            self.logger.error(f"Database error fetching theses for user {user_id}: {db_error}")
+            self.logger.error(
+                f"Database error fetching theses for user {user_id}: {db_error}"
+            )
             raise
         except Exception as e:
-            self.logger.error(f"Unexpected error fetching theses for user {user_id}: {e}")
+            self.logger.error(
+                f"Unexpected error fetching theses for user {user_id}: {e}"
+            )
             raise
 
     def get_user_theses_paginated(self, user_id, page=1, per_page=10):
@@ -39,10 +43,14 @@ class ThesisService:
             theses = query.paginate(page, per_page)
             return list(theses), total  # Return theses and total count
         except peewee.PeeweeException as db_error:
-            self.logger.error(f"Database error fetching theses for user {user_id}: {db_error}")
+            self.logger.error(
+                f"Database error fetching theses for user {user_id}: {db_error}"
+            )
             raise
         except Exception as e:
-            self.logger.error(f"Unexpected error fetching theses for user {user_id}: {e}")
+            self.logger.error(
+                f"Unexpected error fetching theses for user {user_id}: {e}"
+            )
             raise
 
     def get_thesis_by_id(self, thesis_id, user_id=None):

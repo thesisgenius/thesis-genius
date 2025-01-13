@@ -1,9 +1,4 @@
-import pytest
-
 from backend.app.models.data import Settings
-
-
-
 
 
 def test_connect(db_service):

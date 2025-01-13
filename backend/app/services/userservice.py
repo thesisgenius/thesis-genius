@@ -98,8 +98,11 @@ class UserService:
                 return False
 
             from ..utils.redis_helper import blacklist_token
+
             blacklist_token(token)
-            self.logger.info(f"User {user_id} logged out successfully, JWT token invalidated.")
+            self.logger.info(
+                f"User {user_id} logged out successfully, JWT token invalidated."
+            )
 
             user.is_active = False
             user.save()
@@ -150,8 +153,11 @@ class UserService:
                 return False
 
             from ..utils.redis_helper import blacklist_token
+
             blacklist_token(token)
-            self.logger.info(f"User {user_id} logged out successfully, JWT token invalidated.")
+            self.logger.info(
+                f"User {user_id} logged out successfully, JWT token invalidated."
+            )
             return True
         except Exception as e:
             self.logger.error(f"Error logging out user {user_id}: {e}")

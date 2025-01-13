@@ -4,7 +4,8 @@ from functools import wraps
 import jwt
 from flask import current_app as app
 from flask import g, jsonify, request
-from ..utils.redis_helper import is_token_blacklisted, add_token_to_user
+
+from ..utils.redis_helper import add_token_to_user, is_token_blacklisted
 
 
 def generate_token(user_id):
@@ -22,6 +23,7 @@ def generate_token(user_id):
     expiry_seconds = 3600  # 1 hour
     add_token_to_user(user_id, token, expiry_seconds)
     return token
+
 
 def validate_token(token):
     """Validate a JWT token."""
@@ -41,7 +43,15 @@ def jwt_required(f):
         auth_header = request.headers.get("Authorization", "")
         if not auth_header.startswith("Bearer "):
             app.logger.error("Authorization header is missing or malformed")
-            return jsonify({"success": False, "message": "Authorization header must start with 'Bearer'"}), 401
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "Authorization header must start with 'Bearer'",
+                    }
+                ),
+                401,
+            )
 
         token = auth_header.replace("Bearer ", "")
         if not token:
@@ -52,7 +62,15 @@ def jwt_required(f):
             # Check if token is blacklisted
             if is_token_blacklisted(token):
                 app.logger.error("JWT token is blacklisted")
-                return jsonify({"success": False, "message": "Token is expired and blacklisted"}), 401
+                return (
+                    jsonify(
+                        {
+                            "success": False,
+                            "message": "Token is expired and blacklisted",
+                        }
+                    ),
+                    401,
+                )
 
             # Decode the JWT token
             secret_key = app.config["SECRET_KEY"]
@@ -70,10 +88,12 @@ def jwt_required(f):
 
     return decorated_function
 
+
 def admin_required(f):
     """
     Middleware to ensure the user has admin privileges.
     """
+
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not g.user_id:
@@ -81,11 +101,13 @@ def admin_required(f):
 
         # Check if the user is an admin
         from ..models.data import User
+
         user = User.get_or_none(User.id == g.user_id)
         if not user or not user.is_admin:
             return jsonify({"success": False, "message": "Admin access required"}), 403
 
         return f(*args, **kwargs)
+
     return decorated_function
 
 

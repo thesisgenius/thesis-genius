@@ -13,6 +13,9 @@ FRONTEND_PORT ?= 5173
 # ============> BACKEND Variables
 BACKEND_DEV_IMAGE ?= $(DOCKERHUB_UN)/$(APP_NAME)-dev
 BACKEND_APP_PORT ?= 8557
+# Backend virtual environment directory
+BACKEND_VENV := $(CURDIR)/backend/.venv
+PYTHON_BIN := $(BACKEND_VENV)/bin
 
 ##@ Build
 .PHONY: docker-dev-backend
@@ -55,16 +58,36 @@ docker-clean: ## Remove all development Docker containers and images
 
 ##@ Linting
 .PHONY: lint
-lint: ## Run black, isort, and ruff Python code linters
-	@black .
-	@isort .
-	@ruff check .
+lint: check-venv ## Run black, isort, and ruff Python code linters
+	@$(PYTHON_BIN)/black .
+	@$(PYTHON_BIN)/isort .
+	@$(PYTHON_BIN)/ruff check .
 
 .PHONY: check
-check: ## Lint check formatting
-	@black --check .
-	@isort --check-only .
-	@ruff check .
+check: check-venv ## Lint check formatting
+	@$(PYTHON_BIN)/black --check .
+	@$(PYTHON_BIN)/isort --check-only .
+	@$(PYTHON_BIN)/ruff check .
+
+.PHONY: check-venv
+check-venv: ## Ensure the virtual environment and tools are set up
+	@if [ ! -d "$(BACKEND_VENV)" ]; then \
+		echo "Error: Virtual environment not found at $(BACKEND_VENV). Run 'make setup-venv' to create it."; \
+		exit 1; \
+	fi
+	@if [ ! -x "$(PYTHON_BIN)/black" ] || [ ! -x "$(PYTHON_BIN)/isort" ] || [ ! -x "$(PYTHON_BIN)/ruff" ]; then \
+		echo "Error: One or more linters are missing in the virtual environment. Run 'make setup-venv' to install them."; \
+		exit 1; \
+	fi
+
+.PHONY: setup-venv
+setup-venv: ## Create the virtual environment and install linters
+	@if [ ! -d "$(BACKEND_VENV)" ]; then \
+		python3 -m venv $(BACKEND_VENV); \
+	fi
+	@$(PYTHON_BIN)/pip install --upgrade pip
+	@$(PYTHON_BIN)/pip install black isort ruff
+	@echo "Virtual environment set up with linters."
 
 ##@ Tools
 .PHONY: tools

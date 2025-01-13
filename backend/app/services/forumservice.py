@@ -1,5 +1,6 @@
 from peewee import IntegrityError, PeeweeException
-from ..models.data import Post, PostComment, User
+
+from ..models.data import Post, PostComment
 from ..utils.db import model_to_dict
 
 
@@ -40,15 +41,20 @@ class ForumService:
         """
         try:
             # Explicitly select fields to avoid aliasing issues
-            post = Post.select(
-                Post.id,
-                Post.title,
-                Post.description,
-                Post.content,
-                Post.user,
-                Post.created_at,
-                Post.updated_at
-            ).where(Post.id == post_id).dicts().get()
+            post = (
+                Post.select(
+                    Post.id,
+                    Post.title,
+                    Post.description,
+                    Post.content,
+                    Post.user,
+                    Post.created_at,
+                    Post.updated_at,
+                )
+                .where(Post.id == post_id)
+                .dicts()
+                .get()
+            )
 
             return post
         except Post.DoesNotExist:
@@ -69,14 +75,18 @@ class ForumService:
             # Explicitly select fields to avoid aliasing
             # ERROR in forumservice: Database error fetching comments for
             # post 1: (1054, "Unknown column 't2.id' in 'field list'")
-            query = PostComment.select(
-                PostComment.id,
-                PostComment.content,
-                PostComment.created_at,
-                PostComment.updated_at,
-                PostComment.user,
-                PostComment.post
-            ).where(PostComment.post == post_id).dicts()
+            query = (
+                PostComment.select(
+                    PostComment.id,
+                    PostComment.content,
+                    PostComment.created_at,
+                    PostComment.updated_at,
+                    PostComment.user,
+                    PostComment.post,
+                )
+                .where(PostComment.post == post_id)
+                .dicts()
+            )
 
             if order_by:
                 query = query.order_by(order_by)
@@ -137,9 +147,7 @@ class ForumService:
             )
             raise
         except Exception as e:
-            self.logger.error(
-                f"Unexpected error adding comment to post {post_id}: {e}"
-            )
+            self.logger.error(f"Unexpected error adding comment to post {post_id}: {e}")
             raise
 
     def delete_post(self, post_id, user_id):

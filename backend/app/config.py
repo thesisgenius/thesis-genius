@@ -23,7 +23,6 @@ class Config:
     }
 
 
-
 class DevelopmentConfig(Config):
     DB_CONNECTION_INFO = {
         "name": os.getenv("DEV_DATABASE_NAME", "thesis_app_dev"),

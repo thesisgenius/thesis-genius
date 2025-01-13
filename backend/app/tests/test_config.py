@@ -1,6 +1,5 @@
-import os
-import pytest
-from backend.app.config import DevelopmentConfig, TestingConfig, ProductionConfig
+from backend.app.config import (DevelopmentConfig, ProductionConfig,
+                                TestingConfig)
 
 
 def test_development_config(monkeypatch):

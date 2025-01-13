@@ -1,5 +1,6 @@
 import pytest
 
+
 @pytest.fixture
 def register_user(client):
     """
@@ -30,6 +31,7 @@ def login_user(client, register_user):
     assert "token" in response.json
     return response.json["token"]
 
+
 @pytest.fixture
 def register_admin_user(client):
     """
@@ -47,12 +49,14 @@ def register_admin_user(client):
 
     # Promote the user to admin in the database
     from backend.app.models.data import User
+
     admin_user = User.get_or_none(User.email == "admin@example.com")
     assert admin_user is not None
     admin_user.is_admin = True
     admin_user.save()
 
     return response
+
 
 @pytest.fixture
 def login_admin_user(client, register_admin_user):
@@ -66,6 +70,7 @@ def login_admin_user(client, register_admin_user):
     assert response.status_code == 200
     assert "token" in response.json
     return response.json["token"]
+
 
 def test_register_user(client):
     """
@@ -88,9 +93,7 @@ def test_register_user_missing_fields(client):
     """
     Test user registration with missing fields.
     """
-    response = client.post(
-        "/api/auth/register", json={"name": "Incomplete User"}
-    )
+    response = client.post("/api/auth/register", json={"name": "Incomplete User"})
     assert response.status_code == 400
     assert response.json["success"] is False
     assert "Name, email, and password are required" in response.json["message"]
@@ -187,6 +190,7 @@ def test_deactivate_user(client, login_user, mock_redis):
     """
     token = login_user
     from backend.app.models.data import User
+
     target_user = User.get_or_none(User.email == "test@example.com")
     assert target_user is not None
     assert target_user.is_active  # Ensure the user is inactive
@@ -207,6 +211,7 @@ def test_deactivate_user(client, login_user, mock_redis):
     target_user.refresh_from_db()
     assert not target_user.is_active  # Ensure the user is inactive
 
+
 def test_activate_user(client, login_user, login_admin_user, register_user):
     """
     Test activating a user account (admin functionality).
@@ -216,6 +221,7 @@ def test_activate_user(client, login_user, login_admin_user, register_user):
     # Create a regular user (already registered via the register_user fixture)
     token = login_user
     from backend.app.models.data import User
+
     target_user = User.get_or_none(User.email == "test@example.com")
     assert target_user is not None
 

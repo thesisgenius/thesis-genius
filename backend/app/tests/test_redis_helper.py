@@ -1,12 +1,11 @@
-from datetime import datetime, timezone, timedelta
-from backend.app.utils.redis_helper import (
-    add_token_to_user,
-    blacklist_token,
-    is_token_blacklisted,
-    get_user_tokens,
-    revoke_user_tokens,
-    is_token_expired,
-)
+from datetime import datetime, timedelta, timezone
+
+from backend.app.utils.redis_helper import (add_token_to_user, blacklist_token,
+                                            get_user_tokens,
+                                            is_token_blacklisted,
+                                            is_token_expired,
+                                            revoke_user_tokens)
+
 
 def test_add_token_to_user(mock_redis):
     """
@@ -73,6 +72,7 @@ def test_get_user_tokens(mock_redis):
     assert token1 in decoded_tokens
     assert token2 in decoded_tokens
 
+
 def test_revoke_user_tokens(mock_redis):
     """
     Test revoking all tokens for a user.
@@ -107,15 +107,15 @@ def test_revoke_user_tokens(mock_redis):
     assert is_token_blacklisted(token2) is True
 
 
-
-
 def test_is_token_expired(mock_redis):
     """
     Test checking if a token is expired.
     """
     token = "test_token"
     expiry_seconds = 3600
-    expiry_timestamp = (datetime.now(timezone.utc) + timedelta(seconds=expiry_seconds)).timestamp()
+    expiry_timestamp = (
+        datetime.now(timezone.utc) + timedelta(seconds=expiry_seconds)
+    ).timestamp()
 
     redis_client = mock_redis
     redis_client.set(f"token:{token}:expiry", expiry_timestamp)
@@ -123,5 +123,7 @@ def test_is_token_expired(mock_redis):
     assert is_token_expired(token) is False
 
     # Simulate expiration
-    redis_client.set(f"token:{token}:expiry", datetime.now(timezone.utc).timestamp() - 10)
+    redis_client.set(
+        f"token:{token}:expiry", datetime.now(timezone.utc).timestamp() - 10
+    )
     assert is_token_expired(token) is True

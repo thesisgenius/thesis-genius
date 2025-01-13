@@ -30,7 +30,8 @@ def initialize_database(app):
         # Connect to the database and create tables
         app.logger.info("Connecting to the database...")
         with database_proxy:
-            from ..models.data import Post, PostComment, Settings, Thesis, User # , TokenBlacklist
+            from ..models.data import PostComment  # , TokenBlacklist
+            from ..models.data import Post, Settings, Thesis, User
 
             database_proxy.create_tables(
                 [Post, PostComment, Settings, Thesis, User], safe=True

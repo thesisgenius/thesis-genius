@@ -56,7 +56,13 @@ def create_thesis():
         )
         if success:
             return (
-                jsonify({"success": True, "message": f"{title.capitalize()} Thesis created successfully", "id": success["id"]}),
+                jsonify(
+                    {
+                        "success": True,
+                        "message": f"{title.capitalize()} Thesis created successfully",
+                        "id": success["id"],
+                    }
+                ),
                 201,
             )
         return jsonify({"success": False, "message": "Failed to create thesis"}), 400

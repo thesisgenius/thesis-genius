@@ -1,7 +1,9 @@
+from datetime import datetime, timezone
+
 from flask import Blueprint
 from flask import current_app as app
 from flask import g, jsonify, request
-from datetime import datetime, timezone
+
 from ..services.userservice import UserService
 from ..utils.auth import jwt_required
 
@@ -37,7 +39,9 @@ def signin():
             token = user_service.generate_token(user["id"])
 
             # Log login details
-            app.logger.info(f"User {user['id']} logged in successfully at {datetime.now(timezone.utc)}")
+            app.logger.info(
+                f"User {user['id']} logged in successfully at {datetime.now(timezone.utc)}"
+            )
 
             # Return token to client
             return jsonify({"success": True, "token": token}), 200
@@ -121,4 +125,3 @@ def signout():
     except Exception as e:
         app.logger.error(f"Error during sign-out: {e}")
         return jsonify({"success": False, "message": "An internal error occurred"}), 500
-
