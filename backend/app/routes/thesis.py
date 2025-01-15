@@ -1,7 +1,9 @@
 from flask import Blueprint
 from flask import current_app as app
 from flask import g, jsonify, request
+from playhouse.shortcuts import model_to_dict
 
+from ..models.data import Thesis
 from ..services.thesisservice import ThesisService
 from ..utils.auth import jwt_required
 
@@ -14,7 +16,6 @@ def list_theses():
     """
     Fetch all theses created by the authenticated user.
     """
-    # Instantiate ThesisService
     thesis_service = ThesisService(app.logger)
     user_id = g.user_id
     try:
@@ -31,10 +32,15 @@ def create_thesis():
     """
     Create a new thesis.
     """
-    # Instantiate ThesisService
     thesis_service = ThesisService(app.logger)
     try:
         data = request.json
+        if not data:
+            return (
+                jsonify({"success": False, "message": "Request body is required"}),
+                400,
+            )
+
         title = data.get("title")
         abstract = data.get("abstract")
         status = data.get("status")
@@ -51,20 +57,34 @@ def create_thesis():
             )
 
         user_id = g.user_id
-        success = thesis_service.create_thesis(
-            user_id, {"title": title, "abstract": abstract, "status": status}
-        )
-        if success:
+        if not user_id:
+            return jsonify({"success": False, "message": "User ID is missing"}), 400
+
+        thesis_data = {
+            "title": title,
+            "abstract": abstract,
+            "status": status,
+            "student_id": user_id,  # Updated to conform to schema
+        }
+        thesis = thesis_service.create_thesis(thesis_data)
+
+        if thesis:
+            thesis_dict = model_to_dict(
+                thesis, exclude=[Thesis.student]
+            )  # Exclude student object
+            thesis_dict["student_id"] = thesis.student_id  # Add student_id explicitly
             return (
                 jsonify(
                     {
                         "success": True,
-                        "message": f"{title.capitalize()} Thesis created successfully",
-                        "id": success["id"],
+                        "message": f"Thesis '{title}' created successfully",
+                        "thesis": thesis_dict,
+                        "id": thesis.id,
                     }
                 ),
                 201,
             )
+
         return jsonify({"success": False, "message": "Failed to create thesis"}), 400
     except Exception as e:
         app.logger.error(f"Error creating thesis: {e}")
@@ -77,13 +97,15 @@ def edit_thesis(thesis_id):
     """
     Update an existing thesis.
     """
-    # Instantiate ThesisService
     thesis_service = ThesisService(app.logger)
     try:
         user_id = g.user_id
         data = request.json
         if not data:
-            return jsonify({"success": False, "message": "Invalid payload"}), 400
+            return (
+                jsonify({"success": False, "message": "Request body is required"}),
+                400,
+            )
 
         updated_data = {
             "title": data.get("title"),
@@ -106,12 +128,19 @@ def edit_thesis(thesis_id):
                 400,
             )
 
-        success = thesis_service.update_thesis(thesis_id, user_id, updated_data)
-        if success:
+        thesis = thesis_service.update_thesis(thesis_id, user_id, updated_data)
+        if thesis:
             return (
-                jsonify({"success": True, "message": "Thesis updated successfully"}),
+                jsonify(
+                    {
+                        "success": True,
+                        "message": "Thesis updated successfully",
+                        "thesis": thesis,
+                    }
+                ),
                 200,
             )
+
         return jsonify({"success": False, "message": "Failed to update thesis"}), 400
     except Exception as e:
         app.logger.error(f"Error updating thesis {thesis_id}: {e}")
@@ -124,7 +153,6 @@ def delete_thesis(thesis_id):
     """
     Delete an existing thesis.
     """
-    # Instantiate ThesisService
     thesis_service = ThesisService(app.logger)
     try:
         user_id = g.user_id

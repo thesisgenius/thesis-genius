@@ -1,17 +1,31 @@
 import pytest
 
+from backend.app.models.data import Role
+
 
 @pytest.fixture
-def register_and_login_user(client):
+def create_role():
+    """
+    Fixture to create default roles in the database.
+    """
+    for role_name in ["Student", "Teacher", "Admin"]:
+        Role.get_or_create(name=role_name)
+
+
+@pytest.fixture
+def register_and_login_user(client, create_role):
     """
     Fixture to register and log in a user, returning the JWT token.
     """
     client.post(
         "/api/auth/register",
         json={
-            "name": "Test User",
+            "first_name": "Test",
+            "last_name": "User",
             "email": "test@example.com",
+            "username": "testuser",
             "password": "password123",
+            "role": "Student",
         },
     )
     login_response = client.post(
