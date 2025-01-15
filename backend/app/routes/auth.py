@@ -64,22 +64,23 @@ def register():
         if not data:
             return jsonify({"success": False, "message": "Missing request body"}), 400
 
-        name = data.get("name")
+        first_name = data.get("first_name")
+        last_name = data.get("last_name")
         email = data.get("email")
         password = data.get("password")
 
-        if not name or not email or not password:
+        if not first_name or not last_name or not email or not password:
             return (
                 jsonify(
                     {
                         "success": False,
-                        "message": "Name, email, and password are required",
+                        "message": "First name, last name, email, and password are required",
                     }
                 ),
                 400,
             )
 
-        success = user_service.create_user(name=name, email=email, password=password)
+        success = user_service.create_user(first_name=first_name, last_name=last_name, email=email, password=password)
         if success:
             return (
                 jsonify({"success": True, "message": "User registered successfully"}),

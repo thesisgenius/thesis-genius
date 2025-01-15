@@ -46,6 +46,18 @@ function install_homebrew() {
     ok
 }
 
+# Install act via Homebrew if not present
+function install_act() {
+    if ! command_exists act; then
+        warn "act (local GH actions) is not installed. Installing act via Homebrew..."
+        brew install act
+    else
+        info "act is already installed"; ok
+        return 0
+    fi
+    ok
+}
+
 # Install Node.js and Yarn
 function install_node_and_yarn() {
     if ! command_exists node; then
@@ -146,15 +158,19 @@ function install_devtools() {
 function usage() {
     echo -e "${GREEN}Usage:${RESET} $0 [options]"
     echo -e "\nOptions:"
+    echo -e "  -docker,   -d   Install Docker Desktop environment for macOS"
+    echo -e "  -act            Install act (Local GH Actions) for macOS"
     echo -e "  -python,   -p   Set up Python environment (install Python, virtualenv, and dependencies)"
     echo -e "  -frontend, -f   Set up JavaScript (React) environment (install npm, yarn, and dependencies)"
-    echo -e "  -lint,     -l   Install linting and formatting tools (black, ruff, isort, pyinstaller)"
+    echo -e "  -lint,     -l   Install linting and formatting tools (black, ruff, isort)"
     echo -e "  -all,      -a   Perform all setup tasks (Python environment and linting tools)"
     echo -e "  -help,     -h   Show this help message and exit"
 }
 
 # Main script execution with flags
 function main() {
+    local install_docker=false
+    local install_act=false
     local install_python=false
     local install_lint=false
     local install_frontend=false
@@ -164,6 +180,16 @@ function main() {
     # Parse flags
     while [[ "$#" -gt 0 ]]; do
         case "$1" in
+            -docker|--docker|-d)
+                install_docker=true
+                all=false
+                shift
+                ;;
+            -act|--act)
+                install_act=true
+                all=false
+                shift
+                ;;
             -python|--python|-p)
                 install_python=true
                 all=false
@@ -197,10 +223,20 @@ function main() {
     done
 
     if [[ "$all" == true ]]; then
+        install_docker=true
+        install_act=true
         install_python=true
         install_lint=true
         install_frontend=true
         configure_frontend=true
+    fi
+
+    if [[ "$install_docker" == true ]]; then
+        install_docker_desktop
+    fi
+
+    if [[ "$install_act" == true ]]; then
+      install_act
     fi
 
     if [[ "$install_python" == true ]]; then

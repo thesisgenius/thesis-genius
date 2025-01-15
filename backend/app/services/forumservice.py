@@ -1,6 +1,6 @@
 from peewee import IntegrityError, PeeweeException
 
-from ..models.data import Post, PostComment
+from ..models.data import Posts, PostComment
 from ..utils.db import model_to_dict
 
 
@@ -16,7 +16,7 @@ class ForumService:
         Fetch all forum posts with pagination and optional sorting.
         """
         try:
-            query = Post.select().dicts()
+            query = Posts.select().dicts()
             if order_by:
                 query = query.order_by(order_by)
 
@@ -42,22 +42,22 @@ class ForumService:
         try:
             # Explicitly select fields to avoid aliasing issues
             post = (
-                Post.select(
-                    Post.id,
-                    Post.title,
-                    Post.description,
-                    Post.content,
-                    Post.user,
-                    Post.created_at,
-                    Post.updated_at,
+                Posts.select(
+                    Posts.id,
+                    Posts.title,
+                    Posts.description,
+                    Posts.content,
+                    Posts.user,
+                    Posts.created_at,
+                    Posts.updated_at,
                 )
-                .where(Post.id == post_id)
+                .where(Posts.id == post_id)
                 .dicts()
                 .get()
             )
 
             return post
-        except Post.DoesNotExist:
+        except Posts.DoesNotExist:
             self.logger.warning(f"Post with ID {post_id} not found.")
             return None
         except PeeweeException as db_error:
@@ -115,7 +115,7 @@ class ForumService:
         Create a new forum post.
         """
         try:
-            post = Post.create(user=user_id, **post_data)
+            post = Posts.create(user=user_id, **post_data)
             self.logger.info(f"Post created successfully: {post.id}")
             return model_to_dict(post)
         except IntegrityError as e:
@@ -155,7 +155,9 @@ class ForumService:
         Delete a forum post.
         """
         try:
-            post = Post.get_or_none((Post.id == post_id) & (Post.user == user_id))
+            post = Posts.get_or_none(
+                (Posts.id == post_id) & (Posts.user == user_id)
+            )
             if not post:
                 self.logger.warning(
                     f"Post {post_id} not found or not owned by user {user_id}"

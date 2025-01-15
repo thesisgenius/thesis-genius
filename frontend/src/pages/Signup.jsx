@@ -7,7 +7,7 @@ import "./../styles/Signup.css";
 const Signup = () => {
     useRedirectIfAuthenticated(); // Redirect if already authenticated
 
-    const [formData, setFormData] = useState({ name: "", email: "", password: "" });
+    const [formData, setFormData] = useState({ first_name: "", last_name: "", email: "", password: "" });
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
@@ -49,14 +49,25 @@ const Signup = () => {
         <div className="signup-container">
             <h1>Create an Account</h1>
             <form onSubmit={handleSignup}>
-                <label htmlFor="name">Name</label>
+                <label htmlFor="first_name">First Name</label>
                 <input
                     type="text"
-                    name="name"
-                    id="name"
-                    value={formData.name}
+                    name="first_name" // Corrected name attribute
+                    id="first_name"
+                    value={formData.first_name}
                     onChange={handleInputChange}
-                    placeholder="Enter your name"
+                    placeholder="Enter your first name"
+                    required
+                />
+
+                <label htmlFor="last_name">Last Name</label>
+                <input
+                    type="text"
+                    name="last_name" // Corrected name attribute
+                    id="last_name"
+                    value={formData.last_name}
+                    onChange={handleInputChange}
+                    placeholder="Enter your last name"
                     required
                 />
 
