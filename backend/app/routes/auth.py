@@ -80,7 +80,9 @@ def register():
                 400,
             )
 
-        success = user_service.create_user(first_name=first_name, last_name=last_name, email=email, password=password)
+        success = user_service.create_user(
+            first_name=first_name, last_name=last_name, email=email, password=password
+        )
         if success:
             return (
                 jsonify({"success": True, "message": "User registered successfully"}),

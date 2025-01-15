@@ -1,5 +1,6 @@
 import pytest
-from backend.app.models.data import User, Role
+
+from backend.app.models.data import Role, User
 
 
 @pytest.fixture
@@ -115,7 +116,10 @@ def test_register_user_missing_fields(client, create_role):
     )
     assert response.status_code == 400
     assert response.json["success"] is False
-    assert "First name, last name, email, and password are required" in response.json["message"]
+    assert (
+        "First name, last name, email, and password are required"
+        in response.json["message"]
+    )
 
 
 def test_register_user_duplicate_email(client, register_user, create_role):

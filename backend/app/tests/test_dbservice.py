@@ -1,7 +1,9 @@
-import pytest
 from unittest import mock
-from backend.app.services.dbservice import DBService
+
+import pytest
+
 from backend.app.models.data import Settings
+from backend.app.services.dbservice import DBService
 
 
 @pytest.fixture

@@ -1,11 +1,11 @@
 from flask import Blueprint
 from flask import current_app as app
 from flask import g, jsonify, request
+from playhouse.shortcuts import model_to_dict
 
-from ..models.data import User, Thesis
+from ..models.data import Thesis
 from ..services.thesisservice import ThesisService
 from ..utils.auth import jwt_required
-from playhouse.shortcuts import model_to_dict
 
 thesis_bp = Blueprint("thesis_api", __name__, url_prefix="/api/thesis")
 
@@ -36,14 +36,25 @@ def create_thesis():
     try:
         data = request.json
         if not data:
-            return jsonify({"success": False, "message": "Request body is required"}), 400
+            return (
+                jsonify({"success": False, "message": "Request body is required"}),
+                400,
+            )
 
         title = data.get("title")
         abstract = data.get("abstract")
         status = data.get("status")
 
         if not title or not abstract or not status:
-            return jsonify({"success": False, "message": "Title, abstract, and status are required"}), 400
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "Title, abstract, and status are required",
+                    }
+                ),
+                400,
+            )
 
         user_id = g.user_id
         if not user_id:
@@ -53,19 +64,26 @@ def create_thesis():
             "title": title,
             "abstract": abstract,
             "status": status,
-            "student_id": user_id  # Updated to conform to schema
+            "student_id": user_id,  # Updated to conform to schema
         }
         thesis = thesis_service.create_thesis(thesis_data)
 
         if thesis:
-            thesis_dict = model_to_dict(thesis, exclude=[Thesis.student])  # Exclude student object
+            thesis_dict = model_to_dict(
+                thesis, exclude=[Thesis.student]
+            )  # Exclude student object
             thesis_dict["student_id"] = thesis.student_id  # Add student_id explicitly
-            return jsonify({
-                "success": True,
-                "message": f"Thesis '{title}' created successfully",
-                "thesis": thesis_dict,
-                "id": thesis.id
-            }), 201
+            return (
+                jsonify(
+                    {
+                        "success": True,
+                        "message": f"Thesis '{title}' created successfully",
+                        "thesis": thesis_dict,
+                        "id": thesis.id,
+                    }
+                ),
+                201,
+            )
 
         return jsonify({"success": False, "message": "Failed to create thesis"}), 400
     except Exception as e:
@@ -84,7 +102,10 @@ def edit_thesis(thesis_id):
         user_id = g.user_id
         data = request.json
         if not data:
-            return jsonify({"success": False, "message": "Request body is required"}), 400
+            return (
+                jsonify({"success": False, "message": "Request body is required"}),
+                400,
+            )
 
         updated_data = {
             "title": data.get("title"),
@@ -92,16 +113,33 @@ def edit_thesis(thesis_id):
             "status": data.get("status"),
         }
 
-        if not updated_data["title"] or not updated_data["abstract"] or not updated_data["status"]:
-            return jsonify({"success": False, "message": "Title, abstract, and status are required"}), 400
+        if (
+            not updated_data["title"]
+            or not updated_data["abstract"]
+            or not updated_data["status"]
+        ):
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "Title, abstract, and status are required",
+                    }
+                ),
+                400,
+            )
 
         thesis = thesis_service.update_thesis(thesis_id, user_id, updated_data)
         if thesis:
-            return jsonify({
-                "success": True,
-                "message": "Thesis updated successfully",
-                "thesis": thesis
-            }), 200
+            return (
+                jsonify(
+                    {
+                        "success": True,
+                        "message": "Thesis updated successfully",
+                        "thesis": thesis,
+                    }
+                ),
+                200,
+            )
 
         return jsonify({"success": False, "message": "Failed to update thesis"}), 400
     except Exception as e:
@@ -120,7 +158,10 @@ def delete_thesis(thesis_id):
         user_id = g.user_id
         success = thesis_service.delete_thesis(thesis_id, user_id)
         if success:
-            return jsonify({"success": True, "message": "Thesis deleted successfully"}), 200
+            return (
+                jsonify({"success": True, "message": "Thesis deleted successfully"}),
+                200,
+            )
         return jsonify({"success": False, "message": "Failed to delete thesis"}), 400
     except Exception as e:
         app.logger.error(f"Error deleting thesis {thesis_id}: {e}")

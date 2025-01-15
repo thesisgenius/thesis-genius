@@ -1,6 +1,6 @@
 from peewee import IntegrityError, PeeweeException
 
-from ..models.data import Posts, PostComment
+from ..models.data import PostComment, Posts
 from ..utils.db import model_to_dict
 
 
@@ -155,9 +155,7 @@ class ForumService:
         Delete a forum post.
         """
         try:
-            post = Posts.get_or_none(
-                (Posts.id == post_id) & (Posts.user == user_id)
-            )
+            post = Posts.get_or_none((Posts.id == post_id) & (Posts.user == user_id))
             if not post:
                 self.logger.warning(
                     f"Post {post_id} not found or not owned by user {user_id}"

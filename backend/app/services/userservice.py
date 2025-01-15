@@ -1,7 +1,7 @@
 from peewee import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from ..models.data import User, Role
+from ..models.data import Role, User
 from ..utils.auth import generate_token
 from ..utils.db import model_to_dict
 
@@ -37,7 +37,16 @@ class UserService:
             self.logger.error(f"Error during authentication: {e}")
             return None
 
-    def create_user(self, first_name, last_name, email, password, role="Student", is_active=True, is_admin=False):
+    def create_user(
+        self,
+        first_name,
+        last_name,
+        email,
+        password,
+        role="Student",
+        is_active=True,
+        is_admin=False,
+    ):
         """
         Create a new user with the given name, email, and password.
         """
@@ -60,7 +69,7 @@ class UserService:
                 password=hashed_password,
                 role=role_obj,  # Pass the Role object
                 is_active=is_active,
-                is_admin=is_admin
+                is_admin=is_admin,
             )
             self.logger.info(f"User created successfully: {user.id}")
             user.save()
@@ -84,9 +93,9 @@ class UserService:
 
             # Serialize user data
             user_data = model_to_dict(user)
-            if 'role' in user_data:
+            if "role" in user_data:
                 # Serialize role explicitly if needed
-                user_data['role'] = model_to_dict(user.role)
+                user_data["role"] = model_to_dict(user.role)
 
             self.logger.info(f"User {user_id} data fetched successfully.")
             return user_data

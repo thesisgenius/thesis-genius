@@ -1,5 +1,6 @@
 from peewee import IntegrityError, PeeweeException
 from playhouse.shortcuts import model_to_dict
+
 from ..models.data import Thesis, User
 
 
@@ -79,7 +80,9 @@ class ThesisService:
 
             # Validate required fields
             if not title or not abstract or not status or not student_id:
-                raise ValueError("Title, abstract, status, and student ID are required.")
+                raise ValueError(
+                    "Title, abstract, status, and student ID are required."
+                )
 
             # Ensure the student exists
             student = User.get_or_none(User.id == student_id)
@@ -91,7 +94,7 @@ class ThesisService:
                 title=title,
                 abstract=abstract,
                 status=status,
-                student_id=student_id  # Use student_id directly
+                student_id=student_id,  # Use student_id directly
             )
             self.logger.info(f"Thesis created successfully: {thesis.id}")
             return thesis
