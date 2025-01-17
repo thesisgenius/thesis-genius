@@ -45,7 +45,6 @@ class UserService:
         password,
         role="Student",
         is_active=True,
-        is_admin=False,
     ):
         """
         Create a new user with the given name, email, and password.
@@ -54,6 +53,8 @@ class UserService:
             hashed_password = generate_password_hash(password)
             if role == "Admin":
                 is_admin = True
+            else:
+                is_admin = False
 
             # Fetch the Role ID
             role_obj = Role.get_or_none(Role.name == role)

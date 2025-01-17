@@ -113,6 +113,23 @@ class ThesisService:
         Update an existing thesis for the specified user.
         """
         try:
+            # Fetch existing data
+            thesis = Thesis.get_or_none((Thesis.id == thesis_id) & (Thesis.student_id == user_id))
+            if not thesis:
+                self.logger.warning(f"Thesis {thesis_id} not found or not owned by user {user_id}.")
+                return None
+
+            # Check for changes
+            existing_data = {
+                "title": thesis.title,
+                "abstract": thesis.abstract,
+                "status": thesis.status,
+            }
+            if updated_data == existing_data:
+                self.logger.info(f"No changes detected for thesis {thesis_id}.")
+                return None
+
+            # Perform the update
             query = Thesis.update(**updated_data).where(
                 (Thesis.id == thesis_id) & (Thesis.student_id == user_id)
             )
@@ -130,6 +147,7 @@ class ThesisService:
         except Exception as e:
             self.logger.error(f"Failed to update thesis {thesis_id}: {e}")
             return None
+
 
     def delete_thesis(self, thesis_id, user_id):
         """
