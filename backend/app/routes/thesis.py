@@ -102,7 +102,10 @@ def edit_thesis(thesis_id):
         user_id = g.user_id
         data = request.json
         if not data:
-            return jsonify({"success": False, "message": "Request body is required"}), 400
+            return (
+                jsonify({"success": False, "message": "Request body is required"}),
+                400,
+            )
 
         updated_data = {
             "title": data.get("title"),
@@ -111,20 +114,46 @@ def edit_thesis(thesis_id):
         }
 
         if not all(updated_data.values()):
-            return jsonify({"success": False, "message": "Title, abstract, and status are required"}), 400
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "Title, abstract, and status are required",
+                    }
+                ),
+                400,
+            )
 
         # Log the incoming data
-        app.logger.debug(f"Updating thesis {thesis_id} for user {user_id} with data: {updated_data}")
+        app.logger.debug(
+            f"Updating thesis {thesis_id} for user {user_id} with data: {updated_data}"
+        )
 
         thesis = thesis_service.update_thesis(thesis_id, user_id, updated_data)
         if thesis:
-            return jsonify({"success": True, "message": "Thesis updated successfully", "thesis": thesis}), 200
+            return (
+                jsonify(
+                    {
+                        "success": True,
+                        "message": "Thesis updated successfully",
+                        "thesis": thesis,
+                    }
+                ),
+                200,
+            )
 
-        return jsonify({"success": False, "message": "Failed to update thesis. Check if it exists and belongs to you."}), 400
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Failed to update thesis. Check if it exists and belongs to you.",
+                }
+            ),
+            400,
+        )
     except Exception as e:
         app.logger.error(f"Error updating thesis {thesis_id}: {e}")
         return jsonify({"success": False, "message": "An internal error occurred"}), 500
-
 
 
 @thesis_bp.route("/thesis/<int:thesis_id>", methods=["DELETE"])

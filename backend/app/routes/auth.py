@@ -83,7 +83,12 @@ def register():
             )
 
         success = user_service.create_user(
-            first_name=first_name, last_name=last_name, email=email, password=password, role=role, is_active=is_active
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            password=password,
+            role=role,
+            is_active=is_active,
         )
         if success:
             return (

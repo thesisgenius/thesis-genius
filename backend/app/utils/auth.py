@@ -104,9 +104,25 @@ def admin_required(f):
 
         user = User.get_or_none(User.id == g.user_id)
         if not user:
-            return jsonify({"success": False, "message": f"User {user.first_name} (id:{user.id}) not found!"}), 404
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": f"User {user.first_name} (id:{user.id}) not found!",
+                    }
+                ),
+                404,
+            )
         if not user.is_admin:
-            return jsonify({"success": False, "message": f"Admin access required (user {user.first_name}, id: {user.id})"}), 403
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": f"Admin access required (user {user.first_name}, id: {user.id})",
+                    }
+                ),
+                403,
+            )
         return f(*args, **kwargs)
 
     return decorated_function

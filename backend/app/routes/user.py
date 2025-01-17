@@ -48,9 +48,18 @@ def update_user_profile():
             "email": data.get("email"),
         }
 
-        if not updated_data["first_name"] or not updated_data["last_name"] or not updated_data["email"]:
+        if (
+            not updated_data["first_name"]
+            or not updated_data["last_name"]
+            or not updated_data["email"]
+        ):
             return (
-                jsonify({"success": False, "message": "First name, last name, and email are required"}),
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "First name, last name, and email are required",
+                    }
+                ),
                 400,
             )
 

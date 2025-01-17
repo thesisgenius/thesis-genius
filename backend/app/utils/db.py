@@ -32,7 +32,7 @@ def initialize_database(app):
         with database_proxy:
             from ..models.data import Posts  # , TokenBlacklist
             from ..models.data import (PostComment, Role, SessionLog, Settings,
-                                                 Thesis, User)
+                                       Thesis, User)
 
             database_proxy.create_tables(
                 [Role, User, Thesis, Posts, PostComment, SessionLog, Settings],
