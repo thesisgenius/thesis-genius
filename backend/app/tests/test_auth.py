@@ -67,8 +67,7 @@ def register_admin_user(client, create_role):
     # Promote the user to admin in the database
     admin_user = User.get_or_none(User.email == "admin@example.com")
     assert admin_user is not None
-    admin_user.is_admin = True
-    admin_user.save()
+    assert admin_user.is_admin == True
 
     return response
 
