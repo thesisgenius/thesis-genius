@@ -1,67 +1,88 @@
+#!/bin/bash
 
+# Register a user
 curl -X POST http://127.0.0.1:8557/api/auth/register \
     -H "Content-Type: application/json" \
-    -d '{"name": "John Doe", "email": "test@example.com", "password": "password123"}'
+    -d '{"first_name": "John", "last_name": "Doe", "email": "test@example.com", "username": "testuser", "password": "password123", "role": "Student"}'
 
-
+# Log in the user and get the token
 TOKEN=$(curl -s -X POST http://127.0.0.1:8557/api/auth/signin \
     -H "Content-Type: application/json" \
     -d '{"email": "test@example.com", "password": "password123"}' | jq -r .token)
 
+# Sign out the user (blacklist the token)
 curl -X POST http://127.0.0.1:8557/api/auth/signout \
     -H "Content-Type: application/json" \
-    -H "Authorization: Bearer ${TOKEN}" \
-    -d '{"email": "test@example.com", "password": "password123"}'
+    -H "Authorization: Bearer ${TOKEN}"
 
+# Log in again to get a new token
 TOKEN=$(curl -s -X POST http://127.0.0.1:8557/api/auth/signin \
     -H "Content-Type: application/json" \
     -d '{"email": "test@example.com", "password": "password123"}' | jq -r .token)
 
+# Deactivate the user
 curl -X PUT http://127.0.0.1:8557/api/user/deactivate \
     -H "Authorization: Bearer ${TOKEN}"
 
+# Register an admin user
+curl -X POST http://127.0.0.1:8557/api/auth/register \
+    -H "Content-Type: application/json" \
+    -d '{"first_name": "Admin", "last_name": "User", "email": "admin@example.com", "username": "adminuser", "password": "adminpassword123", "role": "Admin"}'
+
+# Log in the admin user and get the token
+ADMIN_TOKEN=$(curl -s -X POST http://127.0.0.1:8557/api/auth/signin \
+    -H "Content-Type: application/json" \
+    -d '{"email": "admin@example.com", "password": "adminpassword123"}' | jq -r .token)
+
+# Reactivate the deactivated user using the admin token
+curl -X PUT http://127.0.0.1:8557/api/user/activate/4 \
+    -H "Authorization: Bearer ${ADMIN_TOKEN}"
+
+# Log in the reactivated user
 TOKEN=$(curl -s -X POST http://127.0.0.1:8557/api/auth/signin \
     -H "Content-Type: application/json" \
     -d '{"email": "test@example.com", "password": "password123"}' | jq -r .token)
 
+# Get user profile
 curl -X GET http://127.0.0.1:8557/api/user/profile \
     -H "Authorization: Bearer ${TOKEN}"
 
-
+# Update user profile
 curl -X PUT http://127.0.0.1:8557/api/user/profile \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer ${TOKEN}" \
-    -d '{"name": "Jane Doe", "email": "jane@example.com"}'
+    -d '{"first_name": "Jane", "last_name": "Doe", "email": "test@example.com", "username": "janedoe"}'
 
-
-
-
+# Fetch all forum posts
 curl -X GET http://127.0.0.1:8557/api/forum/posts
 
+# Create a new forum post
 curl -X POST http://127.0.0.1:8557/api/forum/posts \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer ${TOKEN}" \
     -d '{"title": "New Post", "content": "Post content here"}'
 
-curl -X GET http://127.0.0.1:8557/api/forum/posts/1
+# Fetch a specific forum post by ID
+curl -X GET http://127.0.0.1:8557/api/forum/posts/3
 
-
-curl -X POST http://127.0.0.1:8557/api/forum/posts/1/comments \
+# Add a comment to a forum post
+curl -X POST http://127.0.0.1:8557/api/forum/posts/3/comments \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer ${TOKEN}" \
     -d '{"content": "This is a comment"}'
 
-
+# Fetch all theses for the user
 curl -X GET http://127.0.0.1:8557/api/thesis/theses \
     -H "Authorization: Bearer ${TOKEN}"
 
-curl -X POST http://127.0.0.1:8557/api/thesis/thesis \
+# Create a new thesis
+THESIS_ID=$(curl -X POST http://127.0.0.1:8557/api/thesis/thesis \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer ${TOKEN}" \
-    -d '{"title": "New Thesis", "abstract": "This is the abstract", "status": "Pending"}'
+    -d '{"title": "New Thesis", "abstract": "This is the abstract", "status": "Pending"}' | jq -r '.id')
 
-
-curl -X PUT http://127.0.0.1:8557/api/thesis/thesis/1 \
+# Update an existing thesis
+curl -X PUT http://127.0.0.1:8557/api/thesis/thesis/"$THESIS_ID" \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer ${TOKEN}" \
     -d '{"title": "Updated Thesis Title", "abstract": "Updated Abstract", "status": "Approved"}'

@@ -43,13 +43,23 @@ def update_user_profile():
             return jsonify({"success": False, "message": "Invalid payload"}), 400
 
         updated_data = {
-            "name": data.get("name"),
+            "first_name": data.get("first_name"),
+            "last_name": data.get("last_name"),
             "email": data.get("email"),
         }
 
-        if not updated_data["name"] or not updated_data["email"]:
+        if (
+            not updated_data["first_name"]
+            or not updated_data["last_name"]
+            or not updated_data["email"]
+        ):
             return (
-                jsonify({"success": False, "message": "Name and email are required"}),
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "First name, last name, and email are required",
+                    }
+                ),
                 400,
             )
 

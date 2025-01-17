@@ -68,6 +68,8 @@ def register():
         last_name = data.get("last_name")
         email = data.get("email")
         password = data.get("password")
+        role = data.get("role")
+        is_active = True
 
         if not first_name or not last_name or not email or not password:
             return (
@@ -81,7 +83,12 @@ def register():
             )
 
         success = user_service.create_user(
-            first_name=first_name, last_name=last_name, email=email, password=password
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            password=password,
+            role=role,
+            is_active=is_active,
         )
         if success:
             return (
