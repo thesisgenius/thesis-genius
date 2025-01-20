@@ -43,9 +43,12 @@ def generate_apa_formatted_document(thesis_id):
             thesis_data = {
                 "title": thesis.title,
                 "student": f"{thesis.student.first_name} {thesis.student.last_name}",
-                "institution": "ThesisGenius University",  # Customize this value
+                "instructor": f"{thesis.instructor}",
+                "course": f"{thesis.course}",
+                "institution": f"{thesis.student.institution}",  # Customize this value
                 "abstract": thesis.abstract,
                 "content": thesis.content,
+                "submission_date": thesis.updated_at.strftime("%B %d, %Y"),
             }
         except AttributeError as e:
             logger.error(f"Error preparing thesis data for ID {thesis_id}: {e}")

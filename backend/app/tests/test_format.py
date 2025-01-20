@@ -1,9 +1,11 @@
 from unittest import mock
+from xml.dom.minidom import Document
 
 import pytest
 from app.models.data import Thesis, User
 from app.services.apaservice import generate_apa_formatted_document
 from app.utils.formatter import format_to_apa
+from datetime import datetime
 
 
 @pytest.fixture
@@ -24,6 +26,9 @@ def thesis_data():
             password="hashed_password",
             role_id=1,
         ),
+        "course": "Testing Course",
+        "instructor": "Testing Instructor",
+        "submission_date": datetime.now().strftime("%B %d, %Y"),
         "references": [
             mock.Mock(
                 author="Jane Doe",
@@ -62,6 +67,9 @@ def test_generate_apa_formatted_document(mock_thesis, thesis_data):
         student=mock.Mock(
             username="john.doe@example.com", first_name="John", last_name="Doe"
         ),
+        course=thesis_data["course"],
+        instructor=thesis_data["instructor"],
+        submission_date=thesis_data["submission_date"],
         references=mock_references,
     )
 
@@ -83,6 +91,9 @@ def test_format_to_apa(thesis_data):
         "student": thesis_data["student"].first_name
         + " "
         + thesis_data["student"].last_name,
+        "instructor": thesis_data["instructor"],
+        "course": thesis_data["course"],
+        "submission_date": thesis_data["submission_date"],
         "institution": "ThesisGenius University",
         "abstract": thesis_data["abstract"],
         "content": thesis_data["content"],
@@ -166,3 +177,40 @@ def test_format_to_apa_endpoint_server_error(mock_generate_doc, client):
     # Assertions
     assert response.status_code == 500
     assert "An error occurred" in response.json["error"]
+
+
+def test_double_spacing_in_document(thesis_data):
+    """
+    Test to verify that double-spacing is applied throughout the document.
+    """
+    thesis_metadata = {
+            "title": thesis_data["title"],
+            "student": thesis_data["student"].first_name
+                       + " "
+                       + thesis_data["student"].last_name,
+            "instructor": thesis_data["instructor"],
+            "course": thesis_data["course"],
+            "submission_date": thesis_data["submission_date"],
+            "institution": "ThesisGenius University",
+            "abstract": thesis_data["abstract"],
+            "content": thesis_data["content"],
+        }
+    references = [
+        {
+            "author": ref.author,
+            "title": ref.title,
+            "journal": ref.journal,
+            "publication_year": ref.publication_year,
+            "publisher": ref.publisher,
+            "doi": ref.doi,
+        }
+        for ref in thesis_data["references"]
+    ]
+
+    # Call the utility function
+    from docx import Document
+    doc_path = format_to_apa(thesis_metadata, references)
+    doc = Document(doc_path)
+
+    for paragraph in doc.paragraphs:
+        assert paragraph.paragraph_format.line_spacing == 2.0

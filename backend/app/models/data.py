@@ -64,6 +64,8 @@ class User(BaseModel):
 class Thesis(BaseModel):
     id = AutoField(primary_key=True, column_name="thesis_id")
     title = CharField()
+    course = CharField(null=True)
+    instructor = CharField(null=True)
     abstract = TextField(null=True)
     content = TextField(null=True)
     status = CharField()
