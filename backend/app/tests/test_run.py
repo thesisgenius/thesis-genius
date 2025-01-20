@@ -1,4 +1,4 @@
-from backend.app.models.data import Settings
+from app.models.data import Settings
 
 
 def test_connect(db_service):

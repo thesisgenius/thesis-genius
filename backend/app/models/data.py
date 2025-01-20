@@ -1,7 +1,8 @@
 from datetime import datetime, timezone
 
 from peewee import (AutoField, BooleanField, CharField, DateTimeField,
-                    ForeignKeyField, Model, TextField, TimestampField)
+                    ForeignKeyField, IntegerField, Model, TextField,
+                    TimestampField)
 
 from ..utils.db import database_proxy
 
@@ -33,6 +34,7 @@ class User(BaseModel):
     last_name = CharField()
     email = CharField(unique=True)
     username = CharField(unique=True)
+    institution = CharField()
     password = CharField()
     role = ForeignKeyField(
         Role, backref="users", column_name="role_id", on_delete="CASCADE"
@@ -62,7 +64,8 @@ class User(BaseModel):
 class Thesis(BaseModel):
     id = AutoField(primary_key=True, column_name="thesis_id")
     title = CharField()
-    abstract = TextField()
+    abstract = TextField(null=True)
+    content = TextField(null=True)
     status = CharField()
     created_at = DateTimeField(default=datetime.now(timezone.utc))
     updated_at = DateTimeField(default=datetime.now(timezone.utc))
@@ -73,6 +76,24 @@ class Thesis(BaseModel):
     class Meta:
         table_name = "theses"
         indexes = ((("id", "student_id"), True),)
+
+
+class Reference(BaseModel):
+    id = AutoField(primary_key=True, column_name="reference_id")
+    thesis = ForeignKeyField(
+        Thesis, backref="references", column_name="thesis_id", on_delete="CASCADE"
+    )
+    author = CharField()
+    title = CharField()
+    journal = CharField(null=True)  # Optional for book references
+    publication_year = IntegerField(null=True)
+    publisher = CharField(null=True)  # Optional
+    doi = CharField(null=True)  # Digital Object Identifier (optional)
+    created_at = DateTimeField(default=datetime.now(timezone.utc))
+
+    class Meta:
+        table_name = "references"
+        indexes = ((("id", "thesis_id"), False),)
 
 
 class Posts(BaseModel):

@@ -67,8 +67,9 @@ def register():
         first_name = data.get("first_name")
         last_name = data.get("last_name")
         email = data.get("email")
+        institution = data.get("institution")
         password = data.get("password")
-        role = data.get("role")
+        role = data.get("role", "Student")
         is_active = True
 
         if not first_name or not last_name or not email or not password:
@@ -86,6 +87,7 @@ def register():
             first_name=first_name,
             last_name=last_name,
             email=email,
+            institution=institution,
             password=password,
             role=role,
             is_active=is_active,

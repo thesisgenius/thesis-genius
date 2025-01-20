@@ -1,5 +1,4 @@
-from backend.app.config import (DevelopmentConfig, ProductionConfig,
-                                TestingConfig)
+from app.config import DevelopmentConfig, ProductionConfig, TestingConfig
 
 
 def test_development_config(monkeypatch):

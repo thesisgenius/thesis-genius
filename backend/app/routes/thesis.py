@@ -43,6 +43,7 @@ def create_thesis():
 
         title = data.get("title")
         abstract = data.get("abstract")
+        content = data.get("content")
         status = data.get("status")
 
         if not title or not abstract or not status:
@@ -63,6 +64,7 @@ def create_thesis():
         thesis_data = {
             "title": title,
             "abstract": abstract,
+            "content": content,
             "status": status,
             "student_id": user_id,  # Updated to conform to schema
         }

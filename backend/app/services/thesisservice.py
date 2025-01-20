@@ -75,11 +75,12 @@ class ThesisService:
         try:
             title = thesis_data.get("title")
             abstract = thesis_data.get("abstract")
+            content = thesis_data.get("content")
             status = thesis_data.get("status")
             student_id = thesis_data.get("student_id")
 
             # Validate required fields
-            if not title or not abstract or not status or not student_id:
+            if not title or not status or not student_id:
                 raise ValueError(
                     "Title, abstract, status, and student ID are required."
                 )
@@ -93,6 +94,7 @@ class ThesisService:
             thesis = Thesis.create(
                 title=title,
                 abstract=abstract,
+                content=content,
                 status=status,
                 student_id=student_id,  # Use student_id directly
             )

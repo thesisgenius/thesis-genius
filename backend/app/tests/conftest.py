@@ -4,13 +4,12 @@ from datetime import datetime, timedelta, timezone
 
 import fakeredis
 import pytest
-
-from backend.app import create_app
-from backend.app.models.data import Posts  # , TokenBlacklist
-from backend.app.models.data import (PostComment, Role, SessionLog, Settings,
-                                     Thesis, User)
-from backend.app.services.dbservice import DBService
-from backend.app.utils.db import database_proxy
+from app import create_app
+from app.models.data import Posts  # , TokenBlacklist
+from app.models.data import (PostComment, Role, SessionLog, Settings, Thesis,
+                             User)
+from app.services.dbservice import DBService
+from app.utils.db import database_proxy
 
 # Add the backend directory to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
@@ -107,25 +106,21 @@ def mock_redis(monkeypatch):
         return datetime.now(timezone.utc).timestamp() > float(expiry_timestamp)
 
     monkeypatch.setattr(
-        "backend.app.utils.redis_helper.get_redis_client", mock_get_redis_client
+        "app.utils.redis_helper.get_redis_client", mock_get_redis_client
+    )
+    monkeypatch.setattr("app.utils.redis_helper.blacklist_token", mock_blacklist_token)
+    monkeypatch.setattr(
+        "app.utils.redis_helper.is_token_blacklisted", mock_is_token_blacklisted
     )
     monkeypatch.setattr(
-        "backend.app.utils.redis_helper.blacklist_token", mock_blacklist_token
+        "app.utils.redis_helper.add_token_to_user", mock_add_token_to_user
+    )
+    monkeypatch.setattr("app.utils.redis_helper.get_user_tokens", mock_get_user_tokens)
+    monkeypatch.setattr(
+        "app.utils.redis_helper.revoke_user_tokens", mock_revoke_user_tokens
     )
     monkeypatch.setattr(
-        "backend.app.utils.redis_helper.is_token_blacklisted", mock_is_token_blacklisted
-    )
-    monkeypatch.setattr(
-        "backend.app.utils.redis_helper.add_token_to_user", mock_add_token_to_user
-    )
-    monkeypatch.setattr(
-        "backend.app.utils.redis_helper.get_user_tokens", mock_get_user_tokens
-    )
-    monkeypatch.setattr(
-        "backend.app.utils.redis_helper.revoke_user_tokens", mock_revoke_user_tokens
-    )
-    monkeypatch.setattr(
-        "backend.app.utils.redis_helper.is_token_expired", mock_is_token_expired
+        "app.utils.redis_helper.is_token_expired", mock_is_token_expired
     )
 
     yield redis_mock

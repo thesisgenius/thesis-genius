@@ -42,6 +42,7 @@ class UserService:
         first_name,
         last_name,
         email,
+        institution,
         password,
         role="Student",
         is_active=True,
@@ -67,6 +68,7 @@ class UserService:
                 last_name=last_name,
                 username=email,
                 email=email,
+                institution=institution,
                 password=hashed_password,
                 role=role_obj,  # Pass the Role object
                 is_active=is_active,

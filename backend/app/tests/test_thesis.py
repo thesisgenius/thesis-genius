@@ -1,6 +1,5 @@
 import pytest
-
-from backend.app.models.data import Role
+from app.models.data import Role
 
 
 @pytest.fixture
@@ -23,6 +22,7 @@ def register_and_login_user(client, create_role):
             "first_name": "Test",
             "last_name": "User",
             "email": "test@example.com",
+            "institution": "National University",
             "username": "testuser",
             "password": "password123",
             "role": "Student",
@@ -48,6 +48,7 @@ def create_thesis(client, register_and_login_user):
         json={
             "title": "Test Thesis",
             "abstract": "This is a test thesis.",
+            "content": "This is the content of the thesis.",
             "status": "Pending",
         },
         headers={"Authorization": f"Bearer {token}"},
