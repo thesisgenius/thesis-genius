@@ -9,6 +9,7 @@ from ..utils.auth import jwt_required
 
 thesis_bp = Blueprint("thesis_api", __name__, url_prefix="/api/thesis")
 
+
 @thesis_bp.route("/theses", methods=["GET"])
 @jwt_required
 def list_theses():
@@ -24,6 +25,7 @@ def list_theses():
     except Exception as e:
         app.logger.error(f"Error fetching theses for user {user_id}: {e}")
         return jsonify({"success": False, "message": "Failed to fetch theses"}), 500
+
 
 @thesis_bp.route("/<int:thesis_id>", methods=["GET"])
 @jwt_required
@@ -53,12 +55,15 @@ def get_thesis(thesis_id):
             )
 
         return (
-            jsonify({"success": False, "message": "Thesis not found or not accessible."}),
+            jsonify(
+                {"success": False, "message": "Thesis not found or not accessible."}
+            ),
             404,
         )
     except Exception as e:
         app.logger.error(f"Error fetching thesis {thesis_id}: {e}")
         return jsonify({"success": False, "message": "An internal error occurred"}), 500
+
 
 @thesis_bp.route("/new", methods=["POST"])
 @jwt_required

@@ -1,7 +1,7 @@
 from peewee import IntegrityError, PeeweeException
+from playhouse.shortcuts import model_to_dict
 
 from ..models.data import PostComment, Posts
-from playhouse.shortcuts import model_to_dict
 
 
 class ForumService:

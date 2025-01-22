@@ -1,9 +1,9 @@
 from peewee import IntegrityError
+from playhouse.shortcuts import model_to_dict
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from ..models.data import Role, User
 from ..utils.auth import generate_token
-from playhouse.shortcuts import model_to_dict
 
 
 class UserService:

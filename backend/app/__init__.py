@@ -1,5 +1,4 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
+from flask import Flask, request
 
 from .routes import register_routes
 from .utils.db import database_proxy, initialize_database
