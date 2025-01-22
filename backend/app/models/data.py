@@ -98,6 +98,56 @@ class Reference(BaseModel):
         indexes = ((("id", "thesis_id"), False),)
 
 
+class Footnote(BaseModel):
+    id = AutoField(primary_key=True, column_name="footnote_id")
+    thesis = ForeignKeyField(
+        Thesis, backref="footnotes", column_name="thesis_id", on_delete="CASCADE"
+    )
+    content = TextField()
+
+    class Meta:
+        table_name = "footnotes"
+
+
+class TableEntry(BaseModel):
+    id = AutoField(primary_key=True, column_name="table_id")
+    thesis = ForeignKeyField(
+        Thesis, backref="tables", column_name="thesis_id", on_delete="CASCADE"
+    )
+    caption = CharField(max_length=255)
+    file_path = CharField(max_length=255)  # Path to the uploaded file
+
+    class Meta:
+        table_name = "tables"
+
+
+class Figure(BaseModel):
+    id = AutoField(primary_key=True, column_name="figure_id")
+    thesis = ForeignKeyField(
+        Thesis, backref="figures", column_name="thesis_id", on_delete="CASCADE"
+    )
+    caption = CharField(max_length=255)
+    file_path = CharField(max_length=255)  # Path to the uploaded file
+
+    class Meta:
+        table_name = "figures"
+
+
+class Appendix(BaseModel):
+    id = AutoField(primary_key=True, column_name="appendix_id")
+    thesis = ForeignKeyField(
+        Thesis, backref="appendices", column_name="thesis_id", on_delete="CASCADE"
+    )
+    title = CharField(max_length=255)
+    content = TextField(null=True)  # Appendix content
+    file_path = CharField(
+        max_length=255, null=True
+    )  # Optional file upload for the appendix
+
+    class Meta:
+        table_name = "appendices"
+
+
 class Posts(BaseModel):
     id = AutoField()
     user = ForeignKeyField(

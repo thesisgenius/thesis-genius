@@ -12,7 +12,7 @@ def create_role():
 
 
 @pytest.fixture
-def register_and_login_user(client, create_role):
+def user_token(client, create_role):
     """
     Fixture to register and log in a user, returning the JWT token.
     """
@@ -38,66 +38,81 @@ def register_and_login_user(client, create_role):
 
 
 @pytest.fixture
-def create_thesis(client, register_and_login_user):
+def sample_thesis(client, user_token):
+    """
+    Fixture to create a sample thesis.
+    """
+    response = client.post(
+        "/api/thesis/new",
+        json={
+            "title": "Sample Thesis",
+            "abstract": "This is a sample abstract.",
+            "content": "This is the main content of the thesis.",
+            "status": "Draft",
+        },
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert response.status_code == 201
+    return response.json["id"]
+
+
+@pytest.fixture
+def create_thesis(client, user_token):
     """
     Fixture to create a thesis, returning the thesis data.
     """
-    token = register_and_login_user
     response = client.post(
-        "/api/thesis/thesis",
+        "/api/thesis/new",
         json={
             "title": "Test Thesis",
             "abstract": "This is a test thesis.",
             "content": "This is the content of the thesis.",
             "status": "Pending",
         },
-        headers={"Authorization": f"Bearer {token}"},
+        headers={"Authorization": f"Bearer {user_token}"},
     )
     assert response.status_code == 201
     return response.json
 
 
-def test_create_thesis(client, register_and_login_user):
+def test_create_thesis(client, user_token):
     """
     Test creating a thesis.
     """
-    token = register_and_login_user
     response = client.post(
-        "/api/thesis/thesis",
+        "/api/thesis/new",
         json={
             "title": "Test Thesis",
             "abstract": "This is a test thesis.",
             "status": "Pending",
         },
-        headers={"Authorization": f"Bearer {token}"},
+        headers={"Authorization": f"Bearer {user_token}"},
     )
     assert response.status_code == 201
     assert response.json["success"] is True
     assert response.json["id"] is not None
 
 
-def test_create_thesis_missing_fields(client, register_and_login_user):
+def test_create_thesis_missing_fields(client, user_token):
     """
     Test creating a thesis with missing required fields.
     """
-    token = register_and_login_user
     response = client.post(
-        "/api/thesis/thesis",
+        "/api/thesis/new",
         json={"title": "Incomplete Thesis"},
-        headers={"Authorization": f"Bearer {token}"},
+        headers={"Authorization": f"Bearer {user_token}"},
     )
     assert response.status_code == 400
     assert response.json["success"] is False
     assert "Title, abstract, and status are required" in response.json["message"]
 
 
-def test_get_theses(client, register_and_login_user, create_thesis):
+def test_get_theses(client, user_token, create_thesis):
     """
     Test fetching theses for a user.
     """
-    token = register_and_login_user
     response = client.get(
-        "/api/thesis/theses", headers={"Authorization": f"Bearer {token}"}
+        "/api/thesis/theses", headers={"Authorization": f"Bearer {user_token}"}
     )
     assert response.status_code == 200
     assert response.json["success"] is True
@@ -105,73 +120,349 @@ def test_get_theses(client, register_and_login_user, create_thesis):
     assert len(response.json["theses"]) > 0
 
 
-def test_update_thesis(client, create_thesis, register_and_login_user):
+def test_update_thesis(client, create_thesis, user_token):
     """
     Test updating a thesis.
     """
-    token = register_and_login_user
     thesis_id = create_thesis["id"]
 
     response = client.put(
-        f"/api/thesis/thesis/{thesis_id}",
+        f"/api/thesis/{thesis_id}",
         json={
             "title": "Updated Title",
             "abstract": "Updated Abstract",
             "status": "Approved",
         },
-        headers={"Authorization": f"Bearer {token}"},
+        headers={"Authorization": f"Bearer {user_token}"},
     )
     assert response.status_code == 200
     assert response.json["success"] is True
     assert "Thesis updated successfully" in response.json["message"]
 
 
-def test_update_thesis_invalid_id(client, register_and_login_user):
+def test_update_thesis_invalid_id(client, user_token):
     """
     Test updating a thesis with an invalid ID.
     """
-    token = register_and_login_user
-
     response = client.put(
-        "/api/thesis/thesis/99999",
+        "/api/thesis/99999",
         json={
             "title": "Updated Title",
             "abstract": "Updated Abstract",
             "status": "Approved",
         },
-        headers={"Authorization": f"Bearer {token}"},
+        headers={"Authorization": f"Bearer {user_token}"},
     )
     assert response.status_code == 400
     assert response.json["success"] is False
     assert "Failed to update thesis" in response.json["message"]
 
 
-def test_delete_thesis(client, create_thesis, register_and_login_user):
+def test_delete_thesis(client, create_thesis, user_token):
     """
     Test deleting a thesis.
     """
-    token = register_and_login_user
     thesis_id = create_thesis["id"]
 
     response = client.delete(
-        f"/api/thesis/thesis/{thesis_id}",
-        headers={"Authorization": f"Bearer {token}"},
+        f"/api/thesis/{thesis_id}",
+        headers={"Authorization": f"Bearer {user_token}"},
     )
     assert response.status_code == 200
     assert response.json["success"] is True
     assert "Thesis deleted successfully" in response.json["message"]
 
 
-def test_delete_thesis_invalid_id(client, register_and_login_user):
+def test_delete_thesis_invalid_id(client, user_token):
     """
     Test deleting a thesis with an invalid ID.
     """
-    token = register_and_login_user
-
     response = client.delete(
-        "/api/thesis/thesis/99999",
-        headers={"Authorization": f"Bearer {token}"},
+        "/api/thesis/99999",
+        headers={"Authorization": f"Bearer {user_token}"},
     )
     assert response.status_code == 400
     assert response.json["success"] is False
     assert "Failed to delete thesis" in response.json["message"]
+
+
+# --- Footnotes Tests ---
+def test_add_footnote(client, user_token, sample_thesis):
+    """
+    Test adding a footnote to a thesis.
+    """
+    response = client.post(
+        f"/api/thesis/{sample_thesis}/footnotes",
+        json={"content": "This is a sample footnote."},
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert response.status_code == 201
+    assert response.json["success"] is True
+    assert "footnote" in response.json
+
+
+def test_list_footnotes(client, user_token, sample_thesis):
+    """
+    Test listing all footnotes for a thesis.
+    """
+    response = client.get(
+        f"/api/thesis/{sample_thesis}/footnotes",
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert response.status_code == 200
+    assert response.json["success"] is True
+    assert "footnotes" in response.json
+
+
+def test_update_footnote(client, user_token, sample_thesis):
+    """
+    Test updating a footnote.
+    """
+    # Add a footnote
+    add_response = client.post(
+        f"/api/thesis/{sample_thesis}/footnotes",
+        json={"content": "This is a sample footnote."},
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    footnote_id = add_response.json["footnote"]["id"]
+
+    # Update the footnote
+    update_response = client.put(
+        f"/api/thesis/footnote/{footnote_id}",
+        json={"content": "This is an updated footnote."},
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert update_response.status_code == 200
+    assert update_response.json["success"] is True
+
+
+def test_delete_footnote(client, user_token, sample_thesis):
+    """
+    Test deleting a footnote.
+    """
+    # Add a footnote
+    add_response = client.post(
+        f"/api/thesis/{sample_thesis}/footnotes",
+        json={"content": "This is a sample footnote."},
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    footnote_id = add_response.json["footnote"]["id"]
+
+    # Delete the footnote
+    delete_response = client.delete(
+        f"/api/thesis/footnote/{footnote_id}",
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert delete_response.status_code == 200
+    assert delete_response.json["success"] is True
+
+
+# --- Tables Tests ---
+def test_add_table(client, user_token, sample_thesis):
+    """
+    Test adding a table to a thesis.
+    """
+    response = client.post(
+        f"/api/thesis/{sample_thesis}/tables",
+        json={"caption": "Sample Table", "file_path": "/path/to/table.png"},
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert response.status_code == 201
+    assert response.json["success"] is True
+    assert "table" in response.json
+
+
+def test_list_tables(client, user_token, sample_thesis):
+    """
+    Test listing all tables for a thesis.
+    """
+    response = client.get(
+        f"/api/thesis/{sample_thesis}/tables",
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert response.status_code == 200
+    assert response.json["success"] is True
+    assert "tables" in response.json
+
+
+def test_update_table(client, user_token, sample_thesis):
+    """
+    Test updating a table.
+    """
+    # Add a table
+    add_response = client.post(
+        f"/api/thesis/{sample_thesis}/tables",
+        json={"caption": "Sample Table", "file_path": "/path/to/table.png"},
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    table_id = add_response.json["table"]["id"]
+
+    # Update the table
+    update_response = client.put(
+        f"/api/thesis/table/{table_id}",
+        json={"caption": "Updated Table Caption"},
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert update_response.status_code == 200
+    assert update_response.json["success"] is True
+
+
+def test_delete_table(client, user_token, sample_thesis):
+    """
+    Test deleting a table.
+    """
+    # Add a table
+    add_response = client.post(
+        f"/api/thesis/{sample_thesis}/tables",
+        json={"caption": "Sample Table", "file_path": "/path/to/table.png"},
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    table_id = add_response.json["table"]["id"]
+
+    # Delete the table
+    delete_response = client.delete(
+        f"/api/thesis/table/{table_id}",
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert delete_response.status_code == 200
+    assert delete_response.json["success"] is True
+
+
+def test_add_figure(client, user_token, sample_thesis):
+    """
+    Test adding a figure to a thesis.
+    """
+    response = client.post(
+        f"/api/thesis/{sample_thesis}/figures",
+        json={"caption": "Sample Figure", "file_path": "/path/to/figure.png"},
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert response.status_code == 201
+    assert response.json["success"] is True
+    assert "figure" in response.json
+
+
+def test_list_figures(client, user_token, sample_thesis):
+    """
+    Test listing all figures for a thesis.
+    """
+    response = client.get(
+        f"/api/thesis/{sample_thesis}/figures",
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert response.status_code == 200
+    assert response.json["success"] is True
+    assert "figures" in response.json
+
+
+def test_update_figure(client, user_token, sample_thesis):
+    """
+    Test updating a figure.
+    """
+    # Add a figure
+    add_response = client.post(
+        f"/api/thesis/{sample_thesis}/figures",
+        json={"caption": "Sample Figure", "file_path": "/path/to/figure.png"},
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    figure_id = add_response.json["figure"]["id"]
+
+    # Update the figure
+    update_response = client.put(
+        f"/api/thesis/figure/{figure_id}",
+        json={"caption": "Updated Figure Caption"},
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert update_response.status_code == 200
+    assert update_response.json["success"] is True
+
+
+def test_delete_figure(client, user_token, sample_thesis):
+    """
+    Test deleting a figure.
+    """
+    # Add a figure
+    add_response = client.post(
+        f"/api/thesis/{sample_thesis}/figures",
+        json={"caption": "Sample Figure", "file_path": "/path/to/figure.png"},
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    figure_id = add_response.json["figure"]["id"]
+
+    # Delete the figure
+    delete_response = client.delete(
+        f"/api/thesis/figure/{figure_id}",
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert delete_response.status_code == 200
+    assert delete_response.json["success"] is True
+
+
+def test_add_appendix(client, user_token, sample_thesis):
+    """
+    Test adding an appendix to a thesis.
+    """
+    response = client.post(
+        f"/api/thesis/{sample_thesis}/appendices",
+        json={"title": "Sample Appendix", "content": "This is the appendix content."},
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert response.status_code == 201
+    assert response.json["success"] is True
+    assert "appendix" in response.json
+
+
+def test_list_appendices(client, user_token, sample_thesis):
+    """
+    Test listing all appendices for a thesis.
+    """
+    response = client.get(
+        f"/api/thesis/{sample_thesis}/appendices",
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert response.status_code == 200
+    assert response.json["success"] is True
+    assert "appendices" in response.json
+
+
+def test_update_appendix(client, user_token, sample_thesis):
+    """
+    Test updating an appendix.
+    """
+    # Add an appendix
+    add_response = client.post(
+        f"/api/thesis/{sample_thesis}/appendices",
+        json={"title": "Sample Appendix", "content": "This is the appendix content."},
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    appendix_id = add_response.json["appendix"]["id"]
+
+    # Update the appendix
+    update_response = client.put(
+        f"/api/thesis/appendix/{appendix_id}",
+        json={"title": "Updated Appendix Title"},
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert update_response.status_code == 200
+    assert update_response.json["success"] is True
+
+
+def test_delete_appendix(client, user_token, sample_thesis):
+    """
+    Test deleting an appendix.
+    """
+    # Add an appendix
+    add_response = client.post(
+        f"/api/thesis/{sample_thesis}/appendices",
+        json={"title": "Sample Appendix", "content": "This is the appendix content."},
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    appendix_id = add_response.json["appendix"]["id"]
+
+    # Delete the appendix
+    delete_response = client.delete(
+        f"/api/thesis/appendix/{appendix_id}",
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert delete_response.status_code == 200
+    assert delete_response.json["success"] is True

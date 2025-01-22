@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 from .routes import register_routes
@@ -16,11 +16,25 @@ def create_app(config_name="testing"):
 
     initialize_database(app)
 
-    # Enable CORS for frontend development
-    CORS(app)
-
     # Register API routes
     register_routes(app)
+
+    # # Enable CORS for frontend development
+    # CORS(
+    #     app,
+    #     resources={r"/*": {"origins": "*"}},
+    #     supports_credentials=True,
+    #     allow_headers=["Authorization", "Content-Type"],
+    #     expose_headers=["Authorization", "Content-Type"],
+    #     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    # )
+
+    @app.before_request
+    def log_request_info():
+        app.logger.debug(f"Request Method: {request.method}")
+        app.logger.debug(f"Request URL: {request.url}")
+        app.logger.debug(f"Request Headers: {request.headers}")
+        app.logger.debug(f"Request Body: {request.get_data()}")
 
     # Ensure the database connection is closed after each request
     @app.teardown_appcontext

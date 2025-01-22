@@ -3,7 +3,7 @@
 # Register a user
 curl -X POST http://127.0.0.1:8557/api/auth/register \
     -H "Content-Type: application/json" \
-    -d '{"first_name": "John", "last_name": "Doe", "email": "test@example.com", "username": "testuser", "password": "password123", "role": "Student"}'
+    -d '{"first_name": "John", "last_name": "Doe", "email": "test@example.com", "username": "testuser", "password": "password123", "institution": "NU","role": "Student"}'
 
 # Log in the user and get the token
 TOKEN=$(curl -s -X POST http://127.0.0.1:8557/api/auth/signin \
@@ -76,13 +76,16 @@ curl -X GET http://127.0.0.1:8557/api/thesis/theses \
     -H "Authorization: Bearer ${TOKEN}"
 
 # Create a new thesis
-THESIS_ID=$(curl -X POST http://127.0.0.1:8557/api/thesis/thesis \
+THESIS_ID=$(curl -X POST http://127.0.0.1:8557/api/thesis/new \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer ${TOKEN}" \
     -d '{"title": "New Thesis", "abstract": "This is the abstract", "status": "Pending"}' | jq -r '.id')
 
 # Update an existing thesis
-curl -X PUT http://127.0.0.1:8557/api/thesis/thesis/"$THESIS_ID" \
+curl -X PUT http://127.0.0.1:8557/api/thesis/"$THESIS_ID" \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer ${TOKEN}" \
     -d '{"title": "Updated Thesis Title", "abstract": "Updated Abstract", "status": "Approved"}'
+
+curl -X GET http://127.0.0.1:8557/api/thesis/4 \
+    -H "Authorization: Bearer ${TOKEN}"

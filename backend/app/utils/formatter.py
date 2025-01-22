@@ -1,5 +1,6 @@
 import logging
 import os
+
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 
@@ -32,6 +33,7 @@ logger = logging.getLogger(__name__)
 #
 # 5. Headings:
 #   - Follow APA heading levels (5 levels, each with a specific formatting style).
+
 
 def format_to_apa(thesis_data, references):
     """
@@ -96,7 +98,15 @@ def validate_thesis_data(thesis_data):
     Validates the thesis metadata.
     :param thesis_data: Dictionary containing thesis metadata.
     """
-    required_fields = ["title", "student", "institution", "instructor", "course", "abstract", "submission_date"]
+    required_fields = [
+        "title",
+        "student",
+        "institution",
+        "instructor",
+        "course",
+        "abstract",
+        "submission_date",
+    ]
     missing_fields = [field for field in required_fields if not thesis_data.get(field)]
     if missing_fields:
         raise ValueError(
@@ -117,13 +127,13 @@ def validate_references(references):
         required_fields = ["author", "title", "publication_year"]
         for field in required_fields:
             if field not in ref:
-                raise ValueError(f"Reference {i} is missing the required field: {field}.")
+                raise ValueError(
+                    f"Reference {i} is missing the required field: {field}."
+                )
         if not isinstance(ref["publication_year"], int):
             raise ValueError(
                 f"Reference {i}: 'publication_year' must be an integer. Got {type(ref['publication_year']).__name__}."
             )
-
-
 
 
 def add_title_page(doc, thesis_data):
@@ -144,10 +154,17 @@ def add_title_page(doc, thesis_data):
 
     # Add the rest of the title page information, centered
     doc.add_paragraph(f"{thesis_data['student']}").alignment = WD_ALIGN_PARAGRAPH.CENTER
-    doc.add_paragraph(f"{thesis_data['institution']}").alignment = WD_ALIGN_PARAGRAPH.CENTER
+    doc.add_paragraph(f"{thesis_data['institution']}").alignment = (
+        WD_ALIGN_PARAGRAPH.CENTER
+    )
     doc.add_paragraph(f"{thesis_data['course']}").alignment = WD_ALIGN_PARAGRAPH.CENTER
-    doc.add_paragraph(f"Instructor: {thesis_data['instructor']}").alignment = WD_ALIGN_PARAGRAPH.CENTER
-    doc.add_paragraph(f"Submission Date: {thesis_data['submission_date']}").alignment = WD_ALIGN_PARAGRAPH.CENTER
+    doc.add_paragraph(f"Instructor: {thesis_data['instructor']}").alignment = (
+        WD_ALIGN_PARAGRAPH.CENTER
+    )
+    doc.add_paragraph(
+        f"Submission Date: {thesis_data['submission_date']}"
+    ).alignment = WD_ALIGN_PARAGRAPH.CENTER
+
 
 def add_abstract_section(doc, abstract):
     """
@@ -158,6 +175,7 @@ def add_abstract_section(doc, abstract):
     abstract_paragraph = doc.add_paragraph(abstract)
     abstract_paragraph.paragraph_format.first_line_indent = None
     abstract_paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
+
 
 def add_heading(doc, text, level):
     """
@@ -173,6 +191,7 @@ def add_heading(doc, text, level):
         heading.alignment = 1  # Centered
     else:
         heading.alignment = 0  # Left-aligned
+
 
 def add_main_body(doc, title, content):
     """
@@ -216,6 +235,7 @@ def add_references_section(doc, references):
         except Exception as e:
             logger.error(f"Error adding reference {i}: {e}. Reference: {ref}")
             raise RuntimeError("Failed to add references section.") from e
+
 
 def apply_global_styles(doc):
     """

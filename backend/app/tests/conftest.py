@@ -6,8 +6,8 @@ import fakeredis
 import pytest
 from app import create_app
 from app.models.data import Posts  # , TokenBlacklist
-from app.models.data import (PostComment, Role, SessionLog, Settings, Thesis,
-                             User)
+from app.models.data import (Appendix, Figure, Footnote, PostComment, Role,
+                             SessionLog, Settings, TableEntry, Thesis, User)
 from app.services.dbservice import DBService
 from app.utils.db import database_proxy
 
@@ -26,11 +26,36 @@ def app():
     with app.app_context():
         database_proxy.connect()
         database_proxy.create_tables(
-            [Role, User, Thesis, Posts, PostComment, SessionLog, Settings], safe=True
+            [
+                Role,
+                User,
+                Thesis,
+                Posts,
+                PostComment,
+                SessionLog,
+                Settings,
+                Footnote,
+                TableEntry,
+                Figure,
+                Appendix,
+            ],
+            safe=True,
         )
         yield app
         database_proxy.drop_tables(
-            [Role, User, Thesis, Posts, PostComment, SessionLog, Settings]
+            [
+                Role,
+                User,
+                Thesis,
+                Posts,
+                PostComment,
+                SessionLog,
+                Settings,
+                Footnote,
+                TableEntry,
+                Figure,
+                Appendix,
+            ]
         )
         database_proxy.close()
 

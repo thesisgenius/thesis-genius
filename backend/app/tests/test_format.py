@@ -1,11 +1,10 @@
+from datetime import datetime
 from unittest import mock
-from xml.dom.minidom import Document
 
 import pytest
 from app.models.data import Thesis, User
 from app.services.apaservice import generate_apa_formatted_document
 from app.utils.formatter import format_to_apa
-from datetime import datetime
 
 
 @pytest.fixture
@@ -184,17 +183,17 @@ def test_double_spacing_in_document(thesis_data):
     Test to verify that double-spacing is applied throughout the document.
     """
     thesis_metadata = {
-            "title": thesis_data["title"],
-            "student": thesis_data["student"].first_name
-                       + " "
-                       + thesis_data["student"].last_name,
-            "instructor": thesis_data["instructor"],
-            "course": thesis_data["course"],
-            "submission_date": thesis_data["submission_date"],
-            "institution": "ThesisGenius University",
-            "abstract": thesis_data["abstract"],
-            "content": thesis_data["content"],
-        }
+        "title": thesis_data["title"],
+        "student": thesis_data["student"].first_name
+        + " "
+        + thesis_data["student"].last_name,
+        "instructor": thesis_data["instructor"],
+        "course": thesis_data["course"],
+        "submission_date": thesis_data["submission_date"],
+        "institution": "ThesisGenius University",
+        "abstract": thesis_data["abstract"],
+        "content": thesis_data["content"],
+    }
     references = [
         {
             "author": ref.author,
@@ -209,6 +208,7 @@ def test_double_spacing_in_document(thesis_data):
 
     # Call the utility function
     from docx import Document
+
     doc_path = format_to_apa(thesis_metadata, references)
     doc = Document(doc_path)
 

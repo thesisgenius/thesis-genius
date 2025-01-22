@@ -46,11 +46,11 @@ def initialize_database(app):
     return db
 
 
-def model_to_dict(model):
-    """
-    Convert a Peewee model instance to a dictionary.
-    """
-    return {field: getattr(model, field) for field in model._meta.sorted_field_names}
+# def model_to_dict(model):
+#     """
+#     Convert a Peewee model instance to a dictionary.
+#     """
+#     return {field: getattr(model, field) for field in model._meta.sorted_field_names}
 
 
 def drop_tables(conn_info):
@@ -66,13 +66,27 @@ def drop_tables(conn_info):
     )
     database_proxy.initialize(database)
 
-    from ..models.data import (PostComment, Posts, Reference, Role, SessionLog,
-                               Settings, Thesis, User)
+    from ..models.data import (Appendix, Figure, Footnote, PostComment, Posts,
+                               Reference, Role, SessionLog, Settings,
+                               TableEntry, Thesis, User)
 
     print("Dropping tables if they exist...")
 
     # List of models to drop
-    models = [Settings, SessionLog, PostComment, Posts, Reference, Thesis, User, Role]
+    models = [
+        Settings,
+        SessionLog,
+        PostComment,
+        Posts,
+        Reference,
+        Thesis,
+        User,
+        Role,
+        Footnote,
+        TableEntry,
+        Figure,
+        Appendix,
+    ]
 
     # Fetch existing table names
     with database_proxy:

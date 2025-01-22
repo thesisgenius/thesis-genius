@@ -1,5 +1,3 @@
-import os
-
 import click
 from app.utils.db import seed_database
 from db.init_db import initialize_database
