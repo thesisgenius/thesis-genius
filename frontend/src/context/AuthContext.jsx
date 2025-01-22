@@ -1,43 +1,36 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import apiClient from "../services/apiClient";
 
-// Create the AuthContext
 const AuthContext = createContext(null);
 
-// Create a custom hook to use the AuthContext
 export const useAuth = () => {
     return useContext(AuthContext);
 };
 
-// AuthProvider component
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // Check for token and fetch user profile on initial load
     useEffect(() => {
         const token = localStorage.getItem("token");
-        console.log("Token:", token);
-        setTimeout(() => {
-            if (token) {
-                apiClient.get("/user/profile")
-                    .then((response) => {
-                        console.log("User fetched:", response.data.user);
-                        setUser(response.data.user);
-                    })
-                    .catch(() => {
-                        console.log("Invalid token, removing...");
-                        localStorage.removeItem("token");
-                    })
-                    .finally(() => setLoading(false));
-            } else {
-                console.log("No token found");
-                setLoading(false);
-            }
-        }, 2000);
-    }, []);
+        if (!token) {
+            console.log("No token found");
+            setLoading(false); // Ensure loading ends if no token
+            return;
+        }
 
-    // SignIn function
+        apiClient.get("/user/profile")
+            .then((response) => {
+                console.log("User fetched:", response.data.user);
+                setUser(response.data.user);
+            })
+            .catch(() => {
+                console.log("Invalid token, removing...");
+                localStorage.removeItem("token");
+            })
+            .finally(() => setLoading(false));
+    }, []); // Ensure dependencies do not cause re-triggering
+
     const signIn = async (email, password) => {
         try {
             const response = await apiClient.post("/auth/signin", { email, password });
@@ -45,7 +38,7 @@ export const AuthProvider = ({ children }) => {
 
             localStorage.setItem("token", token); // Save the token
             const userResponse = await apiClient.get("/user/profile");
-            setUser(userResponse.data.user); // Set the user
+            setUser(userResponse.data.user); // Update the user
             return true;
         } catch (error) {
             console.error("Sign-in failed:", error);
@@ -53,10 +46,15 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // SignOut function
-    const signOut = () => {
-        localStorage.removeItem("token");
-        setUser(null);
+    const signOut = async () => {
+        try {
+            await apiClient.post("/auth/signout"); // Ensure server logs out
+        } catch (error) {
+            console.error("Sign-out failed:", error);
+        } finally {
+            localStorage.removeItem("token");
+            setUser(null);
+        }
     };
 
     const value = {

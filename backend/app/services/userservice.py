@@ -1,9 +1,9 @@
 from peewee import IntegrityError
+from playhouse.shortcuts import model_to_dict
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from ..models.data import Role, User
 from ..utils.auth import generate_token
-from ..utils.db import model_to_dict
 
 
 class UserService:
@@ -42,6 +42,7 @@ class UserService:
         first_name,
         last_name,
         email,
+        institution,
         password,
         role="Student",
         is_active=True,
@@ -67,6 +68,7 @@ class UserService:
                 last_name=last_name,
                 username=email,
                 email=email,
+                institution=institution,
                 password=hashed_password,
                 role=role_obj,  # Pass the Role object
                 is_active=is_active,

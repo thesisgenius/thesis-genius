@@ -1,10 +1,8 @@
 from datetime import datetime, timedelta, timezone
 
-from backend.app.utils.redis_helper import (add_token_to_user, blacklist_token,
-                                            get_user_tokens,
-                                            is_token_blacklisted,
-                                            is_token_expired,
-                                            revoke_user_tokens)
+from app.utils.redis_helper import (add_token_to_user, blacklist_token,
+                                    get_user_tokens, is_token_blacklisted,
+                                    is_token_expired, revoke_user_tokens)
 
 
 def test_add_token_to_user(mock_redis):

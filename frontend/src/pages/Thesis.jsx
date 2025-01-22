@@ -4,7 +4,7 @@ import "./../styles/Thesis.css";
 
 const Thesis = () => {
     const [theses, setTheses] = useState([]);
-    const [newThesis, setNewThesis] = useState({ title: "", abstract: "", status: "Pending" });
+    const [newThesis, setNewThesis] = useState({ title: "", abstract: "", status: "Draft", content: "" });
     const [loading, setLoading] = useState(true);
 
     // Fetch all theses on component load
@@ -33,9 +33,9 @@ const Thesis = () => {
     const handleCreateThesis = async (e) => {
         e.preventDefault();
         try {
-            const response = await apiClient.post("/thesis/thesis", newThesis);
+            const response = await apiClient.post("/thesis/new", newThesis);
             setTheses((prevTheses) => [response.data.thesis, ...prevTheses]); // Add the new thesis to the list
-            setNewThesis({ title: "", abstract: "", status: "Pending" }); // Reset the form
+            setNewThesis({ title: "", abstract: "", status: "Draft" }); // Reset the form
         } catch (error) {
             console.error("Failed to create thesis:", error);
         }
@@ -44,7 +44,7 @@ const Thesis = () => {
     // Handle deletion of a thesis
     const handleDeleteThesis = async (id) => {
         try {
-            await apiClient.delete(`/thesis/thesis/${id}`);
+            await apiClient.delete(`/thesis/${id}`);
             setTheses((prevTheses) => prevTheses.filter((thesis) => thesis.id !== id)); // Remove the deleted thesis
         } catch (error) {
             console.error("Failed to delete thesis:", error);
@@ -82,7 +82,7 @@ const Thesis = () => {
                     ></textarea>
                     <label>Status</label>
                     <select name="status" value={newThesis.status} onChange={handleInputChange}>
-                        <option value="Pending">Pending</option>
+                        <option value="Draft">Draft</option>
                         <option value="Approved">Approved</option>
                         <option value="Rejected">Rejected</option>
                     </select>

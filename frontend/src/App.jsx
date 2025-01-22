@@ -5,6 +5,7 @@ import SignIn from "./pages/SignIn";
 import Signup from "./pages/SignUp";
 import Dashboard from "./pages/Dashboard";
 import Thesis from "./pages/Thesis";
+import ThesisDashboard from "./pages/ThesisDashboard";
 import Forum from "./pages/Forum";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -32,6 +33,14 @@ const App = () => {
                     element={
                         <ProtectedRoute>
                             <Thesis />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/thesis/:thesisId"
+                    element={
+                        <ProtectedRoute>
+                            <ThesisDashboard />
                         </ProtectedRoute>
                     }
                 />

@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "thesis-genius"
+version = "1.0.0"
+description = "CLI for managing the Thesis Genius application"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "ThesisGenius", email = "support@thesis-genius.com" }]
+dependencies = {file = ["requirements.txt"]}
+
+[project.scripts]
+thesis-genius = "cli.main:cli"
+
+[tool.setuptools]
+package-data = { "thesis_genius" = ["py.typed"] }
+include-package-data = true

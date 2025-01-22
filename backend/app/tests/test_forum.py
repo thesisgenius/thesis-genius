@@ -1,6 +1,5 @@
 import pytest
-
-from backend.app.models.data import Role
+from app.models.data import Role
 
 
 @pytest.fixture
@@ -23,6 +22,7 @@ def user_token(client, create_role):
             "first_name": "Test",
             "last_name": "User",
             "email": "test@example.com",
+            "institution": "National University",
             "username": "testuser",
             "password": "password123",
             "role": "Student",

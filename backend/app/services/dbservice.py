@@ -1,9 +1,8 @@
 import hashlib
 
+from app.models.data import Settings
+from app.utils.db import database_proxy
 from werkzeug.security import check_password_hash, generate_password_hash
-
-from backend.app.models.data import Settings
-from backend.app.utils.db import database_proxy
 
 
 class DBService:

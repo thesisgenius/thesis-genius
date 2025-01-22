@@ -1,0 +1,33 @@
+/* src/styles/customSplitPane.css */
+
+/* Ensure the container spans the full viewport */
+.react-split {
+    display: flex;
+    height: 100vh;
+    width: 100vw; /* Use full width */
+}
+
+/* Ensure panes occupy equal space and stretch */
+.react-split__pane {
+    flex-grow: 1;
+    width: 50%; /* Each pane takes up half the width by default */
+    height: 100%; /* Full height */
+    overflow: auto; /* Scrollbars if content overflows */
+}
+
+/* Customize the sash size and appearance */
+.react-split__sash {
+    background: #007acc; /* Change color for better visibility */
+    width: 10px; /* Adjust sash thickness */
+    cursor: col-resize; /* Show resizing cursor */
+    transition: background 0.3s ease;
+}
+
+.react-split__sash:hover {
+    background: #005a9c; /* Darker blue on hover */
+}
+
+/* Adjust the inner sash content (optional) */
+.react-split__sash-content {
+    display: none; /* Hide default content */
+}

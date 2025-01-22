@@ -1,9 +1,8 @@
 from unittest import mock
 
 import pytest
-
-from backend.app.models.data import Settings
-from backend.app.services.dbservice import DBService
+from app.models.data import Settings
+from app.services.dbservice import DBService
 
 
 @pytest.fixture
@@ -35,7 +34,7 @@ def test_close_connection(db_service):
     assert db_service.db.is_closed()  # Database should now be closed
 
 
-@mock.patch("backend.app.services.dbservice.Settings")
+@mock.patch("app.services.dbservice.Settings")
 def test_load_settings(mock_settings, db_service):
     """
     Test loading settings into the app config.
@@ -55,7 +54,7 @@ def test_load_settings(mock_settings, db_service):
     assert db_service.app.config["debug_mode"] == ""
 
 
-@mock.patch("backend.app.services.dbservice.Settings")
+@mock.patch("app.services.dbservice.Settings")
 def test_save_settings(mock_settings, db_service):
     """
     Test saving application settings to the database.
@@ -72,7 +71,7 @@ def test_save_settings(mock_settings, db_service):
     assert mock_setting_instance.value == "new_user" or "new_email"
 
 
-@mock.patch("backend.app.services.dbservice.Settings")
+@mock.patch("app.services.dbservice.Settings")
 def test_verify_legacy_password(mock_settings, db_service):
     """
     Test verifying a legacy password.

@@ -7,7 +7,7 @@ import "./../styles/Signup.css";
 const Signup = () => {
     useRedirectIfAuthenticated(); // Redirect if already authenticated
 
-    const [formData, setFormData] = useState({ first_name: "", last_name: "", email: "", password: "" });
+    const [formData, setFormData] = useState({ first_name: "", last_name: "", email: "", password: "", institution: "" });
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
@@ -90,6 +90,17 @@ const Signup = () => {
                     value={formData.password}
                     onChange={handleInputChange}
                     placeholder="Enter your password"
+                    required
+                />
+
+                <label htmlFor="institution">Institution</label>
+                <input
+                    type="text"
+                    name="institution"
+                    id="institution"
+                    value={formData.institution}
+                    onChange={handleInputChange}
+                    placeholder="Enter your school or institution"
                     required
                 />
 

@@ -1,6 +1,5 @@
 import pytest
-
-from backend.app.models.data import Role, User
+from app.models.data import Role, User
 
 
 @pytest.fixture
@@ -24,6 +23,7 @@ def register_user(client, create_role):
             "last_name": "User",
             "email": "test@example.com",
             "username": "testuser",
+            "institution": "National University",
             "password": "password123",
             "role": "Student",
         },
@@ -57,6 +57,7 @@ def register_admin_user(client, create_role):
             "first_name": "Admin",
             "last_name": "User",
             "email": "admin@example.com",
+            "institution": "National University",
             "username": "adminuser",
             "password": "adminpassword123",
             "role": "Admin",
@@ -96,6 +97,7 @@ def test_register_user(client, create_role):
             "first_name": "New",
             "last_name": "User",
             "email": "newuser@example.com",
+            "institution": "National University",
             "username": "newuser",
             "password": "password456",
             "role": "Student",
@@ -181,7 +183,7 @@ def test_activate_user(client, login_admin_user, register_user):
     Test activating a user account (admin functionality).
     """
     admin_token = login_admin_user
-    from backend.app.models.data import User
+    from app.models.data import User
 
     target_user = User.get_or_none(User.email == "test@example.com")
     assert target_user is not None
