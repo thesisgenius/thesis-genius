@@ -111,13 +111,13 @@ cd thesis-genius
   ```
 - Install dependencies
   ```bash
-    python -m venv venv
+    python -m venv .venv
     source venv/bin/activate    # On Windows, use venv\Scripts\activate
     pip install -r requirements.txt
   ```
 - Run the backend server:
   ```bash
-  python run.py
+  python -m cli.main run
   ```
 - The backend will be available at `http://127.0.0.1:8557`
 

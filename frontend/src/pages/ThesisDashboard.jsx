@@ -3,12 +3,15 @@ import SplitPane, { Pane } from "split-pane-react";
 import "../styles/SplitPane.css";
 import apiClient from "../services/apiClient";
 import { useParams } from "react-router-dom";
+import { debounce } from "lodash";
 
 const ThesisDashboard = () => {
     const { thesisId } = useParams();
     const [sizes, setSizes] = useState(["50%", "50%"]);
     const [thesis, setThesis] = useState({});
+    const [localThesis, setLocalThesis] = useState({});
     const [formattedContent, setFormattedContent] = useState("");
+    const [error, setError] = useState("");
 
     // Fetch Thesis Details
     useEffect(() => {
@@ -19,6 +22,7 @@ const ThesisDashboard = () => {
         try {
             const response = await apiClient.get(`/thesis/${thesisId}`);
             setThesis(response.data.thesis);
+            setLocalThesis(response.data.thesis);
             generateLivePreview(response.data.thesis);
         } catch (error) {
             console.error("Error fetching thesis:", error.response || error.message);
@@ -30,50 +34,51 @@ const ThesisDashboard = () => {
         }
     };
 
-    const updateThesisSection = async (section, value) => {
+    const updateThesisSection = debounce(async (section, value) => {
         try {
             const data = { [section]: value };
             await apiClient.put(`/thesis/${thesisId}`, data);
             setThesis((prev) => ({ ...prev, ...data }));
-            generateLivePreview({ ...thesis, ...data });
+            generateLivePreview({ ...localThesis, ...data });
             console.log(`Successfully updated ${section}`);
         } catch (error) {
-            console.error(`Error updating ${section}:`, error);
+            setError(`Failed to update ${section}. Please try again.`);
+            console.error(error);
         }
-    };
+    }, 300);
 
     const generateLivePreview = (data) => {
         const title = data.title
             ? `<h1 style="text-align: center; font-weight: bold; text-transform: capitalize; margin-bottom: 24px;">
-            ${data.title}
-           </h1>`
+                ${data.title}
+               </h1>`
             : "";
 
         const abstract = data.abstract
             ? `<h2 style="text-align: center; font-weight: bold; margin-bottom: 12px;">Abstract</h2>
-           <p style="text-align: justify; margin: 0; line-height: 2; text-indent: 0;">
-            ${data.abstract}
-           </p>`
+               <p style="text-align: justify; margin: 0; line-height: 2;">
+                ${data.abstract}
+               </p>`
             : "";
 
         const content = data.content
             ? `<h2 style="text-align: center; font-weight: bold; margin-top: 24px; margin-bottom: 12px;">Content</h2>
-           <p style="text-align: justify; margin: 0; line-height: 2; text-indent: 0.5in;">
-            ${data.content}
-           </p>`
+               <p style="text-align: justify; margin: 0; line-height: 2; text-indent: 0.5in;">
+                ${data.content}
+               </p>`
             : "";
 
         const apaPreview = `
-        <div style="font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 2; padding: 20px;">
-            ${title}
-            ${abstract}
-            ${content}
-        </div>
-    `;
+            <div style="font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 2; padding: 20px;">
+                ${title}
+                ${abstract}
+                ${content}
+            </div>
+        `;
 
         setFormattedContent(apaPreview);
     };
-    // Custom sash render function
+
     const sashRender = (index, active) => (
         <div
             className={`sash ${active ? "active" : ""}`}
@@ -87,7 +92,8 @@ const ThesisDashboard = () => {
     );
 
     return (
-        <div style={{height: "100vh", overflow: "hidden", background: "#fafafa"}}>
+        <div style={{ height: "100vh", overflow: "hidden", background: "#fafafa" }}>
+            {error && <p style={{ color: "red", textAlign: "center" }}>{error}</p>}
             <SplitPane
                 split="vertical"
                 sizes={sizes}
@@ -103,33 +109,48 @@ const ThesisDashboard = () => {
                             <input
                                 type="text"
                                 placeholder="Title"
-                                value={thesis.title || ""}
+                                value={localThesis.title || ""}
                                 style={inputStyle}
-                                onChange={(e) =>
-                                    updateThesisSection("title", e.target.value)
-                                }
+                                onChange={(e) => {
+                                    const newValue = e.target.value;
+                                    setLocalThesis((prev) => ({
+                                        ...prev,
+                                        title: newValue,
+                                    }));
+                                    updateThesisSection("title", newValue);
+                                }}
                             />
                         </div>
                         <div style={inputGroupStyle}>
                             <h3>Abstract</h3>
                             <textarea
                                 placeholder="Abstract"
-                                value={thesis.abstract || ""}
+                                value={localThesis.abstract || ""}
                                 style={textareaStyle}
-                                onChange={(e) =>
-                                    updateThesisSection("abstract", e.target.value)
-                                }
+                                onChange={(e) => {
+                                    const newValue = e.target.value;
+                                    setLocalThesis((prev) => ({
+                                        ...prev,
+                                        abstract: newValue,
+                                    }));
+                                    updateThesisSection("abstract", newValue);
+                                }}
                             />
                         </div>
                         <div style={inputGroupStyle}>
                             <h3>Content</h3>
                             <textarea
                                 placeholder="Content"
-                                value={thesis.content || ""}
+                                value={localThesis.content || ""}
                                 style={textareaStyle}
-                                onChange={(e) =>
-                                    updateThesisSection("content", e.target.value)
-                                }
+                                onChange={(e) => {
+                                    const newValue = e.target.value;
+                                    setLocalThesis((prev) => ({
+                                        ...prev,
+                                        content: newValue,
+                                    }));
+                                    updateThesisSection("content", newValue);
+                                }}
                             />
                         </div>
                         <button style={buttonStyle} onClick={fetchThesis}>
@@ -143,7 +164,7 @@ const ThesisDashboard = () => {
                     <div style={previewPaneStyle}>
                         <h2>APA Formatted Preview</h2>
                         <div
-                            dangerouslySetInnerHTML={{__html: formattedContent}}
+                            dangerouslySetInnerHTML={{ __html: formattedContent }}
                             style={livePreviewStyle}
                         ></div>
                     </div>
@@ -153,6 +174,7 @@ const ThesisDashboard = () => {
     );
 };
 
+// Styles
 const editorPaneStyle = {
     padding: "20px",
     background: "#f4f4f4",
