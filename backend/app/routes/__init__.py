@@ -6,6 +6,7 @@ from .format import format_bp
 from .forum import forum_bp
 from .thesis import thesis_bp
 from .user import user_bp
+from .status import status_bp
 
 
 def register_routes(app):
@@ -38,7 +39,7 @@ def register_routes(app):
                 )
                 response.headers["Access-Control-Allow-Credentials"] = "true"
                 return response
-
+        app.register_blueprint(status_bp)
         app.register_blueprint(auth_bp)
         app.register_blueprint(user_bp)
         app.register_blueprint(thesis_bp)
