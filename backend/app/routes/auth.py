@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from flask import Blueprint
 from flask import current_app as app
 from flask import g, jsonify, request
+from peewee import IntegrityError
 
 from ..services.userservice import UserService
 from ..utils.auth import jwt_required
@@ -107,9 +108,34 @@ def register():
             ),
             400,
         )
+    except IntegrityError:
+        # Handle uniqueness constraint error
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Email might already be in use or username is not unique.",
+                }
+            ),
+            409,
+        )
+
+    except ValueError as e:
+        app.logger.error(f"Validation error during user creation: {e}")
+        return jsonify({"success": False, "message": str(e)}), 400
+
     except Exception as e:
+        # Log the error and return a 500 for unexpected cases
         app.logger.error(f"Error during registration: {e}")
-        return jsonify({"success": False, "message": "An internal error occurred"}), 500
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Internal Server Error. Please try again later.",
+                }
+            ),
+            500,
+        )
 
 
 @auth_bp.route("/signout", methods=["POST"])

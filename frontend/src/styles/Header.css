@@ -35,3 +35,10 @@
 .logout-button:hover {
     background-color: #ff2c2c;
 }
+
+#main-nav ul {
+    display: none;
+}
+#main-nav ul.open {
+    display: block;
+}

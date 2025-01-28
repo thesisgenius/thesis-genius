@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import apiClient from "../services/apiClient";
+import "../styles/Dashboard.css";
 
 const Dashboard = () => {
     const [user, setUser] = useState(null);
+    const [theses, setTheses] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
     const navigate = useNavigate();
 
     const fetchUserProfile = async () => {
@@ -25,87 +28,152 @@ const Dashboard = () => {
         }
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem("token");
-        navigate("/signin");
+    const fetchTheses = async () => {
+        try {
+            const response = await apiClient.get("/thesis/theses");
+            setTheses(response.data.theses || []);
+        } catch (error) {
+            console.error("Failed to fetch theses:", error);
+            setError("Failed to load theses. Please try again.");
+        }
+    };
+
+    const handleExport = async (thesisId, format) => {
+        try {
+            const response = await apiClient.get(`/format/apa/${thesisId}`, {
+                params: { format },
+                responseType: "blob",
+            });
+            let thesisName;
+            thesisName = theses.find((thesis) => thesis.id === thesisId)?.title;
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", `${thesisName}.${format}`);
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode.removeChild(link);
+        } catch (error) {
+            console.error("Error exporting thesis:", error);
+        }
+    };
+
+    // Handle deletion of a thesis
+    const handleDeleteThesis = async (id) => {
+        const confirmDelete = window.confirm(
+            "Are you sure you want to delete this thesis? This action cannot be undone."
+        );
+
+        if (!confirmDelete) {
+            return; // Exit the function if the user cancels
+        }
+
+        try {
+            await apiClient.delete(`/thesis/${id}`);
+            setTheses((prevTheses) => prevTheses.filter((thesis) => thesis.id !== id)); // Remove the deleted thesis
+        } catch (error) {
+            console.error("Failed to delete thesis:", error);
+        }
     };
 
     useEffect(() => {
         fetchUserProfile();
-    }, [navigate]);
+        fetchTheses();
+    }, []);
 
     if (loading) {
         return <p>Loading...</p>;
     }
 
-    if (!user) {
-        return <p>Failed to load user data. Please try again.</p>;
+    if (error) {
+        return (
+            <div style={styles.centered}>
+                <p>{error}</p>
+            </div>
+        );
     }
 
     return (
-        <div>
-            <h1>Welcome, {user.first_name}!</h1>
-            <p>Email: {user.email}</p>
+        <div style={styles.container}>
+            <header>
+                <h2>Welcome, {user?.first_name}!</h2>
+            </header>
+
+            <main style={styles.main}>
+                <div>
+                    <h3>Theses</h3>
+                    <ul style={{ listStyle: "none", padding: 0 }}>
+                        {theses.map((thesis) => (
+                            <li key={thesis.id} style={{ marginBottom: "10px" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                    <button
+                                        style={{
+                                            background: "none",
+                                            border: "none",
+                                            color: "#007acc",
+                                            cursor: "pointer",
+                                            textDecoration: "underline",
+                                        }}
+                                        onClick={() => navigate(`/thesis/${thesis.id}`)}
+                                    >
+                                        {thesis.title}
+                                    </button>
+                                    <div>
+                                        <button
+                                            style={styles.button}
+                                            onClick={() => handleExport(thesis.id, "docx")}
+                                        >
+                                            Word (docx)
+                                        </button>
+                                        <button
+                                            style={{...styles.button, marginLeft: "10px"}}
+                                            onClick={() => handleExport(thesis.id, "pdf")}
+                                        >
+                                            PDF
+                                        </button>
+                                        <button
+                                            style={{...styles.button, marginLeft: "10px", backgroundColor: "#ff0000"}}
+                                            onClick={() => handleDeleteThesis(thesis.id)}>Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </main>
         </div>
     );
 };
 
 export default Dashboard;
 
-// Inline CSS Styles for simplicity
+// Inline styles for simplicity
 const styles = {
     container: {
-        fontFamily: "Arial, sans-serif",
         padding: "20px",
-        backgroundColor: "#f9f9f9",
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
+        maxWidth: "800px",
+        margin: "0 auto",
+        fontFamily: "Arial, sans-serif",
     },
-    header: {
-        width: "100%",
+    list: {
+        listStyleType: "none",
+        padding: 0,
+    },
+    thesisItem: {
+        marginBottom: "15px",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        padding: "10px 20px",
-        backgroundColor: "#007acc",
-        color: "#fff",
     },
-    logoutButton: {
-        padding: "10px 20px",
-        fontSize: "14px",
-        backgroundColor: "#fff",
-        color: "#007acc",
-        border: "none",
-        borderRadius: "4px",
+    thesisTitle: {
         cursor: "pointer",
-    },
-    main: {
-        flex: 1,
-        width: "100%",
-        maxWidth: "600px",
-        marginTop: "20px",
-    },
-    profileCard: {
-        backgroundColor: "#fff",
-        padding: "20px",
-        borderRadius: "8px",
-        boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-    },
-    centered: {
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        minHeight: "100vh",
-        fontFamily: "Arial, sans-serif",
-        textAlign: "center",
+        textDecoration: "underline",
+        color: "#007acc",
     },
     button: {
-        marginTop: "20px",
-        padding: "10px 20px",
-        fontSize: "16px",
+        marginLeft: "10px",
+        padding: "5px 10px",
         backgroundColor: "#007acc",
         color: "#fff",
         border: "none",
@@ -113,3 +181,4 @@ const styles = {
         cursor: "pointer",
     },
 };
+

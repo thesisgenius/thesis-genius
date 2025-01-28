@@ -19,7 +19,6 @@ const Header = () => {
             </div>
             <nav className="nav">
                 <Link to="/dashboard">Dashboard</Link>
-                <Link to="/thesis">Thesis</Link>
                 <Link to="/forum">Forum</Link>
                 {user ? (
                     <button onClick={handleLogout} className="logout-button">

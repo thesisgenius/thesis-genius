@@ -1,6 +1,5 @@
 from flask import Blueprint, jsonify
 
-
 status_bp = Blueprint("status", __name__, url_prefix="/api/status")
 
 
@@ -11,8 +10,10 @@ def health_check():
     Verifies the application's health by checking memory, CPU, and required environment variables
     based on the current environment (development, testing, production).
     """
-    import psutil  # For system-level resource checks
     import os
+
+    import psutil  # For system-level resource checks
+
     try:
         # Check memory usage
         memory_info = psutil.virtual_memory()
@@ -26,7 +27,6 @@ def health_check():
 
         # Environment-specific checks
         flask_env = os.getenv("FLASK_ENV", "development")
-        missing_env_vars = []
 
         if flask_env == "development":
             required_env_vars = [
@@ -50,26 +50,35 @@ def health_check():
                 "PROD_DATABASE_HOST",
             ]
         else:
-            return jsonify(
-                {"status": "unhealthy", "error": "Unknown FLASK_ENV value"}
-            ), 503
+            return (
+                jsonify({"status": "unhealthy", "error": "Unknown FLASK_ENV value"}),
+                503,
+            )
 
         # Validate environment variables
         missing_env_vars = [var for var in required_env_vars if not os.getenv(var)]
         if missing_env_vars:
-            return jsonify(
-                {
-                    "status": "unhealthy",
-                    "error": "Missing required environment variables",
-                    "details": missing_env_vars,
-                }
-            ), 503
+            return (
+                jsonify(
+                    {
+                        "status": "unhealthy",
+                        "error": "Missing required environment variables",
+                        "details": missing_env_vars,
+                    }
+                ),
+                503,
+            )
 
         # If all checks pass
         return jsonify({"status": "healthy", "environment": flask_env}), 200
 
     except Exception as e:
-        return jsonify({"status": "unhealthy", "error": "Unknown error", "details": str(e)}), 500
+        return (
+            jsonify(
+                {"status": "unhealthy", "error": "Unknown error", "details": str(e)}
+            ),
+            500,
+        )
 
 
 @status_bp.route("/ready", methods=["GET"])
@@ -116,6 +125,7 @@ def readiness_check():
             jsonify({"status": "unready", "error": "Unknown Error", "details": str(e)}),
             500,
         )
+
 
 @status_bp.route("/alive", methods=["GET"])
 def alive_check():

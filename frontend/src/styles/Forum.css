@@ -12,6 +12,7 @@
     color: #333;
 }
 
+/* Create Post Form */
 .create-post {
     margin-bottom: 30px;
     padding: 20px;
@@ -63,6 +64,7 @@
     background-color: #0056b3;
 }
 
+/* Each Post */
 .posts {
     margin-top: 20px;
 }
@@ -89,4 +91,207 @@
 .post small {
     color: #666;
     font-size: 0.875rem;
+}
+
+/* ForumPostView styles */
+.post-view {
+    padding: 20px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+}
+
+.post-view h1 {
+    text-align: left;
+    margin-bottom: 10px;
+    color: #4b79a1;
+}
+
+.post-view p {
+    color: #333;
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+.post-view small {
+    display: block;
+    margin-bottom: 20px;
+    color: #666;
+    font-size: 0.875rem;
+}
+
+.comment {
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f7f7f7;
+}
+
+.comment p {
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.comment small {
+    color: #666;
+    font-size: 0.875rem;
+}
+
+.add-comment {
+    margin-top: 20px;
+}
+
+.add-comment textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    min-height: 80px;
+    resize: vertical;
+}
+
+.add-comment button {
+    margin-top: 10px;
+    padding: 10px 15px;
+    background-color: #28a745;
+    color: white;
+    font-size: 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.add-comment button:hover {
+    background-color: #218838;
+}
+
+/* New Post Button */
+.new-post-btn {
+    display: block;
+    margin: 20px auto;
+    padding: 10px 15px;
+    font-size: 1rem;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+}
+
+.new-post-btn:hover {
+    background-color: #0056b3;
+}
+
+/* Post Summary (in post list) */
+.post-summary {
+    padding: 15px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: box-shadow 0.2s ease;
+}
+
+.post-summary:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    background-color: #f8f9fa;
+}
+
+.post-summary h3 {
+    margin-bottom: 5px;
+    color: #4b79a1;
+    font-size: 1.25rem;
+}
+
+.post-summary p {
+    margin-bottom: 10px;
+    color: #555;
+    font-size: 1rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap; /* Ensures the content is cut off on overflow */
+}
+
+.post-summary small {
+    color: #666;
+    font-size: 0.875rem;
+}
+
+/* Error Message Styling */
+.error-message {
+    padding: 10px;
+    margin: 20px 0;
+    border: 1px solid #e74c3c;
+    border-radius: 4px;
+    background-color: #fbeaea;
+    color: #e74c3c;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+/* Loading Text */
+.loading-text {
+    text-align: center;
+    color: #555;
+    font-size: 1rem;
+    margin-top: 20px;
+}
+
+/* ForumPost (create/update post form) styles */
+.post-form {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.post-form h1 {
+    margin-bottom: 20px;
+    text-align: center;
+    color: #4b79a1;
+}
+
+.post-form form {
+    display: flex;
+    flex-direction: column;
+}
+
+.post-form input[type="text"],
+.post-form textarea {
+    margin-bottom: 15px;
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.post-form textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.post-form button {
+    padding: 10px;
+    font-size: 1rem;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    align-self: flex-start;
+}
+
+.post-form button:hover {
+    background-color: #0056b3;
 }

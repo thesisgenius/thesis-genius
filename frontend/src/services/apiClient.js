@@ -19,16 +19,63 @@ apiClient.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// Add response interceptor for error handling
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+    failedQueue.forEach((promise) => {
+        if (token) {
+            promise.resolve(token);
+        } else {
+            promise.reject(error);
+        }
+    });
+
+    failedQueue = [];
+};
+
 apiClient.interceptors.response.use(
     (response) => response,
-    (error) => {
-        if (error.response && error.response.status === 401) {
-            localStorage.removeItem("token");
-            window.location.href = "/signin"; // Redirect to sign-in
+    async (error) => {
+        const originalRequest = error.config;
+
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            if (isRefreshing) {
+                return new Promise((resolve, reject) => {
+                    failedQueue.push({ resolve, reject });
+                })
+                    .then((token) => {
+                        originalRequest.headers["Authorization"] = `Bearer ${token}`;
+                        return axios(originalRequest);
+                    })
+                    .catch((err) => Promise.reject(err));
+            }
+
+            originalRequest._retry = true;
+            isRefreshing = true;
+
+            try {
+                const { data } = await axios.post("/auth/refresh-token", {
+                    token: localStorage.getItem("refreshToken"),
+                });
+
+                localStorage.setItem("token", data.token);
+
+                originalRequest.headers["Authorization"] = `Bearer ${data.token}`;
+                processQueue(null, data.token);
+                return apiClient(originalRequest);
+            } catch (err) {
+                processQueue(err, null);
+                localStorage.removeItem("token");
+                return Promise.reject(err);
+            } finally {
+                isRefreshing = false;
+            }
         }
+
         return Promise.reject(error);
     }
 );
 
 export default apiClient;
+

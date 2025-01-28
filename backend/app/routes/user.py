@@ -18,7 +18,7 @@ def get_user_profile():
     user_service = UserService(app.logger)
     try:
         user_id = g.user_id
-        user_data = user_service.get_user_data(user_id)
+        user_data = user_service.fetch_user_data(user_id)
         if not user_data:
             return jsonify({"success": False, "message": "User not found"}), 404
 
@@ -63,7 +63,7 @@ def update_user_profile():
                 400,
             )
 
-        success = user_service.update_user_data(user_id, updated_data)
+        success = user_service.update_user(user_id, updated_data)
         if success:
             return (
                 jsonify({"success": True, "message": "Profile updated successfully"}),
@@ -90,7 +90,7 @@ def deactivate_user():
 
         if not token:
             return jsonify({"success": False, "message": "Token is missing"}), 400
-        success = user_service.deactivate_user(user_id, token)
+        success = user_service.update_user(user_id, token)
         if success:
             return (
                 jsonify(
@@ -118,18 +118,39 @@ def activate_user(user_id):
     Allow an admin to activate a user's account.
     """
     user_service = UserService(app.logger)
-    target_user = user_service.get_user_data(user_id)
 
-    if not target_user or target_user["is_active"]:
+    # Change user status using the `change_user_status` method
+    try:
+        success = user_service.change_user_status(user_id=user_id, is_active=True)
+        if success:
+            return (
+                jsonify({"success": True, "message": "User activated successfully"}),
+                200,
+            )
         return (
             jsonify(
                 {"success": False, "message": "User is already active or not found"}
             ),
             400,
         )
+    except Exception as e:
+        app.logger.error(f"Error activating user {user_id}: {e}")
+        return jsonify({"success": False, "message": "Failed to activate user"}), 500
 
-    success = user_service.activate_user(user_id)
+
+@user_bp.route("/<int:user_id>", methods=["DELETE"])
+@jwt_required
+@admin_required
+def delete_user(user_id):
+    """
+    Endpoint to delete a user by ID.
+    """
+    user_service = UserService(app.logger)
+    user = user_service.fetch_user_data(user_id)
+    if not user:
+        return jsonify({"error": f"User with ID {user_id} not found"}), 404
+
+    success = user_service.update_user(user_id, {"is_active": False})
     if success:
-        return jsonify({"success": True, "message": "User activated successfully"}), 200
-
-    return jsonify({"success": False, "message": "Failed to activate user"}), 400
+        return jsonify({"message": f"User {user_id} deactivated successfully"}), 200
+    return jsonify({"error": f"Failed to deactivate user {user_id}"}), 500
