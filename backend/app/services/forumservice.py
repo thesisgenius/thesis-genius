@@ -1,5 +1,7 @@
-from peewee import PeeweeException
 from datetime import datetime, timezone
+
+from peewee import PeeweeException
+
 from ..models.data import PostComment, Posts, User
 
 
@@ -63,7 +65,7 @@ class ForumService:
         :param post_data: Dictionary containing post details (title, content).
         :return: Dictionary with the created post details or None if creation fails.
         """
-    
+
         def execute_create():
             post = Posts.create(
                 user=user_id,
@@ -73,22 +75,21 @@ class ForumService:
                 updated_at=datetime.now(timezone.utc),
             )
             return post.id  # Return the ID of the newly created post
-    
+
         post_id = self._safe_execute(
             execute_create,
             log_error_msg=f"Error creating post for user {user_id}: {{error}}",
             on_error=None,
         )
-    
+
         if post_id:
             self.logger.info(f"Post {post_id} created successfully by user {user_id}.")
             return {"id": post_id, **post_data}
-    
+
         self.logger.error(
             f"Post creation failed for user {user_id} with data {post_data}."
         )
         return None
-
 
     def get_all_posts(self, page=1, per_page=10, order_by=None):
         """
@@ -121,7 +122,9 @@ class ForumService:
                         Posts.title,
                         Posts.description,
                         Posts.content,
-                        Posts.user.alias("post_user"),  # Alias to avoid potential conflicts
+                        Posts.user.alias(
+                            "post_user"
+                        ),  # Alias to avoid potential conflicts
                         Posts.created_at,
                         Posts.updated_at,
                         User.id.alias("user_id"),  # User fields
@@ -139,7 +142,7 @@ class ForumService:
 
             except Posts.DoesNotExist:
                 # Handle the case where the post does not exist
-                app.logger.warning(f"Post with ID {post_id} not found in the database")
+                self.logger.warning(f"Post with ID {post_id} not found in the database")
                 return None
 
         return self._safe_execute(
@@ -168,7 +171,9 @@ class ForumService:
                     User.first_name,
                     User.last_name,
                 )
-                .join(User, on=(PostComment.user == User.id))  # Join User table using foreign key
+                .join(
+                    User, on=(PostComment.user == User.id)
+                )  # Join User table using foreign key
                 .where(PostComment.post == post_id)
                 .dicts()
             )
@@ -182,7 +187,6 @@ class ForumService:
             on_error={"results": [], "total": 0, "page": page, "per_page": per_page},
         )
 
-
     def update_post(self, post_id, post_data, user_id):
         """
         Update a forum post.
@@ -195,9 +199,7 @@ class ForumService:
         def execute_update():
             # Update the post and set the updated_at field
             return (
-                Posts.update(
-                    **post_data, updated_at=datetime.now(timezone.utc)
-                )
+                Posts.update(**post_data, updated_at=datetime.now(timezone.utc))
                 .where((Posts.id == post_id) & (Posts.user == user_id))
                 .execute()
             )
@@ -271,9 +273,7 @@ class ForumService:
             # Perform the deletion
             self.delete_all_comments(post_id)
             post.delete_instance()
-            self.logger.info(
-                f"Post {post_id} deleted successfully by user {user_id}."
-            )
+            self.logger.info(f"Post {post_id} deleted successfully by user {user_id}.")
             return True
 
         return self._safe_execute(

@@ -50,28 +50,32 @@ def view_post(post_id):
         )
 
         # Format and return the response
-        return jsonify({
-            "success": True,
-            "post": {
-                "id": post["id"],
-                "title": post["title"],
-                "description": post["description"],
-                "content": post["content"],
-                "created_at": post["created_at"],
-                "updated_at": post["updated_at"],
-            },
-            "user": {
-                "id": post["user_id"],  # User ID from the joined User table
-                "username": post["username"],
-                "first_name": post["first_name"],
-                "last_name": post["last_name"],
-            },
-            "comments": comments_data
-        }), 200
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "post": {
+                        "id": post["id"],
+                        "title": post["title"],
+                        "description": post["description"],
+                        "content": post["content"],
+                        "created_at": post["created_at"],
+                        "updated_at": post["updated_at"],
+                    },
+                    "user": {
+                        "id": post["user_id"],  # User ID from the joined User table
+                        "username": post["username"],
+                        "first_name": post["first_name"],
+                        "last_name": post["last_name"],
+                    },
+                    "comments": comments_data,
+                }
+            ),
+            200,
+        )
     except Exception as e:
         app.logger.error(f"Error fetching post {post_id}: {e}")
         return jsonify({"success": False, "message": "Failed to fetch post"}), 500
-
 
 
 @forum_bp.route("/posts/new", methods=["POST"])
@@ -112,6 +116,7 @@ def create_post():
         app.logger.error(f"Error creating post: {e}")
         return jsonify({"success": False, "message": "An internal error occurred"}), 500
 
+
 @forum_bp.route("/posts/<int:post_id>", methods=["PUT"])
 @jwt_required
 def update_post(post_id):
@@ -122,17 +127,25 @@ def update_post(post_id):
     try:
         data = request.json
         if not data or ("title" not in data and "content" not in data):
-            return jsonify({"success": False, "message": "Title or content is required"}), 400
+            return (
+                jsonify({"success": False, "message": "Title or content is required"}),
+                400,
+            )
 
         user_id = g.user_id  # Ensure the user is authorized to update the post
         success = forum_service.update_post(post_id, data, user_id)
         if success:
-            return jsonify({"success": True, "message": "Post updated successfully"}), 200
-        return jsonify({"success": False, "message": "Post not found or unauthorized"}), 404
+            return (
+                jsonify({"success": True, "message": "Post updated successfully"}),
+                200,
+            )
+        return (
+            jsonify({"success": False, "message": "Post not found or unauthorized"}),
+            404,
+        )
     except Exception as e:
         app.logger.error(f"Error updating post {post_id}: {e}")
         return jsonify({"success": False, "message": "An internal error occurred"}), 500
-
 
 
 @forum_bp.route("/posts/<int:post_id>/comments", methods=["POST"])
@@ -222,6 +235,7 @@ def update_comment(post_id, comment_id):
     except Exception as e:
         app.logger.error(f"Error updating comment {comment_id} for post {post_id}: {e}")
         return jsonify({"success": False, "message": "An internal error occurred"}), 500
+
 
 @forum_bp.route("/posts/<int:post_id>/comments/<int:comment_id>", methods=["DELETE"])
 @jwt_required
