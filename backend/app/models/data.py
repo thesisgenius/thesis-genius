@@ -176,6 +176,9 @@ class PostComment(BaseModel):
         table_name = "post_comments"
         indexes = ((("id", "user_id"), True),)
 
+    def get_user_id(self):
+        return str(self.user)
+
 
 class SessionLog(BaseModel):
     id = AutoField(primary_key=True, column_name="session_id")

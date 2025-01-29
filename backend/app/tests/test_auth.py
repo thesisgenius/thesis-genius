@@ -118,7 +118,7 @@ def test_register_user_missing_fields(client, create_role):
     assert response.status_code == 400
     assert response.json["success"] is False
     assert (
-        "First name, last name, email, and password are required"
+        "First name, last name, email, institution and password are required"
         in response.json["message"]
     )
 
@@ -136,9 +136,10 @@ def test_register_user_duplicate_email(client, register_user, create_role):
             "username": "duplicateuser",
             "password": "password123",
             "role": "Student",
+            "institution": "Test University",
         },
     )
-    assert response.status_code == 400
+    assert response.status_code == 409
     assert response.json["success"] is False
     assert "Email might already be in use" in response.json["message"]
 

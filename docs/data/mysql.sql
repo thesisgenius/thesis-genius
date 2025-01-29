@@ -52,6 +52,6 @@ INSERT INTO theses (user_id, title, author, abstract, status, submission_date) V
 -- Insert forums into forums table
 INSERT INTO posts (user_id, title, description, body, created_at)
 VALUES
-    (1, 'Welcome to the Forum', 'Sample post 1','This is the first forum post!', NOW()),
+    (1, 'Welcome to the ForumDashboard', 'Sample post 1','This is the first forum post!', NOW()),
     (2, 'Discussion about Thesis', 'Sample post 2', 'Share your ideas and feedback.', NOW());
 

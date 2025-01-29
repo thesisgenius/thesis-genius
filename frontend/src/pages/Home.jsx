@@ -1,14 +1,14 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import "../styles/Home.css";
+import "../styles/Home.css"
 
 const Home = () => {
     return (
         <div className="home-container">
             <header className="hero-section">
                 <div className="hero-content">
-                    <h1>Welcome to Thesis Genius</h1>
-                    <p>Your platform for managing theses and engaging in academic discussions.</p>
+                    <h1>ThesisGenius</h1>
+                    <p>Write smart, stress less</p>
                     <div className="hero-buttons">
                         <Link to="/signin" className="button primary">Sign In</Link>
                         <Link to="/signup" className="button secondary">Sign Up</Link>
@@ -23,7 +23,7 @@ const Home = () => {
                         <p>Easily create, edit, and track the progress of your academic work.</p>
                     </div>
                     <div className="feature">
-                        <h3>Engage in Forums</h3>
+                        <h3>Academic Forums</h3>
                         <p>Join discussions with peers and experts in your field.</p>
                     </div>
                     <div className="feature">

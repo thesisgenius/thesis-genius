@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from flask import Blueprint
 from flask import current_app as app
 from flask import g, jsonify, request
+from peewee import IntegrityError
 
 from ..services.userservice import UserService
 from ..utils.auth import jwt_required
@@ -64,29 +65,34 @@ def register():
         if not data:
             return jsonify({"success": False, "message": "Missing request body"}), 400
 
+        # Validate required fields before proceeding
         first_name = data.get("first_name")
         last_name = data.get("last_name")
         email = data.get("email")
-        institution = data.get("institution")
         password = data.get("password")
-        role = data.get("role", "Student")
-        is_active = True
+        institution = data.get("institution")
 
-        if not first_name or not last_name or not email or not password:
+        if not all([first_name, last_name, email, password, institution]):
             return (
                 jsonify(
                     {
                         "success": False,
-                        "message": "First name, last name, email, and password are required",
+                        "message": "First name, last name, email, institution and password are required",
                     }
                 ),
                 400,
             )
 
+        # Set username to email prefix if not provided
+        username = data.get("username", email.split("@")[0])
+        role = data.get("role", "Student")
+        is_active = True
+
         success = user_service.create_user(
             first_name=first_name,
             last_name=last_name,
             email=email,
+            username=username,
             institution=institution,
             password=password,
             role=role,
@@ -107,9 +113,35 @@ def register():
             ),
             400,
         )
+    except IntegrityError:
+        # Handle uniqueness constraint error
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Email might already be in use or username is not unique.",
+                }
+            ),
+            409,
+        )
+
+    except ValueError as e:
+        app.logger.error(f"Validation error during user creation: {e}")
+        return jsonify({"success": False, "message": str(e)}), 400
+
     except Exception as e:
+        # Log the error and return a 500 for unexpected cases
         app.logger.error(f"Error during registration: {e}")
-        return jsonify({"success": False, "message": "An internal error occurred"}), 500
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Internal Server Error. Please try again later.",
+                }
+            ),
+            500,
+        )
+
 
 
 @auth_bp.route("/signout", methods=["POST"])

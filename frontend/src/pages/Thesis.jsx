@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import apiClient from "../services/apiClient";
-import "./../styles/Thesis.css";
+import "../styles/ThesisCreate.css";
 
 const Thesis = () => {
     const [theses, setTheses] = useState([]);
-    const [newThesis, setNewThesis] = useState({ title: "", abstract: "", status: "Draft", content: "" });
+    const [newThesis, setNewThesis] = useState({ title: "ThesisGenius", abstract: "[Abstract Content]", status: "Draft", content: "[Content]" });
     const [loading, setLoading] = useState(true);
 
     // Fetch all theses on component load
