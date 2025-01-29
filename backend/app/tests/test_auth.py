@@ -118,7 +118,7 @@ def test_register_user_missing_fields(client, create_role):
     assert response.status_code == 400
     assert response.json["success"] is False
     assert (
-        "First name, last name, email, and password are required"
+        "First name, last name, email, institution and password are required"
         in response.json["message"]
     )
 

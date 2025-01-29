@@ -65,24 +65,14 @@ def register():
         if not data:
             return jsonify({"success": False, "message": "Missing request body"}), 400
 
+        # Validate required fields before proceeding
         first_name = data.get("first_name")
         last_name = data.get("last_name")
         email = data.get("email")
-        username = data.get(
-            "username", email.split("@")[0]
-        )  # Ensure username matches email unless specified
-        institution = data.get("institution")
         password = data.get("password")
-        role = data.get("role", "Student")
-        is_active = True
+        institution = data.get("institution")
 
-        if (
-            not first_name
-            or not last_name
-            or not email
-            or not password
-            or not institution
-        ):
+        if not all([first_name, last_name, email, password, institution]):
             return (
                 jsonify(
                     {
@@ -92,6 +82,11 @@ def register():
                 ),
                 400,
             )
+
+        # Set username to email prefix if not provided
+        username = data.get("username", email.split("@")[0])
+        role = data.get("role", "Student")
+        is_active = True
 
         success = user_service.create_user(
             first_name=first_name,
@@ -146,6 +141,7 @@ def register():
             ),
             500,
         )
+
 
 
 @auth_bp.route("/signout", methods=["POST"])
