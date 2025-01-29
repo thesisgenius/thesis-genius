@@ -112,3 +112,19 @@
 .dashboard-button:hover {
     background-color: #0056b3;
 }
+
+.error-message {
+    color: red;
+    text-align: center;
+    margin: 20px 0;
+    font-weight: bold;
+}
+
+.thesis-item .danger {
+    background-color: #ff4b4b;
+    color: white;
+}
+
+.thesis-item .danger:hover {
+    background-color: #d43f3f;
+}

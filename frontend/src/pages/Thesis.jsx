@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import apiClient from "../services/apiClient";
-import "./../styles/Thesis.css";
+import "../styles/ThesisCreate.css";
 
 const Thesis = () => {
     const [theses, setTheses] = useState([]);

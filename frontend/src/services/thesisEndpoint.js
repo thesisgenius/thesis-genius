@@ -70,7 +70,18 @@ const thesisAPI = {
         }
     },
 
-    // Add similar functions for references, tables, appendices, etc.
+    // Export a formatted thesis
+    exportThesis: async (thesisId, format) => {
+        try {
+            const response = await apiClient.get(`/format/apa/${thesisId}`, {
+                params: { format },
+                responseType: "blob", // Ensure it's returned as a file blob
+            });
+            return response;
+        } catch (error) {
+            throw error;
+        }
+    },
 };
 
 export default thesisAPI;

@@ -57,6 +57,7 @@ class UserService:
         first_name,
         last_name,
         email,
+        username,
         institution=None,
         password=None,
         role=DEFAULT_ROLE,
@@ -89,7 +90,7 @@ class UserService:
                 first_name=first_name,
                 last_name=last_name,
                 email=email,
-                username=email,  # Ensure username matches email unless specified
+                username=username,
                 institution=institution,
                 password=hashed_password,
                 role=role_obj,

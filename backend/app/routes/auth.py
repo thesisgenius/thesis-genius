@@ -68,17 +68,18 @@ def register():
         first_name = data.get("first_name")
         last_name = data.get("last_name")
         email = data.get("email")
+        username = data.get("username", email.split("@")[0]) # Ensure username matches email unless specified
         institution = data.get("institution")
         password = data.get("password")
         role = data.get("role", "Student")
         is_active = True
 
-        if not first_name or not last_name or not email or not password:
+        if not first_name or not last_name or not email or not password or not institution:
             return (
                 jsonify(
                     {
                         "success": False,
-                        "message": "First name, last name, email, and password are required",
+                        "message": "First name, last name, email, institution and password are required",
                     }
                 ),
                 400,
@@ -88,6 +89,7 @@ def register():
             first_name=first_name,
             last_name=last_name,
             email=email,
+            username=username,
             institution=institution,
             password=password,
             role=role,

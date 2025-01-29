@@ -1,4 +1,5 @@
 :root {
+  --width: 100%;
   --max-width: 1280px;
   --padding: 2rem;
   --logo-height: 6em;
@@ -10,10 +11,15 @@
 }
 
 #root {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  width: var(--width);
   max-width: var(--max-width);
-  margin: 0 auto;
   padding: var(--padding);
-  text-align: center;
+  text-align: left;
 }
 
 .app-logo {
