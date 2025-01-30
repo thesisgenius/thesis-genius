@@ -28,7 +28,7 @@ const ExpandableMenu = () => {
 
     const handleLogout = () => {
         signOut();
-        navigate("/signin");
+        navigate("/");
     };
 
     const toggleMenu = () => {
