@@ -19,7 +19,7 @@ describe("Header", () => {
             </MemoryRouter>
         );
 
-        const headerElement = screen.getByText(/Thesis Genius/i);
+        const headerElement = screen.getByText(/ThesisGenius/i);
         expect(headerElement).toBeInTheDocument();
     });
 });

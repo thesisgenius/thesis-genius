@@ -85,12 +85,12 @@ def create_thesis():
         content = data.get("content")
         status = data.get("status")
 
-        if not title or not abstract or not status:
+        if not title or not status:
             return (
                 jsonify(
                     {
                         "success": False,
-                        "message": "Title, abstract, and status are required",
+                        "message": "Title and status are required",
                     }
                 ),
                 400,
