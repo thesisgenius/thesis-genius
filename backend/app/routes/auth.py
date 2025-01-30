@@ -143,7 +143,6 @@ def register():
         )
 
 
-
 @auth_bp.route("/signout", methods=["POST"])
 @jwt_required
 def signout():
