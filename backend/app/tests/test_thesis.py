@@ -104,7 +104,7 @@ def test_create_thesis_missing_fields(client, user_token):
     )
     assert response.status_code == 400
     assert response.json["success"] is False
-    assert "Title, abstract, and status are required" in response.json["message"]
+    assert "Title and status are required" in response.json["message"]
 
 
 def test_get_theses(client, user_token, create_thesis):
