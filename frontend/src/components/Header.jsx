@@ -1,88 +1,45 @@
-import React, { useState } from "react";
+import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-    faUser,
-    faSignOutAlt,
-    faSignInAlt,
-    faDashboard,
-    faComments,
-    faBars,
-    faTimes,
-} from "@fortawesome/free-solid-svg-icons";
 import "../styles/Header.css";
 
-const LOGO_PATH = "/tg-white.png";
-const LOGO_ALT = "ThesisGenius";
-const NAV_LINKS = [
-    { to: "/dashboard", label: "Dashboard", icon: faDashboard },
-    { to: "/forum", label: "Forum", icon: faComments },
-    { to: "/signup", label: "Sign Up", icon: faUser },
-];
+const Header = () => {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
-const ExpandableMenu = () => {
-    const { user, signOut } = useAuth();
-    const navigate = useNavigate();
-    const [isMenuOpen, setIsMenuOpen] = useState(false); // State to control menu expand/collapse
+  const temp = "temp";
 
-    const handleLogout = () => {
-        signOut();
-        navigate("/signin");
-    };
+  const handleLogout = () => {
+    signOut();
+    navigate("/signin");
+  };
 
-    const toggleMenu = () => {
-        setIsMenuOpen((prev) => !prev); // Toggle menu state
-    };
-
-    const renderNavLinks = () =>
-        NAV_LINKS.map(({ to, label, icon }) => (
-            <li key={to}>
-                <Link to={to}>
-                    <FontAwesomeIcon icon={icon} /> {label}
-                </Link>
-            </li>
-        ));
-
-    const renderAuthSection = user ? (
-        <li>
-            <button onClick={handleLogout} className="logout-button">
-                <FontAwesomeIcon icon={faSignOutAlt} /> Logout
-            </button>
-        </li>
-    ) : (
-        <li>
-            <Link to="/signin">
-                <FontAwesomeIcon icon={faSignInAlt} /> Sign In
-            </Link>
-        </li>
-    );
-
-    return (
-        <div className="header">
-            {/* Logo Section on the Left */}
-            <div className="logo">
-                <img src={LOGO_PATH} alt={LOGO_ALT} onClick={() => "/"}/>
-                <Link to="/">ThesisGenius</Link>
-                <sub>write smart, stress less</sub>
-            </div>
-
-            {/* Hamburger Menu on the Right */}
-            <div className="menu-toggle" onClick={toggleMenu}>
-                <FontAwesomeIcon icon={isMenuOpen ? faTimes : faBars} size="lg" />
-            </div>
-
-            {/* Expandable Menu */}
-            {isMenuOpen && (
-                <nav className={`menu ${isMenuOpen ? "open" : ""}`}>
-                    <ul>
-                        {renderNavLinks()}
-                        {renderAuthSection}
-                    </ul>
-                </nav>
-            )}
-        </div>
-    );
+  return (
+    <header className="header">
+      <div className="logo">
+        <img
+          src="/owl.png"
+          alt="Logo"
+          className="img img-responsive logo-class"
+        />
+        <Link to="/">Thesis Genius</Link>
+      </div>
+      <nav className="nav">
+        <Link to="/dash">Dashboard</Link>
+        <Link to="/about">About</Link>
+        <a href="https://resources.nu.edu/Chatpage" target="_blank">
+          Forum
+        </a>
+        {user ? (
+          <button onClick={handleLogout} className="btn btn-danger">
+            Logoff
+          </button>
+        ) : (
+          <Link to="/signin">Sign in</Link>
+        )}
+      </nav>
+    </header>
+  );
 };
 
-export default ExpandableMenu;
+export default Header;

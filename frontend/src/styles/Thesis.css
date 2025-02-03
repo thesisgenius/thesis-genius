@@ -1,4 +1,4 @@
-.forum-container {
+.thesis-container {
     max-width: 800px;
     margin: 20px auto;
     padding: 20px;
@@ -7,12 +7,12 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.forum-container h1 {
+.thesis-container h1 {
     text-align: center;
     color: #333;
 }
 
-.create-post {
+.create-thesis {
     margin-bottom: 30px;
     padding: 20px;
     background-color: #fff;
@@ -20,23 +20,24 @@
     border-radius: 5px;
 }
 
-.create-post h2 {
+.create-thesis h2 {
     margin-bottom: 10px;
     color: #4b79a1;
 }
 
-.create-post form {
+.create-thesis form {
     display: flex;
     flex-direction: column;
 }
 
-.create-post label {
+.create-thesis label {
     margin-bottom: 5px;
     font-weight: bold;
 }
 
-.create-post input,
-.create-post textarea {
+.create-thesis input,
+.create-thesis textarea,
+.create-thesis select {
     margin-bottom: 15px;
     padding: 10px;
     border: 1px solid #ccc;
@@ -44,12 +45,12 @@
     font-size: 1rem;
 }
 
-.create-post textarea {
+.create-thesis textarea {
     resize: vertical;
     min-height: 100px;
 }
 
-.create-post button {
+.create-thesis button {
     padding: 10px 15px;
     font-size: 1rem;
     background-color: #007bff;
@@ -59,15 +60,15 @@
     cursor: pointer;
 }
 
-.create-post button:hover {
+.create-thesis button:hover {
     background-color: #0056b3;
 }
 
-.posts {
+.theses {
     margin-top: 20px;
 }
 
-.post {
+.thesis {
     padding: 15px;
     margin-bottom: 15px;
     border: 1px solid #ddd;
@@ -76,17 +77,31 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.post h3 {
+.thesis h3 {
     margin-bottom: 5px;
     color: #4b79a1;
 }
 
-.post p {
+.thesis p {
     margin-bottom: 10px;
     color: #333;
 }
 
-.post small {
+.thesis small {
     color: #666;
     font-size: 0.875rem;
+}
+
+.thesis button {
+    margin-top: 10px;
+    padding: 5px 10px;
+    background-color: #ff4b4b;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.thesis button:hover {
+    background-color: #d43f3f;
 }

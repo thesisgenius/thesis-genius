@@ -2,11 +2,15 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css"; // Import Quill's CSS
 import FadingBanner from "../components/FadingBanner";
 
-const Body = () => {
-  // State to manage the selected section and its content
-  const [selectedSection, setSelectedSection] = useState("Literature Review");
+const ThesisBody = () => {
+  // State for selected section and content
+  const [selectedSection, setSelectedSection] = useState(
+    "Chapter I: Introduction"
+  );
   const [sectionContent, setSectionContent] = useState({
     "Chapter I: Introduction":
       "This is where the introduction content of the thesis will go...",
@@ -20,25 +24,25 @@ const Body = () => {
       "The discussion section interprets the results of the study. It explains the significance of the findings and how they relate to the research questions and objectives.",
   });
 
-  // Handler to change the selected section
+  // Function to change selected section
   const handleSectionChange = (section) => {
     setSelectedSection(section);
   };
 
-  // Handler to update the section content as the user types
-  const handleContentChange = (event) => {
+  // Function to update content dynamically
+  const handleContentChange = (value) => {
     setSectionContent({
       ...sectionContent,
-      [selectedSection]: event.target.value,
+      [selectedSection]: value, // Store HTML content
     });
   };
 
   return (
     <div className="container">
       <div className="col-md-12">
-        <h3 className="flex text-center">{selectedSection}</h3>
+        <h3 className="flex">{selectedSection}</h3>
         <div className="row">
-          {/* Sidebar with Links */}
+          {/* Sidebar Navigation */}
           <div className="col-md-2">
             <ul className="list-group">
               {Object.keys(sectionContent).map((section) => (
@@ -58,20 +62,33 @@ const Body = () => {
             </ul>
           </div>
 
-          {/* Textarea for Editing */}
+          {/* Rich Text Editor */}
           <div className="col-md-5 border">
-            <textarea
-              className="form-control"
-              style={{ height: "200px" }}
+            <ReactQuill
+              theme="snow"
               value={sectionContent[selectedSection]}
               onChange={handleContentChange}
+              modules={{
+                toolbar: [
+                  [{ header: [1, 2, 3, false] }],
+                  ["bold", "italic", "underline"],
+                  [{ list: "ordered" }, { list: "bullet" }],
+                  ["blockquote", "code-block"],
+                  ["link", "image"], // Allows inserting images
+                  ["clean"], // Clears formatting
+                ],
+              }}
             />
           </div>
 
-          {/* Display Screen */}
+          {/* Display Screen (Renders HTML Content) */}
           <div className="col-md-5 border display-screen">
             <h4>{selectedSection}</h4>
-            <p>{sectionContent[selectedSection]}</p>
+            <div
+              dangerouslySetInnerHTML={{
+                __html: sectionContent[selectedSection],
+              }}
+            />
           </div>
         </div>
       </div>
@@ -89,4 +106,4 @@ const Body = () => {
   );
 };
 
-export default Body;
+export default ThesisBody;
