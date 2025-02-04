@@ -12,7 +12,13 @@ load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
 
 @click.group()
 def cli():
-    """ThesisGenius CLI - Manage backend operations."""
+    """
+    This function serves as the entry point for a Click command-line interface (CLI) application. It defines a group of
+    commands to which individual CLI commands can be added. This group enables logical organization and handling
+    of multiple commands within a single CLI application.
+
+    :return: None
+    """
     pass
 
 
@@ -26,7 +32,18 @@ cli.add_command(user_cli, name="user")
 @click.option("--port", default=8557, help="Port for the Flask application.")
 @click.option("--env", default="development", help="Runtime environment for Flask.")
 def run(host, port, env):
-    """Run the Flask application."""
+    """
+    Runs a Flask application server.
+
+    This function sets up and starts a Flask application server based on the provided
+    host, port, and runtime environment. It logs the startup information and raises an
+    exception in case of a failure during execution.
+
+    :param host: The hostname or IP address where the Flask application will run.
+    :param port: The port number on which the Flask server will listen.
+    :param env: The Flask runtime environment (e.g., "development", "production").
+    :return: None
+    """
     try:
         app = create_app(env)
         app.logger.info(f"Starting Flask server in {env} environment")

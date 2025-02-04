@@ -11,6 +11,20 @@ ADMIN_ROLE = "Admin"
 
 
 class UserService:
+    """
+    Provides services related to user management, authentication, and user status
+    updates. This class implements functionalities to handle typical user-related
+    operations such as creating a new user, authenticating, updating profile data,
+    managing user status, logging out, and generating JWT tokens.
+
+    This is designed to integrate with a database model for storing user and role
+    information, as well as handling login sessions and token-based authentication.
+
+    :ivar logger: Instance of a logging framework used for debugging, informational,
+        and error logging.
+    :type logger: logging.Logger
+    """
+
     def __init__(self, logger):
         """Initialize the UserService with a logger instance."""
         self.logger = logger
@@ -36,7 +50,22 @@ class UserService:
 
     # --- Main Service Methods ---
     def authenticate_user(self, email, password):
-        """Authenticate a user by their email and password."""
+        """
+        Authenticates a user by verifying their email and password. This method
+        checks whether the provided email corresponds to an active user
+        in the database and validates the provided password against the
+        stored password hash. If authentication is successful, the user's
+        details are returned as a dictionary.
+
+        :param email: The email address of the user to authenticate.
+        :type email: str
+        :param password: The password of the user to authenticate.
+        :type password: str
+        :return: A dictionary containing the user's details if authentication
+            is successful, or None if authentication fails or any exception
+            occurs.
+        :rtype: Optional[dict]
+        """
         try:
             user = self._get_user_by_email(email)
             if not user or not user.is_active:
@@ -65,7 +94,34 @@ class UserService:
         is_admin=None,
     ):
         """
-        Create a new user with the given details. Raises specific exceptions for errors.
+        Creates a new user with specific parameters such as personal details, credentials, and role. This method
+        validates the input, such as ensuring the role exists, hashes the password, and determines admin status
+        based on the provided or inferred role. If any error is encountered during the creation process,
+        appropriate exceptions will be raised.
+
+        :param first_name: The first name of the user.
+        :type first_name: str
+        :param last_name: The last name of the user.
+        :type last_name: str
+        :param email: The email address of the user, used for unique identification.
+        :type email: str
+        :param username: The username of the user, used for login purposes.
+        :type username: str
+        :param institution: The institution associated with the user. Defaults to "Unknown Institution" if not provided.
+        :type institution: str, optional
+        :param password: The plain-text password for the user, which will be hashed before storage.
+        :type password: str, optional
+        :param role: The role assigned to the user, determining their access rights. Defaults to the application's default role.
+        :type role: str
+        :param is_active: Indicates whether the user account is active. Defaults to True.
+        :type is_active: bool
+        :param is_admin: Flags whether the user is an administrator. This will be inferred from the role if not explicitly provided.
+        :type is_admin: bool, optional
+        :return: The created User object containing all user details.
+        :rtype: User
+        :raises ValueError: If the specified role does not exist.
+        :raises IntegrityError: If there is a unique constraint failure (e.g., duplicate email or username).
+        :raises Exception: For general errors during the user creation process.
         """
         try:
             # Ensure institution has a valid default
@@ -118,7 +174,21 @@ class UserService:
             raise
 
     def fetch_user_data(self, user_id):
-        """Fetch user data for the given user ID."""
+        """
+        Fetches user data for a given user ID.
+
+        This method retrieves user information from the database using the user ID.
+        If the user exists, the data is converted into a dictionary format. If the
+        user has a role attribute, the role information is also converted into a
+        dictionary and included in the resulting response. Success and error logging
+        is performed during the process to provide detailed status updates.
+
+        :param user_id: The unique identifier of the user to fetch data for.
+        :type user_id: int
+        :return: A dictionary containing user data if the user exists or None if no
+            user is found or an error occurs.
+        :rtype: dict | None
+        """
         try:
             user = self._get_user_by_id(user_id)
             if not user:
@@ -135,7 +205,23 @@ class UserService:
             return None
 
     def update_user(self, user_id, updates):
-        """Update user profile data."""
+        """
+        Updates a user's information in the database based on the given user ID and
+        update dictionary. Logs the operation status and handles any exceptions
+        that may occur during the update process.
+
+        :param user_id: The ID of the user to be updated.
+        :type user_id: int
+        :param updates: A dictionary containing the fields and values to be updated
+            for the user.
+        :type updates: dict
+        :return: Returns True if the update was successful, otherwise False.
+        :rtype: bool
+        :raises IntegrityError: Raised when there is a database integrity constraint
+            violation during the update process.
+        :raises Exception: Raised for any other errors encountered during the update
+            process.
+        """
         try:
             updated_rows = User.update(**updates).where(User.id == user_id).execute()
             if updated_rows > 0:
@@ -152,7 +238,28 @@ class UserService:
             return False
 
     def change_user_status(self, user_id, is_active, token=None):
-        """Change the status of a user and optionally blacklist their token."""
+        """
+        Changes the activation status of a user in the system. This method modifies the
+        activation state of a user based on the provided `user_id` and `is_active` parameters.
+        Additionally, if a `token` is supplied, it invalidates the token if the user is being
+        deactivated.
+
+        :param user_id: The unique identifier of the user whose activation status is
+                        to be changed.
+        :type user_id: int or str
+        :param is_active: A boolean indicating the desired activation state of the user.
+                          `True` to activate the user or `False` to deactivate the user.
+        :type is_active: bool
+        :param token: Optional. The JWT token associated with the user to be invalidated
+                      when the user is being deactivated. Expected to be None if no token
+                      is to be invalidated.
+        :type token: str, optional
+        :return: Returns `True` if the user's activation status is successfully changed;
+                 returns `False` if the user's status was already in the desired state.
+        :rtype: bool
+        :raises: 404 if the user with the provided `user_id` is not found,
+                 500 in case of unexpected errors during execution.
+        """
         try:
             # Fetch the user by id
             user = self._get_user_by_id(user_id)
@@ -193,7 +300,24 @@ class UserService:
             abort(500, description="Internal server error.")
 
     def logout(self, user_id, token):
-        """Log out the user by invalidating their current session."""
+        """
+        Logs out a user by invalidating their JWT token.
+
+        This method attempts to log out the user specified by their unique identifier
+        (user_id) by invalidating the provided JWT token. It retrieves the user from
+        the database and ensures they exist before performing the logout action. If the
+        logout process is successful, the token is blacklisted, effectively preventing
+        it from being used for subsequent requests.
+
+        In case of errors during the process, appropriate HTTP responses are triggered.
+
+        :param user_id: Unique identifier of the user.
+        :type user_id: int
+        :param token: JWT token to be invalidated.
+        :type token: str
+        :return: True if the user was logged out successfully.
+        :rtype: bool
+        """
         try:
             user = self._get_user_by_id(user_id)
             if not user:
@@ -214,7 +338,17 @@ class UserService:
             abort(500, description="Internal server error.")
 
     def generate_token(self, user_id):
-        """Generate a JWT token for the specified user ID."""
+        """
+        Generates a token for a given user ID. The function attempts to create a token
+        using the user ID. If successful, the newly generated token is logged and
+        returned. In case of an error during token generation, the error is logged, and
+        None is returned.
+
+        :param user_id: The ID of the user for whom the token is to be generated.
+        :type user_id: str
+        :return: The generated token if successful, otherwise None.
+        :rtype: str or None
+        """
         try:
             token = generate_token(user_id)
             self.logger.info(f"Token generated for user {user_id}.")

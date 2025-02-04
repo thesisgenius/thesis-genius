@@ -10,9 +10,18 @@ logger = logging.getLogger(__name__)
 
 def generate_apa_formatted_document(thesis_id):
     """
-    Generates an APA-formatted document for the given thesis ID.
-    :param thesis_id: ID of the thesis to format.
-    :return: Path to the formatted APA Word document.
+    Generates an APA-formatted document for a specified thesis based on its ID. The function retrieves
+    the thesis and its associated references from the database, prepares the relevant data,
+    and formats the thesis into an APA-compliant document. If any step fails due to missing or invalid
+    data, corresponding exceptions are raised.
+
+    :param thesis_id: The ID of the thesis for which the APA-formatted document is generated.
+    :type thesis_id: int
+    :return: The file path of the generated APA-formatted document.
+    :rtype: str
+
+    :raises ValueError: If the thesis or its references are missing or invalid.
+    :raises RuntimeError: If any unexpected error occurs during document generation.
     """
     try:
         # Fetch thesis data from the database

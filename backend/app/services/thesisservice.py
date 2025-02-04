@@ -6,15 +6,60 @@ from ..models.data import (Appendix, Figure, Footnote, Reference, TableEntry,
 
 
 class ThesisService:
+    """
+    Handles operations related to theses, such as CRUD actions, references, and footnotes. The class is designed to provide
+    methods for creating, retrieving, updating, and deleting theses and associated data (references and footnotes). It uses
+    a logger to capture errors, warnings, and informational messages during operations. This service also supports pagination
+    and detailed filtering for fetching theses.
+
+    :ivar logger: Logger instance for logging various events and errors during operations.
+    :type logger: Logger
+    """
+
     def __init__(self, logger):
         """
-        Initialize the ThesisService with a logger instance.
+        Represents a class for handling logging functionality. This class is used
+        to manage and set up a logger instance for logging purposes across the
+        application.
+
+        Attributes
+        ----------
+        logger : Logger
+            The logger instance provided during initialization to handle logging
+            operations.
+
+        :param logger: The logger instance used to configure logging functionality
+        :type logger: Logger
         """
         self.logger = logger
 
     def get_user_theses(self, user_id, status=None, order_by=None):
         """
-        Fetch all theses created by the specified user with optional filters and sorting.
+        Fetches a list of theses for a specific user, with optional status
+        filtering and sorting. This function queries the database for theses
+        associated with a given user, and applies optional filters and sorting
+        parameters. It handles database exceptions and any other unexpected
+        errors by logging them and re-raising.
+
+        :param user_id: The unique identifier of the user whose theses are to
+            be retrieved.
+        :type user_id: int
+        :param status: (Optional) The status to filter the theses by.
+            Theses will only be retrieved if they match the specified status,
+            if provided.
+        :type status: str, optional
+        :param order_by: (Optional) The field by which the theses should be
+            ordered. If provided, the list of theses will be sorted based on
+            this field.
+        :type order_by: str, optional
+        :return: A list of dictionaries, where each dictionary represents a
+            thesis belonging to the specified user and matches the applied
+            filters, if any.
+        :rtype: list[dict]
+        :raises PeeweeException: Raised if there is an error in database
+            querying, such as connection issues or malformed queries.
+        :raises Exception: Raised for any unexpected errors that may occur
+            during the execution of the function.
         """
         try:
             query = Thesis.select().where(Thesis.student_id == user_id)
@@ -37,7 +82,21 @@ class ThesisService:
 
     def get_user_theses_paginated(self, user_id, page=1, per_page=10):
         """
-        Fetch theses created by the specified user with pagination.
+        Fetches a paginated list of theses for a specific user based on the user ID. This method uses
+        the Peewee ORM to query the database for theses associated with the given user ID and provides
+        pagination functionality by limiting the results to the specified page and number of items
+        per page. Errors encountered during querying or unexpected issues are logged and raised.
+
+        :param user_id: The ID of the user for whom the theses are being fetched.
+        :type user_id: int
+        :param page: The page number for paginated results. Defaults to 1.
+        :type page: int
+        :param per_page: The number of items per page in the paginated results. Defaults to 10.
+        :type per_page: int
+        :return: A tuple containing a list of serialized theses and the total number of theses found.
+        :rtype: tuple[list[dict], int]
+        :raises PeeweeException: Raised when a database error occurs.
+        :raises Exception: Raised when any unexpected error occurs.
         """
         try:
             query = Thesis.select().where(Thesis.student_id == user_id)
@@ -57,7 +116,17 @@ class ThesisService:
 
     def get_thesis_by_id(self, thesis_id, user_id=None):
         """
-        Fetch a single thesis by ID, optionally restricting to a specific user.
+        Fetches a thesis record by its unique identifier and optionally filters by
+        the user ID linked to the record. This method queries the database to retrieve
+        a specific thesis object. In case of any errors during query execution,
+        it logs the details and returns None.
+
+        :param thesis_id: Unique identifier for the thesis.
+        :type thesis_id: int
+        :param user_id: (Optional) The ID of the user associated with the thesis.
+        :type user_id: int, optional
+        :return: The thesis object if retrieved successfully; otherwise, None.
+        :rtype: Thesis or None
         """
         try:
             query = Thesis.select().where(Thesis.id == thesis_id)
@@ -71,7 +140,22 @@ class ThesisService:
 
     def create_thesis(self, thesis_data):
         """
-        Create a new thesis for the specified student.
+        Creates a new thesis entry in the database after performing validation on
+        the input data. This function ensures the required fields are provided
+        and that the related student exists before creating the thesis.
+
+        :param thesis_data: A dictionary containing data for the thesis. Required
+            keys include "title", "status", and "student_id". Optional keys include
+            "abstract" and "content".
+        :type thesis_data: dict
+        :return: The newly created Thesis object.
+        :rtype: Thesis
+        :raises ValueError: If the required fields are missing or the student does
+            not exist.
+        :raises IntegrityError: If there is a database integrity issue during
+            thesis creation.
+        :raises Exception: For any general exceptions that occur while creating the
+            thesis.
         """
         try:
             title = thesis_data.get("title")
@@ -113,7 +197,18 @@ class ThesisService:
 
     def update_thesis(self, thesis_id, user_id, updated_data):
         """
-        Update an existing thesis for the specified user.
+        Updates the thesis associated with a specific user by its ID. This method retrieves
+        an existing thesis record, checks for modifications to the data provided, and
+        updates the record within the database if changes are detected. In cases where
+        no changes are identified or the thesis isn't found, appropriate logging is performed.
+
+        :param thesis_id: The unique identifier of the thesis to be updated.
+        :param user_id: The unique identifier of the user owning the thesis.
+        :param updated_data: The dictionary containing new data to update the thesis record.
+            It is expected to include keys such as 'title', 'abstract', and 'status'.
+        :return: Returns the updated thesis record if the update operation is successful,
+            or None if no changes are made, the thesis is not found or the user doesn't
+            own it, or an error occurs during the operation.
         """
         try:
             # Fetch existing data
@@ -158,7 +253,17 @@ class ThesisService:
 
     def delete_thesis(self, thesis_id, user_id):
         """
-        Delete a thesis for the specified user.
+        Deletes a thesis record if it exists and is owned by the specified user. This method
+        checks for the combination of thesis ID and user ID to ensure that the action is
+        authorized. If the record exists, it is deleted from the database; otherwise, a
+        warning is logged.
+
+        :param thesis_id: The unique identifier of the thesis to be deleted.
+        :type thesis_id: int
+        :param user_id: The unique identifier of the user who owns the thesis.
+        :type user_id: int
+        :return: True if the thesis was successfully deleted, False otherwise.
+        :rtype: bool
         """
         try:
             thesis = Thesis.get_or_none(
@@ -180,7 +285,22 @@ class ThesisService:
     # --- References ---
     def add_reference(self, thesis_id, reference_data):
         """
-        Adds a reference to the specified thesis.
+        Adds a reference to a specified thesis in the database. This method fetches the
+        thesis identified by the given `thesis_id` and adds a new reference using the
+        `reference_data`. If the thesis is not found or an error occurs during the
+        process, appropriate handling is performed.
+
+        :param thesis_id: Unique identifier of the thesis to which the reference will
+            be added.
+        :type thesis_id: int
+        :param reference_data: Data of the reference to be added. Must include valid
+            information required for reference creation.
+        :type reference_data: dict
+        :return: The newly created reference object associated with the specified thesis.
+        :rtype: Reference
+        :raises ValueError: If the thesis associated with the given `thesis_id` is not
+            found.
+        :raises Exception: For any other errors encountered during the process.
         """
         try:
             thesis = Thesis.get_or_none(Thesis.id == thesis_id)
@@ -196,7 +316,24 @@ class ThesisService:
 
     def get_references(self, thesis_id):
         """
-        Retrieves all references for the specified thesis.
+        Fetches references for a given thesis from the database.
+
+        This method retrieves all references associated with the specified thesis ID
+        from the database using an ORM query. The references are then converted to a
+        dictionary representation for further use or processing. If an error occurs
+        during the operation, it is logged, and the exception is re-raised for proper
+        handling.
+
+        :param thesis_id: The unique identifier of the thesis for which references
+            need to be fetched.
+        :type thesis_id: Any compatible type that matches `thesis_id` requirement in the
+            database ORM query
+        :return: A list of dictionaries, each representing a reference associated
+            with the given thesis.
+        :rtype: List[Dict[str, Any]]
+
+        :raises Exception: When there is a failure in fetching references
+            from the database.
         """
         try:
             references = Reference.select().where(Reference.thesis_id == thesis_id)
@@ -207,7 +344,20 @@ class ThesisService:
 
     def update_reference(self, reference_id, updated_data):
         """
-        Updates a specific reference.
+        Updates an existing reference in the database with the given updated data. The method
+        fetches the reference by its unique identifier, applies the provided data updates,
+        and saves the changes. If the reference cannot be found, an exception is raised.
+        Provides logs about the success or failure of the operation.
+
+        :param reference_id: The unique identifier of the reference to be updated.
+        :type reference_id: int
+        :param updated_data: A dictionary containing the fields and values to update
+            on the reference.
+        :type updated_data: dict
+        :return: The updated reference object.
+        :rtype: Reference
+        :raises ValueError: If no reference with the given ID is found.
+        :raises Exception: For any other errors encountered during the update process.
         """
         try:
             reference = Reference.get_or_none(Reference.id == reference_id)
@@ -226,7 +376,17 @@ class ThesisService:
 
     def delete_reference(self, reference_id):
         """
-        Deletes a specific reference.
+        Deletes a reference in the database with the given reference ID. If the
+        reference ID does not exist, a ValueError is raised. Logs the outcome of
+        the deletion process and returns the result. If an error occurs during
+        the process, the exception is logged and re-raised.
+
+        :param reference_id: The ID of the reference to delete.
+        :type reference_id: int
+        :return: True if the deletion is successful.
+        :rtype: bool
+        :raises ValueError: If the reference ID does not exist.
+        :raises Exception: If an error occurs during the deletion process.
         """
         try:
             reference = Reference.get_or_none(Reference.id == reference_id)
@@ -243,7 +403,23 @@ class ThesisService:
     # --- Footnotes ---
     def add_footnote(self, thesis_id, footnote_data):
         """
-        Adds a footnote to the specified thesis.
+        Adds a footnote to a specific thesis using the provided thesis ID and footnote data.
+
+        This method attempts to find a thesis with the given ID. If the thesis is found, it creates
+        a new footnote associated with the thesis using the provided footnote data. If the thesis
+        is not found, an error is logged, and an exception is raised. The method also logs
+        successful addition of the footnote.
+
+        :param thesis_id: The ID of the thesis to which the footnote should be added.
+        :type thesis_id: int
+        :param footnote_data: A dictionary containing data for the footnote to be created. It
+            must match the expected structure and fields required for creating a Footnote object.
+        :type footnote_data: dict
+        :return: The newly created Footnote object.
+        :rtype: Footnote
+        :raises ValueError: Raised when the thesis with the given ID is not found.
+        :raises Exception: Any other exception that occurs during the operations will be
+            logged and re-raised for further handling.
         """
         try:
             thesis = Thesis.get_or_none(Thesis.id == thesis_id)
@@ -259,7 +435,20 @@ class ThesisService:
 
     def get_footnotes(self, thesis_id):
         """
-        Retrieves all footnotes for the specified thesis.
+        Fetches all footnotes associated with a given thesis.
+
+        This method retrieves footnotes from the database corresponding to a specific
+        thesis ID. Each footnote record is converted to a dictionary using the
+        `model_to_dict` utility before being added to the result list. If an error
+        occurs during the retrieval process, an exception is logged, and the same
+        exception is raised.
+
+        :param thesis_id: ID of the thesis for which footnotes need to be retrieved.
+        :type thesis_id: int
+        :return: A list of dictionaries, each representing a footnote record.
+        :rtype: list[dict]
+        :raises Exception: If there is an error while fetching footnotes from
+            the database.
         """
         try:
             footnotes = Footnote.select().where(Footnote.thesis_id == thesis_id)
@@ -270,7 +459,19 @@ class ThesisService:
 
     def update_footnote(self, footnote_id, updated_data):
         """
-        Updates a specific footnote.
+        Updates an existing footnote in the database with the provided updated data. If
+        the specified footnote does not exist, a ValueError is raised. Logs the process
+        and outcome, and reraises any encountered exceptions.
+
+        :param footnote_id: The identifier of the footnote to be updated.
+        :type footnote_id: int
+
+        :param updated_data: A dictionary containing key-value pairs of the new data
+            to update the footnote with.
+        :type updated_data: dict
+
+        :return: The updated footnote instance retrieved after the update.
+        :rtype: Footnote
         """
         try:
             footnote = Footnote.get_or_none(Footnote.id == footnote_id)
@@ -289,7 +490,17 @@ class ThesisService:
 
     def delete_footnote(self, footnote_id):
         """
-        Deletes a specific footnote.
+        Deletes a footnote by its ID. The method fetches the corresponding footnote
+        from the database using the provided ID. If the footnote is found, it is
+        deleted, and a success log is recorded. Otherwise, an exception will be
+        raised. Logs errors in case of failure during the deletion.
+
+        :param footnote_id: The ID of the footnote to be deleted.
+        :type footnote_id: int
+        :return: A boolean indicating whether the deletion was successful.
+        :rtype: bool
+        :raises ValueError: If the footnote with the specified ID is not found.
+        :raises Exception: If any other failure occurs during the deletion process.
         """
         try:
             footnote = Footnote.get_or_none(Footnote.id == footnote_id)
@@ -306,7 +517,20 @@ class ThesisService:
     # --- Tables ---
     def add_table(self, thesis_id, table_data):
         """
-        Adds a table to the specified thesis.
+        Adds a new table entry to an existing thesis. The method retrieves the thesis
+        object based on the provided `thesis_id`, then creates a new table entry
+        associated with that thesis using the provided `table_data`. This operation
+        is logged, and any errors encountered during the process are also logged
+        before re-raising the exception.
+
+        :param thesis_id: ID of the thesis the table should be added to.
+        :type thesis_id: int
+        :param table_data: Data of the table to be added, passed as key-value pairs.
+        :type table_data: dict
+        :return: The created table entry object.
+        :rtype: TableEntry
+        :raises ValueError: If the thesis with the provided ID cannot be found.
+        :raises Exception: For other errors encountered during the operation.
         """
         try:
             thesis = Thesis.get_or_none(Thesis.id == thesis_id)
@@ -322,7 +546,19 @@ class ThesisService:
 
     def get_tables(self, thesis_id):
         """
-        Retrieves all tables for the specified thesis.
+        Fetches the tables associated with a given thesis ID from the database and
+        returns them in dictionary form. This method queries the `TableEntry` model
+        for all entries matching the provided thesis ID. If an error occurs during
+        the query, it logs the error and raises the exception.
+
+        :param thesis_id: The unique identifier of the thesis for which tables need
+            to be fetched.
+        :type thesis_id: int
+        :return: A list of dictionaries where each dictionary represents a table
+            associated with the given thesis ID.
+        :rtype: list[dict]
+        :raises Exception: If an error occurs while fetching the tables from the
+            database.
         """
         try:
             tables = TableEntry.select().where(TableEntry.thesis_id == thesis_id)
@@ -333,7 +569,18 @@ class ThesisService:
 
     def update_table(self, table_id, updated_data):
         """
-        Updates a specific table.
+        Updates a table entry in the database with the provided data. If the table entry
+        with the specified ID does not exist, an exception will be raised. The updated
+        entry is then retrieved and returned.
+
+        :param table_id: The unique identifier of the table entry to be updated.
+        :type table_id: int
+        :param updated_data: Dictionary containing the data to update in the table entry.
+        :type updated_data: dict
+        :return: The updated table entry.
+        :rtype: TableEntry
+        :raises ValueError: If no table entry is found with the provided ID.
+        :raises Exception: If any other error occurs during the update operation.
         """
         try:
             table = TableEntry.get_or_none(TableEntry.id == table_id)
@@ -352,7 +599,20 @@ class ThesisService:
 
     def delete_table(self, table_id):
         """
-        Deletes a specific table.
+        Deletes a table entry from the database identified by its table ID.
+
+        Attempts to locate and delete a table entry in the database based on the
+        provided table ID. If the table is not found, an error is logged and
+        raised. If the deletion is successful, an appropriate log message is
+        produced. Any unexpected exceptions encountered during this operation
+        are logged and re-raised for handling elsewhere.
+
+        :param table_id: Unique identifier of the table to be deleted.
+        :type table_id: int
+        :return: True if the table is successfully deleted.
+        :rtype: bool
+        :raises ValueError: If the table with the given table ID is not found.
+        :raises Exception: If any other error occurs during the deletion process.
         """
         try:
             table = TableEntry.get_or_none(TableEntry.id == table_id)
@@ -369,7 +629,19 @@ class ThesisService:
     # --- Figures ---
     def add_figure(self, thesis_id, figure_data):
         """
-        Adds a figure to the specified thesis.
+        Adds a figure to the specified thesis by its ID. The figure data is provided
+        as a dictionary containing necessary details for figure creation. It attempts
+        to fetch a Thesis object by ID. If the thesis does not exist, an error is
+        raised. A new Figure object is then created and associated with the thesis.
+        Logs are written to record successful operations and errors during the process.
+
+        :param thesis_id: The unique identifier of the thesis to which the figure will
+                          be added.
+        :type thesis_id: int
+        :param figure_data: A dictionary containing data required to create a new figure.
+        :type figure_data: dict
+        :return: A newly created Figure object representing the added figure.
+        :rtype: Figure
         """
         try:
             thesis = Thesis.get_or_none(Thesis.id == thesis_id)
@@ -385,7 +657,23 @@ class ThesisService:
 
     def get_figures(self, thesis_id):
         """
-        Retrieves all figures for the specified thesis.
+        Fetches all figures associated with a specific thesis.
+
+        This method retrieves all figure records that are associated with
+        the given thesis ID from the database. Each figure record is
+        converted to a dictionary representation before being returned
+        in a list. If any error occurs during this process, it logs
+        the error and re-raises the exception.
+
+        :param thesis_id: The unique identifier for the thesis whose figures
+                          are to be retrieved. Must match a valid `thesis_id`
+                          in the database.
+        :type thesis_id: int
+        :return: A list of dictionaries where each dictionary represents a
+                 figure associated with the given thesis ID.
+        :rtype: list[dict]
+        :raises Exception: If there is an issue while fetching figures
+                           or executing the database query.
         """
         try:
             figures = Figure.select().where(Figure.thesis_id == thesis_id)
@@ -396,7 +684,19 @@ class ThesisService:
 
     def update_figure(self, figure_id, updated_data):
         """
-        Updates a specific figure.
+        Updates an existing figure in the database with new data. Retrieves the figure
+        by its ID, applies the updates, executes the update query, and fetches the
+        updated figure to return. If the figure is not found, raises an error.
+
+        :param figure_id: The unique identifier of the figure to be updated.
+        :type figure_id: int
+        :param updated_data: A dictionary containing the fields and their new values
+            to update the figure with.
+        :type updated_data: dict
+        :return: The updated figure instance after applying changes.
+        :rtype: Figure
+        :raises ValueError: If the figure with the given ID is not found.
+        :raises Exception: If any error occurs during the update process.
         """
         try:
             figure = Figure.get_or_none(Figure.id == figure_id)
@@ -415,7 +715,20 @@ class ThesisService:
 
     def delete_figure(self, figure_id):
         """
-        Deletes a specific figure.
+        Deletes a figure from the database identified by its unique figure ID.
+
+        This method checks for the existence of a figure with the provided ID
+        and removes it if it exists. If no such figure exists, it raises an
+        error. The deletion process is logged, including both successful and
+        unsuccessful operations. If an unexpected exception is encountered,
+        the error is logged, and the exception is propagated.
+
+        :param figure_id: Unique identifier of the figure to be deleted.
+        :type figure_id: int
+        :return: True if the figure is successfully deleted.
+        :rtype: bool
+        :raises ValueError: If no figure exists with the specified ID.
+        :raises Exception: If an unexpected error occurs during the deletion process.
         """
         try:
             figure = Figure.get_or_none(Figure.id == figure_id)
@@ -432,7 +745,18 @@ class ThesisService:
     # --- Appendices ---
     def add_appendix(self, thesis_id, appendix_data):
         """
-        Adds an appendix to the specified thesis.
+        Adds an appendix to a given thesis by its ID. Ensures that the specified thesis
+        exists before attempting to create the appendix. Logs both successful and
+        unsuccessful attempts to add the appendix.
+
+        :param thesis_id: The ID of the thesis to which the appendix is to be added.
+        :type thesis_id: int
+        :param appendix_data: A dictionary containing data for the appendix to be added.
+        :type appendix_data: dict
+        :return: The created Appendix instance.
+        :rtype: Appendix
+        :raises ValueError: If the specified thesis is not found.
+        :raises Exception: If an error occurs during the process of adding the appendix.
         """
         try:
             thesis = Thesis.get_or_none(Thesis.id == thesis_id)
@@ -448,7 +772,19 @@ class ThesisService:
 
     def get_appendices(self, thesis_id):
         """
-        Retrieves all appendices for the specified thesis.
+        Fetches appendices associated with the provided thesis ID.
+
+        This function retrieves all appendices related to a specific thesis ID from
+        the database and returns them as a list of dictionaries. If any error occurs
+        during the retrieval process, it will log the error and raise the exception.
+
+        :param thesis_id: ID of the thesis for which appendices are to be fetched.
+        :type thesis_id: int
+        :return: A list of dictionaries, where each dictionary represents an appendix
+            associated with the provided thesis ID.
+        :rtype: list[dict]
+        :raises Exception: If an error occurs during the database query or
+            data processing.
         """
         try:
             appendices = Appendix.select().where(Appendix.thesis_id == thesis_id)
@@ -459,7 +795,18 @@ class ThesisService:
 
     def update_appendix(self, appendix_id, updated_data):
         """
-        Updates a specific appendix.
+        Updates an existing appendix record in the database using the provided data. If the appendix with
+        the specified ID does not exist, an exception is raised. After a successful update, the updated
+        appendix record is retrieved and returned.
+
+        :param appendix_id: The unique identifier of the appendix to be updated.
+        :type appendix_id: int
+        :param updated_data: A dictionary containing the fields to update with their new values.
+        :type updated_data: dict
+        :return: The updated appendix record.
+        :rtype: Appendix
+        :raises ValueError: If no appendix with the given ID is found.
+        :raises Exception: For other database or unexpected errors.
         """
         try:
             appendix = Appendix.get_or_none(Appendix.id == appendix_id)
@@ -478,7 +825,17 @@ class ThesisService:
 
     def delete_appendix(self, appendix_id):
         """
-        Deletes a specific appendix.
+        Deletes an appendix with the given ID. If the appendix with the specified ID
+        does not exist in the database, a ValueError is raised. This function logs
+        the successful deletion of the appendix or any errors encountered during
+        the operation.
+
+        :param appendix_id: The unique identifier of the appendix to be deleted.
+        :type appendix_id: int
+        :return: Returns True if the appendix was successfully deleted.
+        :rtype: bool
+        :raises ValueError: If no appendix with the given ID is found.
+        :raises Exception: If any other error occurs during the deletion process.
         """
         try:
             appendix = Appendix.get_or_none(Appendix.id == appendix_id)

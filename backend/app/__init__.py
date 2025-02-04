@@ -6,27 +6,30 @@ from .utils.db import database_proxy, initialize_database
 
 def create_app(config_name="testing"):
     """
-    Flask application factory.
+    Creates and configures a Flask application instance with the specified configuration,
+    initializes the database, registers API routes, and sets up request lifecycle handlers.
+
+    :param config_name: Name of the configuration to use for the Flask application.
+    :type config_name: str, optional
+    :return: Configured Flask application instance.
+    :rtype: Flask
     """
     app = Flask(__name__)
     app.config.from_object(f"app.config.{config_name.capitalize()}Config")
+    # OpenAPI configuration
+    app.config.update(
+        {
+            "APISPEC_TITLE": "ThesisGenius API",
+            "APISPEC_VERSION": "v1",
+            "APISPEC_SWAGGER_URL": "/docs",
+        }
+    )
 
     # Initialize database
-
     initialize_database(app)
 
     # Register API routes
     register_routes(app)
-
-    # # Enable CORS for frontend development
-    # CORS(
-    #     app,
-    #     resources={r"/*": {"origins": "*"}},
-    #     supports_credentials=True,
-    #     allow_headers=["Authorization", "Content-Type"],
-    #     expose_headers=["Authorization", "Content-Type"],
-    #     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    # )
 
     @app.before_request
     def log_request_info():

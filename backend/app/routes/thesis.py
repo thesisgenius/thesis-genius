@@ -14,7 +14,18 @@ thesis_bp = Blueprint("thesis_api", __name__, url_prefix="/api/thesis")
 @jwt_required
 def list_theses():
     """
-    Fetch all theses created by the authenticated user.
+    Retrieves a list of theses associated with the authenticated user.
+
+    This function handles the HTTP GET request to retrieve theses linked to the
+    currently authenticated user. It utilizes a ThesisService instance to fetch
+    user-specific theses and returns them in a JSON response. If an exception
+    occurs, an error is logged, and a failure response is returned.
+
+    :raises Exception: If there is an error fetching theses for the user.
+
+    :return: A tuple containing a JSON response with either a list of theses or
+        an error message, along with the appropriate HTTP status code.
+    :rtype: tuple
     """
 
     thesis_service = ThesisService(app.logger)
@@ -31,7 +42,20 @@ def list_theses():
 @jwt_required
 def get_thesis(thesis_id):
     """
-    Fetch a single thesis by its ID.
+    Fetches a specific thesis by its ID for the authenticated user.
+
+    This endpoint allows users to retrieve details of a thesis identified by the given
+    thesis ID. The endpoint requires the user to be authenticated via a JWT, and the
+    thesis must be accessible by the requesting user. If the thesis exists and is accessible,
+    the details are returned in the response; otherwise, an appropriate error message
+    is provided.
+
+    :param thesis_id: The unique identifier of the thesis to fetch.
+    :type thesis_id: int
+    :return: A JSON object with details of the thesis if found, or an error message
+        indicating either the thesis is not found, not accessible, or
+        an internal server error occurred.
+    :rtype: Tuple[Response, int]
     """
     thesis_service = ThesisService(app.logger)
     try:
@@ -69,7 +93,24 @@ def get_thesis(thesis_id):
 @jwt_required
 def create_thesis():
     """
-    Create a new thesis.
+    Handles the creation of a new thesis entry by the authenticated user. The function validates
+    input data provided in the request, ensures required fields are populated, and interacts
+    with the ThesisService to persist the data in the database. If the creation is successful,
+    returns a JSON response including the newly created thesis details; otherwise, returns
+    appropriate error responses.
+
+    :param request.json: JSON-encoded request data containing the thesis details to be created.
+        It may include the following keys: "title" (required, string), "abstract" (optional, string),
+        "content" (optional, string), and "status" (required, string).
+    :return: A Flask JSON response object.
+        On success: Response with HTTP 201 status containing thesis details and a success message.
+        On failure: Response with HTTP 400 status and an error message for invalid/missing data.
+        On internal server error: Response with HTTP 500 status and a generic error message.
+
+    :raises:
+        - If the request JSON is invalid or missing, raises an error with HTTP 400 response.
+        - If "title" or "status" is not present in the request body, raises an error with HTTP 400 response.
+        - If "user_id" is inaccessible from the global object, raises an error with HTTP 400 response.
     """
     thesis_service = ThesisService(app.logger)
     try:
@@ -136,7 +177,18 @@ def create_thesis():
 @jwt_required
 def edit_thesis(thesis_id):
     """
-    Update an existing thesis.
+    Update an existing thesis based on the provided data and thesis ID. The user must
+    be authenticated to perform this operation. The function retrieves the user ID
+    from the JWT token, validates the request body, and updates the thesis data
+    using the service layer. It ensures that all required fields are provided
+    before proceeding with the update.
+
+    :param thesis_id: The ID of the thesis to be updated.
+    :type thesis_id: int
+    :raises ValueError: If the request body is missing or mandatory fields are not provided.
+    :return: JSON response indicating success or failure, along with the updated thesis
+        data if the update is successful.
+    :rtype: flask.Response
     """
     thesis_service = ThesisService(app.logger)
     try:
@@ -207,7 +259,20 @@ def edit_thesis(thesis_id):
 @jwt_required
 def delete_thesis(thesis_id):
     """
-    Delete an existing thesis.
+    Deletes a thesis record associated with the provided thesis ID and
+    user ID.
+
+    This endpoint deletes a specific thesis identified by its ID, if the
+    user has the permission to delete it. It logs the result of the operation
+    and provides appropriate HTTP status codes for success and error
+    responses.
+
+    :param thesis_id: The ID of the thesis to be deleted, passed as part
+                      of the route.
+    :type thesis_id: int
+    :return: A JSON response containing the operation result and a corresponding
+             HTTP status code.
+    :rtype: Tuple[Response, int]
     """
 
     thesis_service = ThesisService(app.logger)
@@ -229,7 +294,21 @@ def delete_thesis(thesis_id):
 @thesis_bp.route("/<int:thesis_id>/references", methods=["POST"])
 @jwt_required
 def add_reference(thesis_id):
+    """
+    Handles the HTTP POST request to add a reference to a thesis. This endpoint
+    requires authentication via JWT. A JSON payload containing reference details
+    is expected in the request body. Upon successful addition of the reference,
+    a JSON response containing the new reference details is returned with HTTP
+    status 201. If an error occurs, an error message is logged and a JSON response
+    with the error details is returned with HTTP status 400.
 
+    :param thesis_id: The unique identifier of the thesis to which the reference
+                      should be added
+    :type thesis_id: int
+    :return: A JSON response indicating success or failure. If successful, includes
+             details of the added reference.
+    :rtype: tuple (dict, int)
+    """
     thesis_service = ThesisService(app.logger)
     try:
         data = request.json
@@ -243,7 +322,20 @@ def add_reference(thesis_id):
 @thesis_bp.route("/<int:thesis_id>/references", methods=["GET"])
 @jwt_required
 def list_references(thesis_id):
+    """
+    Fetch the list of references associated with a specific thesis.
 
+    This endpoint is responsible for retrieving all references tied to a given
+    thesis ID. It requires authentication via a JWT token. The function
+    utilizes the ThesisService to handle the business logic for fetching
+    references. Success or failure responses are returned in JSON format.
+
+    :param thesis_id: An integer indicating the unique identifier of the thesis.
+    :return: On success, returns a JSON object containing a success flag and
+        the list of references (HTTP status code 200). On failure,
+        returns a JSON object with a success flag set to False and the
+        error message (HTTP status code 400).
+    """
     thesis_service = ThesisService(app.logger)
     try:
         references = thesis_service.get_references(thesis_id)
@@ -256,7 +348,18 @@ def list_references(thesis_id):
 @thesis_bp.route("/reference/<int:reference_id>", methods=["PUT"])
 @jwt_required
 def update_reference(reference_id):
+    """
+    Updates a reference entry identified by its ID with new data. This function
+    is intended to be used with the PUT HTTP method and requires authentication
+    using JWT. It integrates with the `ThesisService` class to handle the
+    update operation and logs errors if the update fails.
 
+    :param reference_id: The ID of the reference to be updated.
+    :type reference_id: int
+    :return: A JSON response with the success status and updated reference
+        details if the operation is successful, or an error message if it fails.
+    :rtype: tuple
+    """
     thesis_service = ThesisService(app.logger)
     try:
         data = request.json
@@ -273,7 +376,18 @@ def update_reference(reference_id):
 @thesis_bp.route("/reference/<int:reference_id>", methods=["DELETE"])
 @jwt_required
 def delete_reference(reference_id):
+    """
+    Handles the deletion of a reference with the given ID. This endpoint is protected
+    by a JWT and allows only authenticated users to delete references. The method interacts
+    with the ThesisService to perform the deletion operation, logs any errors, and returns
+    an appropriate JSON response with a success or failure message.
 
+    :param reference_id: The integer ID of the reference to be deleted.
+    :type reference_id: int
+    :return: A JSON response indicating whether the reference was deleted successfully,
+             along with the appropriate HTTP status code.
+    :rtype: Tuple of a dictionary and an integer
+    """
     thesis_service = ThesisService(app.logger)
     try:
         success = thesis_service.delete_reference(reference_id)
@@ -292,7 +406,18 @@ def delete_reference(reference_id):
 @thesis_bp.route("/<int:thesis_id>/footnotes", methods=["POST"])
 @jwt_required
 def add_footnote(thesis_id):
+    """
+    Add a new footnote to a specific thesis by its ID. This endpoint is protected
+    and requires a valid JWT token for access. The provided footnote details in the
+    request body will be used to create the footnote. Sends back a JSON response
+    on success or failure.
 
+    :param thesis_id: The ID of the thesis to which the footnote is to be added.
+    :type thesis_id: int
+    :return: A JSON response containing the success state and details of the
+             newly added footnote or an error message.
+    :rtype: Response
+    """
     thesis_service = ThesisService(app.logger)
     try:
         data = request.json
@@ -306,7 +431,22 @@ def add_footnote(thesis_id):
 @thesis_bp.route("/<int:thesis_id>/footnotes", methods=["GET"])
 @jwt_required
 def list_footnotes(thesis_id):
+    """
+    Fetches and returns the list of footnotes associated with a specific thesis.
 
+    This function handles HTTP GET requests to retrieve a list of footnotes for a
+    given thesis based on its ID. It utilizes the ``ThesisService`` to perform the
+    operation and logs errors if the retrieval operation fails. The response will
+    contain the list of footnotes if successful or an error message if the operation
+    encounters an exception.
+
+    :param thesis_id: The unique identifier of the thesis whose footnotes are to be
+        retrieved.
+    :type thesis_id: int
+    :return: A JSON response containing success status along with the list of
+        footnotes if the operation is successful, otherwise an error message.
+    :rtype: Tuple[Response, int]
+    """
     thesis_service = ThesisService(app.logger)
     try:
         footnotes = thesis_service.get_footnotes(thesis_id)
@@ -319,7 +459,22 @@ def list_footnotes(thesis_id):
 @thesis_bp.route("/footnote/<int:footnote_id>", methods=["PUT"])
 @jwt_required
 def update_footnote(footnote_id):
+    """
+    Updates an existing footnote with provided data.
 
+    This endpoint allows updating the details of an existing footnote identified
+    by its footnote ID. The updated footnote data is provided in the request
+    payload and processed by the `ThesisService` to perform the update operation.
+    Upon successful update, a JSON response containing the updated footnote data
+    is returned.
+
+    :param footnote_id: Identifier of the footnote to be updated.
+    :type footnote_id: int
+    :return: A JSON response containing the status of the update operation and
+        the updated footnote data, if the update is successful. In case of a
+        failure, a JSON response with an error message is returned.
+    :rtype: Tuple[flask.Response, int]
+    """
     thesis_service = ThesisService(app.logger)
     try:
         data = request.json
@@ -336,7 +491,21 @@ def update_footnote(footnote_id):
 @thesis_bp.route("/footnote/<int:footnote_id>", methods=["DELETE"])
 @jwt_required
 def delete_footnote(footnote_id):
+    """
+    Deletes a footnote with the given ID.
 
+    This method allows the deletion of a specific footnote by
+    providing its ID. It communicates with the `ThesisService`
+    to attempt removal of the specified footnote and returns a
+    JSON response indicating the success or failure of the
+    operation. If an exception occurs during the process, an
+    error response is returned, and the exception is logged.
+
+    :param footnote_id: The ID of the footnote to be deleted.
+    :type footnote_id: int
+    :return: A JSON response indicating success or failure of the operation.
+    :rtype: Response
+    """
     thesis_service = ThesisService(app.logger)
     try:
         success = thesis_service.delete_footnote(footnote_id)
@@ -355,7 +524,19 @@ def delete_footnote(footnote_id):
 @thesis_bp.route("/<int:thesis_id>/tables", methods=["POST"])
 @jwt_required
 def add_table(thesis_id):
+    """
+    This function is an endpoint to add a new table to a specific thesis. It uses the provided
+    ``thesis_id`` and the table data from the request JSON payload, processes it through the thesis
+    service, and returns the newly added table in JSON format if successful. In case of a failure,
+    it logs the error and sends an error message in the response.
 
+    :param thesis_id: The unique identifier for the thesis to which the table is being added.
+    :type thesis_id: int
+
+    :return: A JSON response containing a success status and the newly added table if the
+        operation is successful, or an error message otherwise.
+    :rtype: tuple
+    """
     thesis_service = ThesisService(app.logger)
     try:
         data = request.json
@@ -369,7 +550,21 @@ def add_table(thesis_id):
 @thesis_bp.route("/<int:thesis_id>/tables", methods=["GET"])
 @jwt_required
 def list_tables(thesis_id):
+    """
+    Fetches and returns the tables associated with a specific thesis.
 
+    This function handles the retrieval of tables linked to a given thesis ID.
+    It leverages the ThesisService class to perform the database operations
+    and returns the results in JSON format with appropriate HTTP status codes.
+    If an error occurs, it logs the error and provides an error message in the
+    response.
+
+    :param thesis_id: The ID of the thesis for which tables are being fetched.
+    :type thesis_id: int
+    :return: A JSON response containing a success indicator and a list of tables
+        if successful, or an error message if an exception occurs.
+    :rtype: flask.Response
+    """
     thesis_service = ThesisService(app.logger)
     try:
         tables = thesis_service.get_tables(thesis_id)
@@ -382,7 +577,24 @@ def list_tables(thesis_id):
 @thesis_bp.route("/table/<int:table_id>", methods=["PUT"])
 @jwt_required
 def update_table(table_id):
+    """
+    Updates a table in the thesis management system with the provided data.
 
+    This function is an endpoint that processes a PUT request to update an
+    existing table identified by its ID. It invokes the `update_table` method
+    from the `ThesisService` class, passing the table ID and the JSON payload
+    received in the request. The response includes the updated table data in
+    JSON format if the operation is successful, or an error message otherwise.
+
+    :param table_id: The ID of the table to be updated
+    :type table_id: int
+    :return: A JSON response containing either the updated table data or an
+        error message. On success, the response includes a `success` flag set
+        to `True`, and the updated table object serialized into a dictionary
+        format. On failure, the response includes a `success` flag set to
+        `False` and an error message.
+    :rtype: tuple(dict, int)
+    """
     thesis_service = ThesisService(app.logger)
     try:
         data = request.json
@@ -396,7 +608,19 @@ def update_table(table_id):
 @thesis_bp.route("/table/<int:table_id>", methods=["DELETE"])
 @jwt_required
 def delete_table(table_id):
+    """
+    Deletes a table identified by its unique ID. This function handles the HTTP DELETE
+    request method and is responsible for invoking the `ThesisService` to perform the
+    deletion operation. If the deletion is successful, a corresponding success message
+    is returned; otherwise, an error message is returned. The function also logs any
+    exceptions during the process.
 
+    :param table_id: Unique identifier of the table to be deleted
+    :type table_id: int
+    :return: A JSON response indicating success or failure message with appropriate
+        HTTP status codes. On success, returns HTTP 200; on failure, returns HTTP 400
+    :rtype: Tuple[flask.Response, int]
+    """
     thesis_service = ThesisService(app.logger)
     try:
         success = thesis_service.delete_table(table_id)
@@ -415,7 +639,18 @@ def delete_table(table_id):
 @thesis_bp.route("/<int:thesis_id>/figures", methods=["POST"])
 @jwt_required
 def add_figure(thesis_id):
+    """
+    Adds a new figure to a thesis by its ID.
 
+    This endpoint allows users to add a figure to a specified thesis, identified by its
+    unique thesis ID. The figure data must be provided in the request body as JSON. A successful
+    operation will return the newly created figure in JSON format.
+
+    :param thesis_id: The unique identifier of the thesis to which the figure will be added.
+    :type thesis_id: int
+    :return: A JSON response containing the success status and the newly created figure data.
+    :rtype: Tuple[dict, int]
+    """
     thesis_service = ThesisService(app.logger)
     try:
         data = request.json
@@ -429,7 +664,22 @@ def add_figure(thesis_id):
 @thesis_bp.route("/<int:thesis_id>/figures", methods=["GET"])
 @jwt_required
 def list_figures(thesis_id):
+    """
+    Fetches the figures associated with a given thesis ID. This endpoint is
+    protected and requires a valid JWT token. The function interacts with
+    the ThesisService to retrieve the list of figures for the specified
+    thesis. If successful, the figures are returned in a JSON response.
+    In case of errors during processing, an appropriate error message is
+    logged and returned.
 
+    :param thesis_id: The unique identifier of the thesis whose figures
+                      are to be retrieved.
+    :type thesis_id: int
+    :return: A JSON response with a success status and a list of figures
+             if the retrieval is successful, or an error message and
+             failure status if an error occurs.
+    :rtype: tuple
+    """
     thesis_service = ThesisService(app.logger)
     try:
         figures = thesis_service.get_figures(thesis_id)
@@ -442,7 +692,18 @@ def list_figures(thesis_id):
 @thesis_bp.route("/figure/<int:figure_id>", methods=["PUT"])
 @jwt_required
 def update_figure(figure_id):
+    """
+    Updates a specific figure by its ID with the provided new data. This endpoint
+    is protected and requires a valid JWT for access. The updated figure details
+    are returned in JSON format upon success.
 
+    :param figure_id: The ID of the figure to be updated
+    :type figure_id: int
+    :return: JSON response containing the updated figure details and a success
+             status in case of successful update, or an error message in case of
+             failure
+    :rtype: tuple
+    """
     thesis_service = ThesisService(app.logger)
     try:
         data = request.json
@@ -456,7 +717,17 @@ def update_figure(figure_id):
 @thesis_bp.route("/figure/<int:figure_id>", methods=["DELETE"])
 @jwt_required
 def delete_figure(figure_id):
+    """
+    Deletes a figure by its ID. This endpoint is protected and requires JWT
+    authentication. It attempts to delete a figure using the `ThesisService`
+    and returns a success or failure response.
 
+    :param figure_id: The ID of the figure to be deleted.
+    :type figure_id: int
+    :return: A JSON response indicating success or failure along with
+        appropriate HTTP status code.
+    :rtype: tuple
+    """
     thesis_service = ThesisService(app.logger)
     try:
         success = thesis_service.delete_figure(figure_id)
@@ -475,7 +746,22 @@ def delete_figure(figure_id):
 @thesis_bp.route("/<int:thesis_id>/appendices", methods=["POST"])
 @jwt_required
 def add_appendix(thesis_id):
+    """
+    Adds an appendix to a thesis.
 
+    This function allows adding an appendix to an existing thesis by processing
+    the provided data. It takes the thesis ID as input, retrieves the JSON data
+    from the request, and utilizes the thesis service to perform the addition.
+    Upon success, it returns the added appendix data formatted as a dictionary.
+    If any exception occurs during the operation, an error message is logged, and
+    an appropriate response with error details is returned.
+
+    :param thesis_id: An integer representing the ID of the thesis to which the
+                      appendix will be added.
+    :returns: A JSON response containing the success status, the added appendix
+              data (if successful), or the error message in case of failure.
+    :rtype: flask.Response
+    """
     thesis_service = ThesisService(app.logger)
     try:
         data = request.json
@@ -489,7 +775,23 @@ def add_appendix(thesis_id):
 @thesis_bp.route("/<int:thesis_id>/appendices", methods=["GET"])
 @jwt_required
 def list_appendices(thesis_id):
+    """
+    Fetches and returns the list of appendices associated with a specific thesis.
 
+    This function is a part of the thesis blueprint and handles GET requests to
+    retrieve appendices related to a thesis identified by its unique `thesis_id`.
+    It utilizes the `ThesisService` class to fetch the appendices. The response
+    includes a JSON object indicating the success status and the list of appendices
+    if successful, or an error message in case of failure.
+
+    :param thesis_id: Unique identifier of the thesis for which appendices
+        need to be fetched.
+    :type thesis_id: int
+    :return: A JSON object containing either the success status and the list of
+        appendices or an error message in case of failure, along with an HTTP status
+        code.
+    :rtype: Tuple[dict, int]
+    """
     thesis_service = ThesisService(app.logger)
     try:
         appendices = thesis_service.get_appendices(thesis_id)
@@ -502,7 +804,19 @@ def list_appendices(thesis_id):
 @thesis_bp.route("/appendix/<int:appendix_id>", methods=["PUT"])
 @jwt_required
 def update_appendix(appendix_id):
+    """
+    Updates an existing appendix identified by the provided appendix ID. The function
+    uses the `ThesisService` to handle the update operation, which accepts the appendix
+    ID and the new data to update the appendix. The updated appendix is then returned
+    in JSON format. In case of an error, an appropriate error message is logged and
+    returned.
 
+    :param appendix_id: The unique identifier of the appendix to be updated.
+    :type appendix_id: int
+    :return: A JSON object containing the success status and the updated appendix
+        details, or an error message in case of failure.
+    :rtype: tuple (dict, int)
+    """
     thesis_service = ThesisService(app.logger)
     try:
         data = request.json
@@ -519,7 +833,21 @@ def update_appendix(appendix_id):
 @thesis_bp.route("/appendix/<int:appendix_id>", methods=["DELETE"])
 @jwt_required
 def delete_appendix(appendix_id):
+    """
+    Deletes an appendix with the specified `appendix_id`. This function is bound to the
+    `DELETE` method of the `/appendix/<int:appendix_id>` route. It utilizes the service layer
+    to perform the delete operation and logs any errors encountered during the operation.
 
+    The function ensures proper response handling by returning appropriate HTTP status codes
+    and messages indicating the success or failure of the operation.
+
+    :param appendix_id: The unique identifier of the appendix to be deleted.
+    :type appendix_id: int
+    :return: A JSON response with `success` status and corresponding message. If the operation
+        is successful, it returns a message stating "Appendix deleted successfully" with HTTP 200.
+        Otherwise, it returns an error message with HTTP 400.
+    :rtype: tuple
+    """
     thesis_service = ThesisService(app.logger)
     try:
         success = thesis_service.delete_appendix(appendix_id)
