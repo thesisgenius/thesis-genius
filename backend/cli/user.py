@@ -5,7 +5,17 @@ from peewee import DoesNotExist
 
 @click.group()
 def user_cli():
-    """User management commands."""
+    """
+    A command-line interface (CLI) group for handling user-related commands.
+
+    This CLI group serves as an entry point for managing various operations
+    related to users. It acts as a container for multiple commands that can be
+    defined and executed to process user-related tasks. Each command within this
+    group can perform a specific operation.
+
+    :return: Returns the `click.Group` instance initialized for the user CLI.
+    :rtype: click.Group
+    """
     pass
 
 
@@ -19,7 +29,22 @@ def user_cli():
     "--institution", default="ThesisGenius University", help="User's institution."
 )
 def create(email, password, role, first_name, last_name, institution):
-    """Create a new user."""
+    """
+    This function is a command-line utility for creating a new user in the system. It allows
+    the addition of a user with specified attributes such as email, password, role, first
+    name, last name, and institution. The function validates the provided role to ensure
+    it exists and checks if the given email is already associated with an existing user.
+    If both checks pass, a new user is created, and the operation result is printed to the
+    console.
+
+    :param email: Email address of the user to be created. This will also serve as a part of the username.
+    :param password: Password for the user. In production, this should be securely hashed.
+    :param role: Role assigned to the user (default is "Student").
+    :param first_name: First name of the user (default is "Default").
+    :param last_name: Last name of the user (default is "User").
+    :param institution: Institution associated with the user (default is "ThesisGenius University").
+    :return: None. Outputs a success or error message to the console.
+    """
     try:
         # Fetch the role object
         role_obj = Role.get(Role.name == role)
@@ -48,7 +73,15 @@ def create(email, password, role, first_name, last_name, institution):
 @user_cli.command()
 @click.argument("email")
 def delete(email):
-    """Delete a user by email."""
+    """
+    Delete a user from the database based on their email. This method retrieves a user
+    using the provided email and removes the corresponding record from the database.
+    If the user does not exist, it displays an appropriate error message.
+
+    :param email: The email of the user to delete
+    :type email: str
+    :return: None
+    """
     try:
         user = User.get(User.email == email)
         user.delete_instance()
@@ -60,7 +93,20 @@ def delete(email):
 @user_cli.command()
 @click.option("--role", help="Filter users by role.")
 def list(role):
-    """List all users, optionally filtered by role."""
+    """
+    Lists users optionally filtered by a specified role.
+
+    The function retrieves and displays a list of users from the database. If a role
+    is specified, it filters the users by the specified role. If the role does not
+    exist in the database, an error message is displayed. If no users are found,
+    a message indicating this is shown.
+
+    :param role: Filters the list of users to show only users with the specified
+        role. If not specified, all users are listed.
+    :type role: str or None
+
+    :return: None
+    """
     if role:
         try:
             role_obj = Role.get(Role.name == role)
@@ -87,7 +133,26 @@ def list(role):
 @click.option("--role", help="Update the user's role.")
 @click.option("--institution", help="Update the user's institution.")
 def update(email, password, first_name, last_name, role, institution):
-    """Update a user's details by email."""
+    """
+    Updates the properties of an existing user in the system. Allows updating the
+    user's password, first name, last name, role, and institution by providing
+    appropriate options. Throws an error if the user or role does not exist.
+
+    :param email: Email of the user to be updated
+    :type email: str
+    :param password: New password for the user
+    :type password: Optional[str]
+    :param first_name: New first name of the user
+    :type first_name: Optional[str]
+    :param last_name: New last name of the user
+    :type last_name: Optional[str]
+    :param role: New role of the user
+    :type role: Optional[str]
+    :param institution: New institution of the user
+    :type institution: Optional[str]
+    :return: None
+    :rtype: None
+    """
     try:
         user = User.get(User.email == email)
         if password:

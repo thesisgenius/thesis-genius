@@ -15,26 +15,31 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     // Check for an existing token and fetch user profile on mount
-    useEffect(() => {
-        const token = localStorage.getItem("token");
-        if (!token) {
-            console.log("No token found");
-            setUser(null);
-            setLoading(false); // End loading if no token
-            return;
-        }
+    // Fetch user profile
+    const fetchUser = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) throw new Error("No token found");
 
-        userAPI
-            .getUserProfile() // Fetch user profile using userAPI
-            .then((user) => {
-                console.log("User fetched:", user);
-                setUser(user);
-            })
-            .catch(() => {
-                console.log("Invalid token, removing...");
-                localStorage.removeItem("token");
-            })
-            .finally(() => setLoading(false)); // Ensure loading ends
+            const user = await userAPI.getUserProfile();
+            setUser(user);
+            return user;
+        } catch (error) {
+            console.error("Failed to fetch user profile:", error);
+            localStorage.removeItem("token");
+            setUser(null);
+            return null;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // On initialization
+    useEffect(() => {
+        (async () => {
+            setLoading(true); // Show loading state during initialization
+            await fetchUser(); // Fetch the user's profile
+        })();
     }, []);
 
     // Sign-in function
@@ -66,9 +71,9 @@ export const AuthProvider = ({ children }) => {
     };
 
     // Refresh user explicitly
-    const refreshUser = () => {
-        setLoading(true);
-        fetchUser();
+    const refreshUser = async () => {
+        setLoading(true); // Show loading spinner during refresh
+        await fetchUser(); // Refetch and update user details
     };
 
     // Memoize the context value to optimize re-renders
@@ -78,8 +83,9 @@ export const AuthProvider = ({ children }) => {
             loading,
             signIn,
             signOut,
+            refreshUser: fetchUser, // Allow refreshUser to be triggered externally
         }),
-        [user, loading] // Dependencies that trigger re-computation
+        [user, loading]
     );
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
