@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import apiClient from "../services/apiClient";
 import useRedirectIfAuthenticated from "../hooks/useRedirectIfAuthenticated";
-import "./../styles/Signup.css";
+import "./../styles/SignUp.css";
 
 const Signup = () => {
     useRedirectIfAuthenticated(); // Redirect if already authenticated
