@@ -15,39 +15,52 @@ const Dash = () => {
           <Link to="/title">1. Title Page</Link>
         </p>
         <p className="textbox">
-          <Link to="/abstract">2. Abstract</Link>
+          <Link to="/copyright">2. Copyright Page</Link>
         </p>
         <p className="textbox">
-          <Link to="/table-of-contents">3. Table of Contents</Link>
+          <Link to="/signature">3. Signature Page</Link>
         </p>
         <p className="textbox">
-          <Link to="/list-of-figures">4. List of Figures</Link>
+          <Link to="/abstract">4. Abstract Page</Link>
         </p>
         <p className="textbox">
-          <Link to="/list-of-tables">5. List of Tables</Link>
+          <Link to="/dedication">5. Dedication Page</Link>
+        </p>
+        <p className="textbox">
+          <Link to="/acknowledgements">6. Acknowledgements Page</Link>
+        </p>
+        <p className="textbox">
+          <Link to="/table-of-contents">7. Table of Contents</Link>
+        </p>
+        <p className="textbox">
+          <Link to="/list-of-figures">8. List of Figures (if any)</Link>
+        </p>
+        <p className="textbox">
+          <Link to="/list-of-tables">9. List of Tables (if any)</Link>
         </p>
         <Accordion.Item eventKey="5">
           <Accordion.Header>
-            <Link to="/body">6. Body (4-6 sections)</Link>{" "}
+            <Link to="/body">10. Body (4-6 sections)</Link>{" "}
           </Accordion.Header>
           <Accordion.Body>
-            <ul>
-              <li>Literature Review</li>
-              <li>Methodology</li>
-              <li>Results</li>
-              <li>Discussion</li>
-              <li>Conclusion</li>
-            </ul>
+            <ol>
+              <li>Chapter I: Introduction</li>
+              <li>Chapter II: Literature Review</li>
+              <li>Chapter III: Methods</li>
+              <li>Chapter IV: Results</li>
+              <li>Chapter V: Discussion</li>
+            </ol>
           </Accordion.Body>
         </Accordion.Item>
         <p className="textbox">
-          <Link to="/appendices">7. Appendices</Link>
+          <Link to="/references">11. References</Link>
         </p>
         <p className="textbox">
-          <Link to="/references">8. References</Link>
+          <Link to="/appendices">12. Appendices</Link>
         </p>
+
         <p className="textbox">
-          <Link to="/other-info">9. Other Info</Link>
+          <Link to="/other-info">13. Other Info</Link>
         </p>
       </Accordion>
     </div>

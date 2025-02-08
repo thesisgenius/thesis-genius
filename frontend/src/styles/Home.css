@@ -1,7 +1,6 @@
 /* Hero Section */
 .hero-section {
     background: linear-gradient(135deg, #4b79a1, #283e51);
-    /* background-image: url('../assets/tg.png');*/
     color: white;
     text-align: center;
     padding: 50px 20px;
@@ -66,7 +65,7 @@
     background: #4b79a1;
     color: white;
     text-align: center;
-    padding: 20px 20px;
+    padding: 50px 20px;
 }
 
 .cta-section .button {
