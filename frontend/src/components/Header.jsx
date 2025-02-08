@@ -13,7 +13,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import "../styles/Header.css";
 
-const LOGO_PATH = "/tg-white.png";
+const LOGO_PATH = "/owl.png";
 const LOGO_ALT = "ThesisGenius";
 const NAV_LINKS = [
     { to: "/dashboard", label: "Dashboard", icon: faDashboard },

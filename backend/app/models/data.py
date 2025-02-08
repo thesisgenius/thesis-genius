@@ -147,10 +147,6 @@ class Thesis(BaseModel):
     title = CharField()
     course = CharField(null=True)
     instructor = CharField(null=True)
-    # TODO: Separate to another table
-    abstract = TextField(null=True)
-    # TODO: Separate to another table and rename to BodyPage
-    content = TextField(null=True)
     status = CharField()
     created_at = DateTimeField(default=datetime.now(timezone.utc))
     updated_at = DateTimeField(default=datetime.now(timezone.utc))
@@ -161,6 +157,111 @@ class Thesis(BaseModel):
     class Meta:
         table_name = "theses"
         indexes = ((("id", "student_id"), True),)
+
+
+class TableOfContents(BaseModel):
+    """
+    Represents a Table of Contents (ToC) entry for a thesis document.
+
+    This class is designed to model the structure of a Table of Contents in relation to
+    a thesis. Each instance of the class corresponds to a specific entry in the ToC,
+    which includes a section title, the page number, and the order of appearance.
+    The entries are unique per thesis and are maintained in a specific order. It
+    employs relational mapping to associate ToC entries with their respective thesis.
+
+    :ivar id: Primary key field representing the unique identifier of the
+              table of contents entry.
+    :type id: AutoField
+    :ivar thesis: Foreign key field mapping the ToC entry to a specific thesis.
+    :type thesis: ForeignKeyField
+    :ivar section_title: Title of the section represented by the ToC entry.
+    :type section_title: CharField
+    :ivar page_number: Page number where the section begins. Can be null.
+    :type page_number: IntegerField
+    :ivar order: Order of the section in the ToC. Unique within the context
+                 of a single thesis.
+    :type order: IntegerField
+    """
+
+    id = AutoField(primary_key=True, column_name="toc_id")
+    thesis = ForeignKeyField(
+        Thesis,
+        backref="table_of_contents",
+        column_name="thesis_id",
+        on_delete="CASCADE",
+    )
+    section_title = CharField()
+    page_number = IntegerField(null=True)
+    order = IntegerField()
+
+    class Meta:
+        table_name = "thesis_table_of_contents"
+        indexes = (
+            (("thesis", "order"), True),
+        )  # Ensure unique ordering for each thesis
+
+
+class Abstract(BaseModel):
+    """
+    Represents the abstract data for a thesis record.
+
+    This class is used to define and interact with the abstract data
+    associated with a thesis in the database. It includes the primary key
+    for the abstract, the reference to the associated thesis, and a text
+    description of the abstract. This model is mapped to the database table
+    `thesis_abstracts`.
+
+    :ivar id: The unique identifier for the abstract record.
+    :type id: AutoField
+    :ivar thesis: The ForeignKey relationship to a thesis. Refers to the
+        parent thesis to which this abstract belongs.
+    :type thesis: ForeignKeyField
+    :ivar text: The text content of the abstract. This may contain the
+        summary or details encapsulating the purpose or findings of the
+        thesis. It can be null.
+    :type text: TextField
+    """
+
+    id = AutoField(primary_key=True, column_name="abstract_id")
+    thesis = ForeignKeyField(
+        Thesis, backref="abstract", column_name="thesis_id", on_delete="CASCADE"
+    )
+    text = TextField(null=True)
+
+    class Meta:
+        table_name = "thesis_abstracts"
+
+
+class BodyPage(BaseModel):
+    """
+    Represents a page within the body of a thesis.
+
+    This class is used to define the structure and properties of a thesis body
+    page in a database. Each body page is associated with a specific thesis and
+    contains information such as the page number and the body content. The class
+    is designed to manage and store body pages as part of a thesis management system.
+
+    :ivar id: Unique identifier for the body page.
+    :type id: AutoField
+    :ivar thesis: Reference to the thesis this body page belongs to.
+    :type thesis: ForeignKeyField
+    :ivar page_number: The page number within the thesis.
+    :type page_number: IntegerField
+    :ivar body: The content of the body page.
+    :type body: TextField
+
+    """
+
+    id = AutoField(primary_key=True, column_name="body_page_id")
+    thesis = ForeignKeyField(
+        Thesis, backref="body_pages", column_name="thesis_id", on_delete="CASCADE"
+    )
+    page_number = IntegerField()
+    body = TextField(null=True)
+
+    class Meta:
+        table_name = "thesis_body_pages"
+        indexes = ((("thesis", "page_number"), True),)
 
 
 class Reference(BaseModel):

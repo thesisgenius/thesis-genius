@@ -79,13 +79,27 @@ curl -X GET http://127.0.0.1:8557/api/thesis/theses \
 THESIS_ID=$(curl -X POST http://127.0.0.1:8557/api/thesis/new \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer ${TOKEN}" \
-    -d '{"title": "New Thesis", "abstract": "This is the abstract", "status": "Pending"}' | jq -r '.id')
+    -d '{"title": "New Thesis", "status": "Pending"}' | jq -r '.id')
 
 # Update an existing thesis
 curl -X PUT http://127.0.0.1:8557/api/thesis/"$THESIS_ID" \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer ${TOKEN}" \
-    -d '{"title": "Updated Thesis Title", "abstract": "Updated Abstract", "status": "Approved"}'
+    -d '{"title": "Updated Thesis Title", "status": "Approved"}'
 
 curl -X GET http://127.0.0.1:8557/api/thesis/4 \
     -H "Authorization: Bearer ${TOKEN}"
+
+
+curl -X POST http://127.0.0.1:8557/api/thesis/new \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer ${TOKEN}" \
+    -d '{
+          "title": "New Thesis",
+          "status": "Pending",
+          "abstract": "This is a test abstract.",
+          "body_pages": [
+              {"page_number": 1, "body": "This is the first page."},
+              {"page_number": 2, "body": "This is the second page."}
+          ]
+        }'

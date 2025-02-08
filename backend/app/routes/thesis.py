@@ -122,8 +122,6 @@ def create_thesis():
             )
 
         title = data.get("title")
-        abstract = data.get("abstract")
-        content = data.get("content")
         status = data.get("status")
 
         if not title or not status:
@@ -142,15 +140,18 @@ def create_thesis():
             return jsonify({"success": False, "message": "User ID is missing"}), 400
 
         thesis_data = {
-            "title": title,
-            "abstract": abstract,
-            "content": content,
-            "status": status,
-            "student_id": user_id,  # Updated to conform to schema
+            key: value
+            for key, value in data.items()
+            if key in ["title", "abstract", "status", "body_pages"]
         }
+        thesis_data["student_id"] = user_id
         thesis = thesis_service.create_thesis(thesis_data)
-
-        if thesis:
+        if not thesis:
+            return (
+                jsonify({"success": False, "message": "Failed to create thesis"}),
+                400,
+            )
+        else:
             thesis_dict = model_to_dict(
                 thesis, exclude=[Thesis.student]
             )  # Exclude student object
@@ -166,8 +167,6 @@ def create_thesis():
                 ),
                 201,
             )
-
-        return jsonify({"success": False, "message": "Failed to create thesis"}), 400
     except Exception as e:
         app.logger.error(f"Error creating thesis: {e}")
         return jsonify({"success": False, "message": "An internal error occurred"}), 500
@@ -200,22 +199,18 @@ def edit_thesis(thesis_id):
                 400,
             )
 
-        updated_data = {}
-        if data.get("title"):
-            updated_data["title"] = data.get("title")
-        if data.get("abstract"):
-            updated_data["abstract"] = data.get("abstract")
-        if data.get("status"):
-            updated_data["status"] = data.get("status")
-        if data.get("content"):
-            updated_data["content"] = data.get("content")
+        updated_data = {
+            key: value
+            for key, value in dict(data).items()
+            if key in ["title", "status"]
+        }
 
         if not all(updated_data.values()):
             return (
                 jsonify(
                     {
                         "success": False,
-                        "message": "Title, abstract, and status are required",
+                        "message": "Title and status are required",
                     }
                 ),
                 400,
@@ -226,30 +221,40 @@ def edit_thesis(thesis_id):
         )
 
         thesis = thesis_service.update_thesis(thesis_id, user_id, updated_data)
-        if thesis:
-            thesis_dict = model_to_dict(
-                thesis, exclude=[Thesis.student]
-            )  # Exclude student object
+        if not thesis:
             return (
                 jsonify(
                     {
-                        "success": True,
-                        "message": "Thesis updated successfully",
-                        "thesis": thesis_dict,
+                        "success": False,
+                        "message": "Failed to update thesis. Check if it exists and belongs to you.",
                     }
                 ),
-                200,
+                400,
             )
 
+        # Handle abstract updates
+        if "abstract" in data:
+            thesis_service.add_abstract(thesis.id, data["abstract"])
+
+        # Handle body pages updates
+        if "body_pages" in data:
+            for page in data["body_pages"]:
+                thesis_service.add_body_page(
+                    thesis.id, page["page_number"], page["body"]
+                )
+
+        thesis_dict = model_to_dict(thesis, exclude=[thesis.student])
         return (
             jsonify(
                 {
-                    "success": False,
-                    "message": "Failed to update thesis. Check if it exists and belongs to you.",
+                    "success": True,
+                    "message": "Thesis updated successfully",
+                    "thesis": thesis_dict,
                 }
             ),
-            400,
+            200,
         )
+
     except Exception as e:
         app.logger.error(f"Error updating thesis {thesis_id}: {e}")
         return jsonify({"success": False, "message": "An internal error occurred"}), 500
@@ -288,6 +293,153 @@ def delete_thesis(thesis_id):
     except Exception as e:
         app.logger.error(f"Error deleting thesis {thesis_id}: {e}")
         return jsonify({"success": False, "message": "An internal error occurred"}), 500
+
+
+# ----------------- ABSTRACT ROUTES -----------------
+
+
+@thesis_bp.route("/<int:thesis_id>/abstract", methods=["POST"])
+@jwt_required
+def create_or_update_abstract(thesis_id):
+    """
+    Creates or updates an abstract for a thesis with the provided `thesis_id`.
+    The function handles POST requests, retrieves the abstract text from the
+    incoming JSON payload, and attempts to either create or update the abstract
+    associated with the specified `thesis_id`. If an error occurs during processing,
+    an error response is returned, and the corresponding error is logged.
+
+    :param thesis_id: The unique identifier for the thesis whose abstract is being
+        created or updated.
+    :type thesis_id: int
+    :return: A JSON response with the success status and message indicating the
+        result of the operation. Possible HTTP status codes: 200 (success),
+        400 (failure to update abstract), or 500 (internal error).
+    :rtype: flask.Response
+    """
+    thesis_service = ThesisService(app.logger)
+    try:
+        data = request.json
+        abstract_text = data.get("text", "")
+        abstract = thesis_service.add_abstract(thesis_id, abstract_text)
+        if abstract:
+            return jsonify({"success": True, "message": "Abstract updated"}), 200
+        return jsonify({"success": False, "message": "Failed to update abstract"}), 400
+
+    except Exception as e:
+        app.logger.error(f"Error updating abstract for thesis {thesis_id}: {e}")
+        return jsonify({"success": False, "message": "An internal error occurred"}), 500
+
+
+@thesis_bp.route("/<int:thesis_id>/abstract", methods=["DELETE"])
+@jwt_required
+def delete_abstract(thesis_id):
+    """
+    Deletes the abstract of a thesis identified by its ID.
+
+    This endpoint allows a user to delete an existing abstract for a specific
+    thesis by providing the thesis ID. The operation requires authentication
+    via JWT. Upon successful deletion, a success message is returned.
+
+    :param thesis_id: The ID of the thesis whose abstract is to be deleted
+    :type thesis_id: int
+    :return: JSON response confirming the success of the operation and an
+        associated message
+    :rtype: tuple (dict, int)
+    """
+    thesis_service = ThesisService(app.logger)
+    try:
+        thesis_service.delete_abstract(thesis_id)
+    except Exception as e:
+        app.logger.error(f"Error deleting abstract for thesis {thesis_id}: {e}")
+        return jsonify({"success": False, "message": "An internal error occurred"}), 500
+    return jsonify({"success": True, "message": "Abstract deleted"}), 200
+
+
+# ----------------- BODY PAGE ROUTES -----------------
+
+
+@thesis_bp.route("/<int:thesis_id>/body-pages", methods=["POST"])
+@jwt_required
+def add_body_page(thesis_id):
+    """
+    Add a new body page to an existing thesis. This function allows adding a body page
+    to a specific thesis identified by its ID. It extracts the page number and body content
+    from the request JSON payload and creates a new body page using the ThesisService.
+    The response includes a success or failure message along with the newly created
+    page's ID if successful.
+
+    :param thesis_id: The ID of the thesis to which the body page is to be added
+    :type thesis_id: int
+    :return: A JSON response with success status, message, and page ID if successful,
+        or failure status and message if not.
+    :rtype: flask.Response
+    """
+    thesis_service = ThesisService(app.logger)
+    try:
+        data = request.json
+        page = thesis_service.add_body_page(
+            thesis_id, data["page_number"], data["body"]
+        )
+        if page:
+            return (
+                jsonify(
+                    {"success": True, "message": "Body page added", "page_id": page.id}
+                ),
+                201,
+            )
+    except Exception as e:
+        app.logger.error(f"Failed to add body page: {e}")
+        return jsonify({"success": False, "message": "Failed to add body page"}), 400
+
+
+@thesis_bp.route("/<int:page_id>", methods=["PUT"])
+@jwt_required
+def update_body_page(page_id):
+    """
+    Updates a thesis body page with the provided details. It uses the ThesisService
+    to update the page's content, given the page ID, page number, and body text.
+    Returns a success response if the page is updated, otherwise a failure response.
+
+    :param page_id: The ID of the page to be updated.
+    :type page_id: int
+    :return: A Flask JSON response indicating the success or failure of the operation.
+    :rtype: flask.Response
+
+    """
+    thesis_service = ThesisService(app.logger)
+    try:
+        data = request.json
+        updated_page = thesis_service.add_body_page(
+            page_id, data["page_number"], data["body"]
+        )
+        if updated_page:
+            return jsonify({"success": True, "message": "Body page updated"}), 200
+    except Exception as e:
+        app.logger.error(f"Error updating body page: {e}")
+        return jsonify({"success": False, "message": "Failed to update body page"}), 400
+
+
+@thesis_bp.route("/<int:page_id>", methods=["DELETE"])
+@jwt_required
+def delete_body_page(page_id):
+    """
+    Deletes a body page from a thesis by its page ID. This function is protected
+    by JWT authentication and interacts with the `ThesisService` to perform
+    the deletion. After successful deletion, it returns a success response
+    with a message indicating that the body page has been deleted.
+
+    :param page_id: The ID of the page to be deleted.
+    :type page_id: int
+    :return: A dictionary containing success status and deletion message,
+             along with HTTP status code 200.
+    :rtype: tuple
+    """
+    thesis_service = ThesisService(app.logger)
+    try:
+        thesis_service.delete_body_page(page_id)
+    except Exception as e:
+        app.logger.error(f"Failed to delete body page: {e}")
+        return jsonify({"success": False, "message": "Failed to delete body page"}), 400
 
 
 # --- References Endpoints ---

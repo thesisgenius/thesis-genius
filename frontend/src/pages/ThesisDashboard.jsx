@@ -47,6 +47,21 @@ const ThesisDashboard = () => {
         }
     }, 300);
 
+    const updateBodyPage = debounce(async (pageId, value) => {
+        try {
+            await apiClient.put(`/thesis/${thesisId}/body-pages/${pageId}`, { body: value });
+            const updatedPages = localThesis.bodyPages.map((page) =>
+                page.id === pageId ? { ...page, body: value } : page
+            );
+            setLocalThesis((prev) => ({ ...prev, bodyPages: updatedPages }));
+            generateLivePreview({ ...localThesis, bodyPages: updatedPages });
+            console.log(`Successfully updated body page ${pageId}`);
+        } catch (error) {
+            setError("Failed to update body page. Please try again.");
+            console.error(error);
+        }
+    }, 300);
+
     const generateLivePreview = (data) => {
         const title = data.title
             ? `<h1 style="text-align: center; font-weight: bold; text-transform: capitalize; margin-bottom: 24px;">
@@ -61,22 +76,46 @@ const ThesisDashboard = () => {
                </p>`
             : "";
 
-        const content = data.content
-            ? `<h2 style="text-align: center; font-weight: bold; margin-top: 24px; margin-bottom: 12px;">Content</h2>
-               <p style="text-align: justify; margin: 0; line-height: 2; text-indent: 0.5in;">
-                ${data.content}
-               </p>`
+        const tableOfContents = data.tableOfContents
+            ? `<h2 style="text-align: center; font-weight: bold; margin-bottom: 12px;">Table of Contents</h2>
+               <ul style="list-style-type: none; padding: 0; margin: 0;">
+                ${data.tableOfContents
+                .sort((a, b) => a.order - b.order)
+                .map(
+                    (entry) => `<li style="margin: 4px 0;">
+                            ${entry.order}. ${entry.sectionTitle} (Page ${entry.pageNumber})
+                        </li>`
+                )
+                .join("")}
+               </ul>`
             : "";
 
-        const apaPreview = `
+        const bodyPages = data.bodyPages
+            ? data.bodyPages
+                .sort((a, b) => a.pageNumber - b.pageNumber)
+                .map(
+                    (page) => `<div style="margin-top: 24px;">
+                          <h3 style="text-align: left; font-weight: bold; margin-bottom: 12px;">
+                            Page ${page.pageNumber}
+                          </h3>
+                          <p style="text-align: justify; margin: 0; line-height: 2; text-indent: 0.5in;">
+                            ${page.body}
+                          </p>
+                      </div>`
+                )
+                .join("")
+            : "";
+
+        const previewContent = `
             <div style="font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 2; padding: 20px;">
                 ${title}
                 ${abstract}
-                ${content}
+                ${tableOfContents}
+                ${bodyPages}
             </div>
         `;
 
-        setFormattedContent(apaPreview);
+        setFormattedContent(previewContent);
     };
 
     const sashRender = (index, active) => (
@@ -137,21 +176,23 @@ const ThesisDashboard = () => {
                                 }}
                             />
                         </div>
+
                         <div style={inputGroupStyle}>
-                            <h3>Content</h3>
-                            <textarea
-                                placeholder="Content"
-                                value={localThesis.content || ""}
-                                style={textareaStyle}
-                                onChange={(e) => {
-                                    const newValue = e.target.value;
-                                    setLocalThesis((prev) => ({
-                                        ...prev,
-                                        content: newValue,
-                                    }));
-                                    updateThesisSection("content", newValue);
-                                }}
-                            />
+                            <h3>Body Pages</h3>
+                            {localThesis.bodyPages?.map((page) => (
+                                <div key={page.id} style={{ marginBottom: "12px" }}>
+                                    <h4>Page {page.pageNumber}</h4>
+                                    <textarea
+                                        placeholder={`Content for Page ${page.pageNumber}`}
+                                        value={page.body || ""}
+                                        style={textareaStyle}
+                                        onChange={(e) => {
+                                            const newValue = e.target.value;
+                                            updateBodyPage(page.id, newValue);
+                                        }}
+                                    />
+                                </div>
+                            ))}
                         </div>
                         <button style={buttonStyle} onClick={fetchThesis}>
                             Refresh Preview
@@ -173,7 +214,6 @@ const ThesisDashboard = () => {
         </div>
     );
 };
-
 // Styles
 const editorPaneStyle = {
     padding: "20px",
@@ -231,5 +271,4 @@ const livePreviewStyle = {
     border: "1px solid #ddd",
     borderRadius: "4px",
 };
-
 export default ThesisDashboard;
