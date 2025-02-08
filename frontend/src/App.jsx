@@ -18,6 +18,13 @@ import Part from "./pages/Part";
 import About from "./pages/About";
 import ThesisBody from "./pages/ThesisBody";
 import DynamicPart from "./pages/DynamicPart";
+import AllPages from "./pages/AllPages";
+import TitlePage from "./pages/ThesisPages/TitlePage";
+import CopyrightPage from "./pages/ThesisPages/CopyrightPage";
+import SignaturePage from "./pages/ThesisPages/SignaturePage";
+import AbstractPage from "./pages/ThesisPages/AbstractPage";
+import DedicationPage from "./pages/ThesisPages/DedicationPage";
+import AcknowledgementPage from "./pages/ThesisPages/AcknowledgementPage";
 
 const App = () => {
   return (
@@ -34,6 +41,13 @@ const App = () => {
         <Route path="/part" element={<Part />} />
         <Route path="/dynamicpart" element={<DynamicPart />} />
         <Route path="/about" element={<About />} />
+        <Route path="/allpages" element={<AllPages />} />
+        <Route path="/titlepage" element={<TitlePage />} />
+        <Route path="/copyrightpage" element={<CopyrightPage />} />
+        <Route path="/signaturepage" element={<SignaturePage />} />
+        <Route path="/abstractpage" element={<AbstractPage />} />
+        <Route path="/dedicationpage" element={<DedicationPage />} />
+        <Route path="/acknowledgementpage" element={<AcknowledgementPage />} />
         <Route
           path="/dashboard"
           element={
