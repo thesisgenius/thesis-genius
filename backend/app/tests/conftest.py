@@ -1,3 +1,4 @@
+import inspect
 import os
 import sys
 from datetime import datetime, timedelta, timezone
@@ -5,11 +6,10 @@ from datetime import datetime, timedelta, timezone
 import fakeredis
 import pytest
 from app import create_app
-from app.models.data import Posts  # , TokenBlacklist
-from app.models.data import (Appendix, Figure, Footnote, PostComment, Role,
-                             SessionLog, Settings, TableEntry, Thesis, User)
+from app.models import data
 from app.services.dbservice import DBService
 from app.utils.db import database_proxy
+from peewee import Model
 
 # Add the backend directory to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
@@ -25,38 +25,34 @@ def app():
     # Initialize the SQLite test database
     with app.app_context():
         database_proxy.connect()
-        database_proxy.create_tables(
-            [
-                Role,
-                User,
-                Thesis,
-                Posts,
-                PostComment,
-                SessionLog,
-                Settings,
-                Footnote,
-                TableEntry,
-                Figure,
-                Appendix,
-            ],
-            safe=True,
-        )
+        database_models = [
+            cls
+            for _, cls in inspect.getmembers(
+                data,
+                lambda m: isinstance(m, type) and issubclass(m, Model) and m != Model,
+            )
+        ]
+        database_proxy.create_tables(database_models, safe=True)
+
         yield app
-        database_proxy.drop_tables(
-            [
-                Role,
-                User,
-                Thesis,
-                Posts,
-                PostComment,
-                SessionLog,
-                Settings,
-                Footnote,
-                TableEntry,
-                Figure,
-                Appendix,
-            ]
-        )
+        # Dynamically retrieve all models from data.py
+        database_models = [
+            model
+            for model in data.__dict__.values()
+            if isinstance(model, type)
+            and issubclass(model, data.BaseModel)
+            and model is not data.BaseModel
+        ]
+        existing_tables = database_proxy.get_tables()
+
+        # Drop only tables that exist
+        tables_to_drop = [
+            model
+            for model in database_models
+            if model._meta.table_name in existing_tables
+        ]
+        if tables_to_drop:
+            database_proxy.drop_tables(tables_to_drop, safe=True)
         database_proxy.close()
 
 

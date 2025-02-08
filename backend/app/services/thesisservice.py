@@ -1,8 +1,11 @@
+from datetime import datetime, timezone
+
 from peewee import IntegrityError, PeeweeException
 from playhouse.shortcuts import model_to_dict
 
-from ..models.data import (Appendix, Figure, Footnote, Reference, TableEntry,
-                           Thesis, User)
+from ..models.data import (Abstract, Appendix, BodyPage, Figure, Footnote,
+                           Reference, TableEntry, TableOfContents, Thesis,
+                           User)
 
 
 class ThesisService:
@@ -138,6 +141,217 @@ class ThesisService:
             self.logger.error(f"Failed to fetch thesis {thesis_id}: {e}")
             return None
 
+    def add_table_of_contents_entry(self, thesis_id, section_title, page_number, order):
+        """
+        Adds an entry to the table of contents for a thesis.
+
+        :param thesis_id: The ID of the thesis the entry belongs to.
+        :type thesis_id: int
+        :param section_title: The title of the section in the TOC.
+        :type section_title: str
+        :param page_number: The page number associated with the section.
+        :type page_number: int
+        :param order: The order of the section in the TOC.
+        :type order: int
+        :return: The newly created TOC entry.
+        :rtype: TableOfContents
+        """
+        try:
+            thesis = Thesis.get_or_none(Thesis.id == thesis_id)
+            if not thesis:
+                raise ValueError(f"Thesis with ID {thesis_id} not found.")
+            toc_entry = TableOfContents.create(
+                thesis=thesis,
+                section_title=section_title,
+                page_number=page_number,
+                order=order,
+            )
+            self.logger.info(f"TOC entry added to thesis {thesis_id}.")
+            return toc_entry
+        except Exception as e:
+            self.logger.error(f"Error adding TOC entry to thesis {thesis_id}: {e}")
+            raise
+
+    def get_table_of_contents(self, thesis_id):
+        """
+        Retrieves the table of contents for a thesis.
+
+        :param thesis_id: The ID of the thesis whose TOC is to be retrieved.
+        :type thesis_id: int
+        :return: A list of table of contents entries.
+        :rtype: list[dict]
+        """
+        try:
+            toc_entries = (
+                TableOfContents.select()
+                .where(TableOfContents.thesis_id == thesis_id)
+                .order_by(TableOfContents.order)
+            )
+            return [model_to_dict(entry) for entry in toc_entries]
+        except Exception as e:
+            self.logger.error(f"Error fetching TOC for thesis {thesis_id}: {e}")
+            raise
+
+    def delete_table_of_contents_entry(self, entry_id):
+        """
+        Deletes a specific table of contents entry by its ID.
+
+        :param entry_id: The ID of the TOC entry to delete.
+        :type entry_id: int
+        :return: True if deletion is successful.
+        :rtype: bool
+        """
+        try:
+            entry = TableOfContents.get_or_none(TableOfContents.id == entry_id)
+            if not entry:
+                self.logger.warning(f"TOC entry {entry_id} not found.")
+                return False
+            entry.delete_instance()
+            self.logger.info(f"TOC entry {entry_id} deleted successfully.")
+            return True
+        except Exception as e:
+            self.logger.error(f"Error deleting TOC entry {entry_id}: {e}")
+            raise
+
+    def add_abstract(self, thesis_id, abstract_data):
+        """
+        Adds or updates the abstract for a specified thesis.
+
+        :param thesis_id: The ID of the thesis to which the abstract belongs.
+        :type thesis_id: int
+        :param abstract_data: The abstract text to be added or updated.
+        :type abstract_data: str
+        :return: The created or updated Abstract instance.
+        :rtype: Abstract
+        :raises ValueError: If the specified thesis does not exist.
+        """
+        try:
+            thesis = Thesis.get_or_none(Thesis.id == thesis_id)
+            if not thesis:
+                raise ValueError(f"Thesis with ID {thesis_id} not found.")
+
+            abstract, created = Abstract.get_or_create(thesis=thesis)
+            abstract.text = abstract_data
+            abstract.save()
+            self.logger.info(
+                f"Abstract {'created' if created else 'updated'} for thesis {thesis_id}."
+            )
+            return abstract
+        except Exception as e:
+            self.logger.error(
+                f"Error adding or updating abstract for thesis {thesis_id}: {e}"
+            )
+            raise
+
+    def get_abstract(self, thesis_id):
+        """
+        Fetches the abstract for a specified thesis.
+
+        :param thesis_id: The ID of the thesis whose abstract is to be fetched.
+        :type thesis_id: int
+        :return: The abstract text.
+        :rtype: str
+        :raises ValueError: If the thesis does not have an abstract.
+        """
+        try:
+            abstract = Abstract.get_or_none(Abstract.thesis_id == thesis_id)
+            if not abstract:
+                raise ValueError(f"No abstract found for thesis ID {thesis_id}.")
+            return abstract.text
+        except Exception as e:
+            self.logger.error(f"Error fetching abstract for thesis {thesis_id}: {e}")
+            raise
+
+    def delete_abstract(self, thesis_id):
+        """
+        Deletes the abstract for a specified thesis.
+        :param thesis_id: The ID of the thesis whose abstract is to be deleted.
+        :type thesis_id: int
+        :return: True if the deletion is successful.
+        :rtype: bool
+        """
+        try:
+            abstract = Abstract.get_or_none(Abstract.thesis_id == thesis_id)
+            if not abstract:
+                self.logger.warning(f"Abstract for thesis {thesis_id} not found.")
+                return False
+            abstract.delete_instance()
+            self.logger.info(f"Abstract for thesis {thesis_id} deleted successfully.")
+            return True
+        except Exception as e:
+            self.logger.error(f"Error deleting abstract for thesis {thesis_id}: {e}")
+            raise
+
+    def add_body_page(self, thesis_id, page_number, body_text):
+        """
+        Adds a body page to the specified thesis.
+
+        :param thesis_id: The ID of the thesis to which the body page belongs.
+        :type thesis_id: int
+        :param page_number: The page number for the body content.
+        :type page_number: int
+        :param body_text: The text content for this page.
+        :type body_text: str
+        :return: The created or updated BodyPage instance.
+        :rtype: BodyPage
+        """
+        try:
+            thesis = Thesis.get_or_none(Thesis.id == thesis_id)
+            if not thesis:
+                raise ValueError(f"Thesis with ID {thesis_id} not found.")
+
+            body_page, created = BodyPage.get_or_create(
+                thesis=thesis, page_number=page_number
+            )
+            body_page.body = body_text
+            body_page.save()
+            self.logger.info(
+                f"Body page {page_number} for thesis {thesis_id} {'created' if created else 'updated'}."
+            )
+            return body_page
+        except Exception as e:
+            self.logger.error(
+                f"Error adding or updating body page for thesis {thesis_id}: {e}"
+            )
+            raise
+
+    def get_body_pages(self, thesis_id):
+        """
+        Fetches all body pages for a specified thesis.
+
+        :param thesis_id: The ID of the thesis whose body pages are to be fetched.
+        :type thesis_id: int
+        :return: A list of dictionaries with page information.
+        :rtype: list[dict]
+        """
+        try:
+            pages = BodyPage.select().where(BodyPage.thesis_id == thesis_id)
+            return [model_to_dict(page) for page in pages]
+        except Exception as e:
+            self.logger.error(f"Error fetching body pages for thesis {thesis_id}: {e}")
+            raise
+
+    def delete_body_page(self, page_id):
+        """
+        Deletes a specific body page by its ID.
+
+        :param page_id: The ID of the body page to delete.
+        :type page_id: int
+        :return: True if the deletion is successful.
+        :rtype: bool
+        """
+        try:
+            body_page = BodyPage.get_or_none(BodyPage.id == page_id)
+            if not body_page:
+                self.logger.warning(f"Body page {page_id} not found.")
+                return False
+            body_page.delete_instance()
+            self.logger.info(f"Body page {page_id} deleted successfully.")
+            return True
+        except Exception as e:
+            self.logger.error(f"Error deleting body page {page_id}: {e}")
+            raise
+
     def create_thesis(self, thesis_data):
         """
         Creates a new thesis entry in the database after performing validation on
@@ -159,10 +373,20 @@ class ThesisService:
         """
         try:
             title = thesis_data.get("title")
-            abstract = thesis_data.get("abstract")
-            content = thesis_data.get("content")
+            course = thesis_data.get("course")
+            instructor = thesis_data.get("instructor")
             status = thesis_data.get("status")
             student_id = thesis_data.get("student_id")
+
+            abstract = None
+            if "abstract" in thesis_data:
+                abstract = thesis_data.get("abstract")
+
+            initial_body_pages = None
+            if "body_pages" in thesis_data:
+                initial_body_pages = thesis_data.get(
+                    "body_pages", []
+                )  # List of {'page_number': int, 'body': str}
 
             # Validate required fields
             if not title or not status or not student_id:
@@ -178,11 +402,23 @@ class ThesisService:
             # Create the thesis
             thesis = Thesis.create(
                 title=title,
-                abstract=abstract,
-                content=content,
+                course=course,
+                instructor=instructor,
                 status=status,
-                student_id=student_id,  # Use student_id directly
+                student=student_id,
             )
+
+            # Conditionally create abstract
+            if abstract:
+                self.add_abstract(thesis.id, abstract)
+
+            # Conditionally create body pages
+            if initial_body_pages:
+                for page in initial_body_pages:
+                    self.add_body_page(
+                        thesis.id, page.get("page_number"), page.get("body")
+                    )
+
             self.logger.info(f"Thesis created successfully: {thesis.id}")
             return thesis
         except IntegrityError as e:
@@ -222,33 +458,44 @@ class ThesisService:
                 return None
 
             # Check for changes
-            existing_data = {
-                "title": thesis.title,
-                "abstract": thesis.abstract,
-                "status": thesis.status,
-            }
+            existing_data = model_to_dict(thesis)
+
             if updated_data == existing_data:
                 thesis = self.get_thesis_by_id(thesis_id, user_id)
                 self.logger.info(f"No changes detected for thesis {thesis_id}.")
                 return thesis
 
             # Perform the update
+            updated_data["updated_at"] = datetime.now(timezone.utc)
             query = Thesis.update(**updated_data).where(
                 (Thesis.id == thesis_id) & (Thesis.student_id == user_id)
             )
             updated_rows = query.execute()
+
+            if "abstract" in updated_data:
+                self.add_abstract(thesis.id, updated_data.get("abstract"))
+
+            if "body_pages" in updated_data:
+                for page in updated_data["body_pages"]:
+                    self.add_body_page(
+                        thesis.id, page.get("page_number"), page.get("body")
+                    )
+
             if updated_rows > 0:
                 self.logger.info(f"Thesis {thesis_id} updated successfully.")
                 thesis = self.get_thesis_by_id(thesis_id, user_id)
                 return thesis
             else:
                 self.logger.warning(f"No rows updated for thesis {thesis_id}.")
-                return None
+                thesis = self.get_thesis_by_id(thesis_id, user_id)
+                return thesis
         except IntegrityError as e:
             self.logger.error(f"IntegrityError updating thesis {thesis_id}: {e}")
             return None
         except Exception as e:
-            self.logger.error(f"Failed to update thesis {thesis_id}: {e}")
+            self.logger.error(
+                f"Failed to update thesis {thesis_id}: {e}. Thesis: {type(thesis)}"
+            )
             return None
 
     def delete_thesis(self, thesis_id, user_id):

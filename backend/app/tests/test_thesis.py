@@ -46,8 +46,6 @@ def sample_thesis(client, user_token):
         "/api/thesis/new",
         json={
             "title": "Sample Thesis",
-            "abstract": "This is a sample abstract.",
-            "content": "This is the main content of the thesis.",
             "status": "Draft",
         },
         headers={"Authorization": f"Bearer {user_token}"},
@@ -65,8 +63,6 @@ def create_thesis(client, user_token):
         "/api/thesis/new",
         json={
             "title": "Test Thesis",
-            "abstract": "This is a test thesis.",
-            "content": "This is the content of the thesis.",
             "status": "Pending",
         },
         headers={"Authorization": f"Bearer {user_token}"},
@@ -75,15 +71,15 @@ def create_thesis(client, user_token):
     return response.json
 
 
+# ---------------- CREATE THESIS TESTS ----------------
+
+
 def test_create_thesis(client, user_token):
-    """
-    Test creating a thesis.
-    """
+    """Test creating a thesis without abstract and body pages."""
     response = client.post(
         "/api/thesis/new",
         json={
             "title": "Test Thesis",
-            "abstract": "This is a test thesis.",
             "status": "Pending",
         },
         headers={"Authorization": f"Bearer {user_token}"},
@@ -93,10 +89,28 @@ def test_create_thesis(client, user_token):
     assert response.json["id"] is not None
 
 
+def test_create_thesis_with_abstract_and_body(client, user_token):
+    """Test creating a thesis with an abstract and body pages."""
+    response = client.post(
+        "/api/thesis/new",
+        json={
+            "title": "Test Thesis",
+            "status": "Pending",
+            "abstract": "This is a test abstract.",
+            "body_pages": [
+                {"page_number": 1, "body": "This is the first page."},
+                {"page_number": 2, "body": "This is the second page."},
+            ],
+        },
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert response.status_code == 201
+    assert response.json["success"] is True
+    assert response.json["id"] is not None
+
+
 def test_create_thesis_missing_fields(client, user_token):
-    """
-    Test creating a thesis with missing required fields.
-    """
+    """Test creating a thesis with missing required fields."""
     response = client.post(
         "/api/thesis/new",
         json={"title": "Incomplete Thesis"},

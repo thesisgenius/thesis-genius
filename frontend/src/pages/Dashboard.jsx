@@ -8,7 +8,7 @@ import "../styles/ThesisCreate.css";
 const Dashboard = () => {
     const [user, setUser] = useState(null);
     const [theses, setTheses] = useState([]);
-    const [newThesis, setNewThesis] = useState({ title: "", abstract: "", status: "Draft" });
+    const [newThesis, setNewThesis] = useState({ title: "", status: "Draft" });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const navigate = useNavigate();
