@@ -12,7 +12,15 @@ user_bp = Blueprint("user_api", __name__, url_prefix="/api/user")
 @jwt_required
 def get_user_profile():
     """
-    Fetch the authenticated user's profile data.
+    Handles the GET request to retrieve a user's profile information. The user's ID is
+    retrieved from the global context (g), and user data is fetched using the UserService.
+    If the user is not found, returns a 404 response. In case of an internal error, logs
+    the error and returns a 500 response.
+
+    :raises Exception: If an error occurs while fetching user profile data.
+    :return: JSON response containing user profile data or an error message, along with the
+        respective HTTP status code.
+    :rtype: flask.Response
     """
     # Instantiate UserService
     user_service = UserService(app.logger)
@@ -32,7 +40,20 @@ def get_user_profile():
 @jwt_required
 def update_user_profile():
     """
-    Update the authenticated user's profile data.
+    Updates the profile information of the currently authenticated user. The endpoint
+    is protected with JWT and requires the user to be authenticated before access. It
+    accepts a JSON payload with the user's first name, last name, and email, validates
+    the input, and then updates the user's data via the `UserService`. If the payload
+    or required fields are invalid, an appropriate error response is returned. In the
+    case of success, the profile is updated, and a success response is sent back.
+
+    :param: None.
+
+    :raises JSONDecodeError: If the request payload is not valid JSON.
+    :raises Exception: For general internal errors during execution.
+
+    :return: A JSON response indicating success or failure along with an appropriate
+        HTTP status code.
     """
     # Instantiate UserService
     user_service = UserService(app.logger)
@@ -80,7 +101,15 @@ def update_user_profile():
 @jwt_required
 def deactivate_user():
     """
-    Deactivate the authenticated user's account.
+    Deactivates a user account by invoking the corresponding service method and verifies the
+    request token from the headers. Logs errors and handles potential exceptions. Returns appropriate
+    response based on success or failure of the deactivation process.
+
+    :raises Exception: If any unexpected error occurs during user account deactivation.
+    :rtype: flask.Response
+    :return: Returns a JSON response with a success or failure message. Response status code
+             is 200 if the user account is successfully deactivated, otherwise 400 for client
+             errors or 500 for server errors.
     """
     # Instantiate UserService
     user_service = UserService(app.logger)
@@ -115,7 +144,17 @@ def deactivate_user():
 @admin_required
 def activate_user(user_id):
     """
-    Allow an admin to activate a user's account.
+    Activate a user by changing their status to active. This endpoint requires users to be
+    authenticated and have admin privileges. It uses the `change_user_status` method of the
+    user service to update the user status and logs errors, if any, during the operation.
+    A success or failure response is returned based on the operation's outcome.
+
+    :param user_id: The ID of the user to be activated.
+    :type user_id: int
+    :return: A JSON response containing the success status and a message. Returns an HTTP
+        status code of 200 if the operation succeeds, 400 if the user is already active or
+        not found, and 500 in case of an unexpected server error.
+    :rtype: tuple
     """
     user_service = UserService(app.logger)
 
@@ -143,7 +182,16 @@ def activate_user(user_id):
 @admin_required
 def delete_user(user_id):
     """
-    Endpoint to delete a user by ID.
+    Deletes and deactivates a user by their ID. The endpoint requires the user to have a valid JWT
+    and admin privileges to perform the action. If the specified user is not found, a 404 error
+    is returned. If the deactivation process is successful, a success message is returned with
+    a 200 status code. Otherwise, an error message with a 500 status code is returned.
+
+    :param user_id: ID of the user to be deactivated
+    :type user_id: int
+    :return: A JSON object containing a success or error message along with the corresponding
+             HTTP status code
+    :rtype: Tuple[Response, int]
     """
     user_service = UserService(app.logger)
     user = user_service.fetch_user_data(user_id)

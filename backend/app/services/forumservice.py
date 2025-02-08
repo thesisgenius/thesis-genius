@@ -238,8 +238,8 @@ class ForumService:
                 user=user_id,
                 post=post_id,
                 content=comment_data["content"],
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow(),
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc),
             )
             return {"id": comment.id, "content": comment.content}
 
@@ -284,7 +284,17 @@ class ForumService:
 
     def delete_comment(self, post_id, comment_id, user_id):
         """
-        Delete a specific comment by ID for a given post.
+        Deletes a comment associated with a specific post, given its ID. The function ensures that only
+        the authorized user can delete the comment. If the comment is not found or the user lacks
+        authorization to delete it, the method logs appropriate warnings and does not perform the
+        deletion. The function will handle execution safely and return a boolean indicating the success
+        or failure of the operation.
+
+        :param post_id: The unique identifier of the post associated with the comment.
+        :param comment_id: The unique identifier of the comment to be deleted.
+        :param user_id: The unique identifier of the user attempting to delete the comment.
+        :return: A boolean indicating whether the deletion was successfully performed. Returns `True` if
+                 the comment was deleted successfully, and `False` otherwise.
         """
 
         def fetch_and_delete():
@@ -318,7 +328,23 @@ class ForumService:
 
     def get_comment_by_id(self, post_id, comment_id):
         """
-        Fetch a single comment by ID for a given post.
+        Fetches a specific comment associated with a given post.
+
+        This method retrieves a specific comment from the database using the post ID and
+        comment ID provided. It ensures that the comment with the exact ID matching both
+        the post and comment parameters is fetched.
+
+        Any database errors during the fetch operation are logged with a specific error
+        message while allowing additional error handling mechanisms.
+
+        :param post_id: The unique identifier of the post to which the comment belongs.
+        :type post_id: int
+        :param comment_id: The unique identifier of the comment to retrieve.
+        :type comment_id: int
+        :return: A dictionary containing the comment information, including ID, content,
+            creation timestamp, last updated time, user, and associated post, or `None`
+            if the operation fails.
+        :rtype: dict or None
         """
 
         def fetch_comment():
@@ -345,7 +371,18 @@ class ForumService:
 
     def update_comment(self, post_id, comment_id, new_content):
         """
-        Update a comment's content by ID for a given post.
+        Updates the content of a specific comment within a specified post. The method ensures
+        that the update is safely executed, logs any errors that occur during execution, and
+        returns whether the update was successful.
+
+        :param post_id: The ID of the post containing the comment to be updated.
+        :type post_id: int
+        :param comment_id: The ID of the comment to update within the specified post.
+        :type comment_id: int
+        :param new_content: The new content to replace the existing comment content.
+        :type new_content: str
+        :return: A boolean indicating whether the update was successful.
+        :rtype: bool
         """
 
         def execute_update():
@@ -373,7 +410,16 @@ class ForumService:
 
     def delete_all_comments(self, post_id):
         """
-        Delete all comments for a specific post.
+        Deletes all comments associated with a specific post.
+
+        This method attempts to delete all comments linked to a given post ID.
+        If the deletion is successful, it logs an informational message and returns
+        True. If no comments are found to delete, it logs a warning and returns False.
+
+        :param post_id: Unique identifier of the post whose comments need to be deleted.
+        :type post_id: int
+        :return: True if comments were deleted successfully, False otherwise.
+        :rtype: bool
         """
 
         def execute_deletion():

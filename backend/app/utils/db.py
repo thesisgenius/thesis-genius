@@ -1,3 +1,5 @@
+import inspect
+
 from peewee import MySQLDatabase, Proxy, SqliteDatabase
 
 # Create a database proxy to allow initialization later
@@ -6,7 +8,17 @@ database_proxy = Proxy()
 
 def initialize_database(app):
     """
-    Initialize the correct database based on the provided Flask app configuration.
+    Initializes the application's database connection and schema.
+
+    This function configures the database connection based on the application's
+    configuration and prepares the database by dynamically detecting and
+    synchronizing all models from the `data` module.
+
+    :param app: The Flask application instance containing configuration settings.
+    :type app: Flask
+
+    :return: Initialized database object prepared for use.
+    :rtype: peewee.Database
     """
     conn_info = app.config["DB_CONNECTION_INFO"]
 
@@ -30,14 +42,25 @@ def initialize_database(app):
         # Connect to the database and create tables
         app.logger.info("Connecting to the database...")
         with database_proxy:
-            from ..models.data import Posts  # , TokenBlacklist
-            from ..models.data import (PostComment, Role, SessionLog, Settings,
-                                       Thesis, User)
+            # Dynamically detect all models in data.py and sync tables
+            from peewee import Model
 
-            database_proxy.create_tables(
-                [Role, User, Thesis, Posts, PostComment, SessionLog, Settings],
-                safe=True,
+            from ..models import data
+
+            database_models = [
+                cls
+                for _, cls in inspect.getmembers(
+                    data,
+                    lambda m: isinstance(m, type)
+                    and issubclass(m, Model)
+                    and m != Model,
+                )
+            ]
+            app.logger.info(
+                f"Found {len(database_models)} models to sync: {[model.__name__ for model in database_models]}"
             )
+            database_proxy.create_tables(database_models, safe=True)
+
         app.logger.info("Database initialization complete.")
     except Exception as e:
         app.logger.error(f"Database initialization failed: {e}")
@@ -46,15 +69,24 @@ def initialize_database(app):
     return db
 
 
-# def model_to_dict(model):
-#     """
-#     Convert a Peewee model instance to a dictionary.
-#     """
-#     return {field: getattr(model, field) for field in model._meta.sorted_field_names}
-
-
 def drop_tables(conn_info):
+    """
+    Drops existing database tables dynamically by retrieving model definitions
+    from the provided module and comparing them with existing tables in the
+    database. Only tables that match existing definitions are dropped to prevent
+    errors.
+
+    :param conn_info: A dictionary containing database connection details. The
+        keys in the dictionary are expected to include "name" (database name),
+        "user" (database username), "password" (database password), "host"
+        (database host), and "port" (port number for the database connection).
+    :type conn_info: dict
+    :return: None
+    :rtype: NoneType
+    """
     from peewee import MySQLDatabase
+
+    from ..models import data
 
     # Configure the database
     database = MySQLDatabase(
@@ -66,26 +98,15 @@ def drop_tables(conn_info):
     )
     database_proxy.initialize(database)
 
-    from ..models.data import (Appendix, Figure, Footnote, PostComment, Posts,
-                               Reference, Role, SessionLog, Settings,
-                               TableEntry, Thesis, User)
-
     print("Dropping tables if they exist...")
 
-    # List of models to drop
-    models = [
-        Settings,
-        SessionLog,
-        PostComment,
-        Posts,
-        Reference,
-        Thesis,
-        User,
-        Role,
-        Footnote,
-        TableEntry,
-        Figure,
-        Appendix,
+    # Dynamically retrieve all models from data.py
+    database_models = [
+        model
+        for model in data.__dict__.values()
+        if isinstance(model, type)
+        and issubclass(model, data.BaseModel)
+        and model is not data.BaseModel
     ]
 
     # Fetch existing table names
@@ -94,27 +115,41 @@ def drop_tables(conn_info):
 
         # Drop only tables that exist
         tables_to_drop = [
-            model for model in models if model._meta.table_name in existing_tables
+            model
+            for model in database_models
+            if model._meta.table_name in existing_tables
         ]
         if tables_to_drop:
             database_proxy.drop_tables(tables_to_drop, safe=True)
-            print(
-                f"Dropped tables: {[model._meta.table_name for model in tables_to_drop]}"
-            )
+            print(f"Dropped tables: {[model.__name__ for model in tables_to_drop]}")
         else:
             print("No tables to drop.")
 
 
 def seed_database(conn_info):
     """
-    Seeds the database with initial data for roles, users, theses, references, posts, comments, session logs, and settings.
+    Seeds the database with initial data, ensuring all necessary tables and default
+    entries are created. The function sets up user roles, default users, thesis
+    data, references, figures, tables, and other necessary entries to prepare the
+    application for use.
+
+    .. note::
+        Sensitive data like passwords in this function should follow secure
+        practices such as using password hashing in a production environment.
+
+    :param conn_info: Contains the database connection information.
+                      Expected keys are "name", "user", "password", "host", "port".
+                      Use them to establish the connection with the database.
+    :type conn_info: dict[str, str | int]
+    :return: None
     """
     from datetime import datetime, timezone
 
     from peewee import MySQLDatabase
 
-    from ..models.data import (PostComment, Posts, Reference, Role, SessionLog,
-                               Settings, Thesis, User)
+    from ..models.data import (Appendix, Figure, Footnote, PostComment, Posts,
+                               Reference, Role, SessionLog, Settings,
+                               TableEntry, Thesis, User)
 
     # Configure the database
     database = MySQLDatabase(
@@ -129,37 +164,46 @@ def seed_database(conn_info):
     # Ensure tables exist
     print("Ensuring all tables exist...")
     with database_proxy:
-        database_proxy.create_tables(
-            [Role, User, Thesis, Reference, Posts, PostComment, SessionLog, Settings],
-            safe=True,
-        )
+        # Dynamically detect all models in data.py and sync tables
+        from peewee import Model
+
+        from ..models import data
+
+        database_models = [
+            cls
+            for _, cls in inspect.getmembers(
+                data,
+                lambda m: isinstance(m, type) and issubclass(m, Model) and m != Model,
+            )
+        ]
+        database_proxy.create_tables(database_models, safe=True)
 
     # Seed Roles
     print("Seeding roles...")
     roles = ["Student", "Teacher", "Admin"]
     for role_name in roles:
-        if not Role.select().where(Role.name == role_name).exists():
-            Role.create(name=role_name)
+        Role.get_or_create(name=role_name)
 
     # Seed Admin User
     print("Seeding admin user...")
     admin_role = Role.get(Role.name == "Admin")
-    if not User.select().where(User.email == "admin@example.com").exists():
-        User.create(
-            first_name="Admin",
-            last_name="User",
-            email="admin@example.com",
-            username="admin",
-            institution="ThesisGenius University",
-            password="securepassword",  # In production, hash this password
-            role=admin_role,
-            is_admin=True,
-        )
+    User.get_or_create(
+        email="admin@example.com",
+        defaults={
+            "first_name": "Admin",
+            "last_name": "User",
+            "username": "admin",
+            "institution": "ThesisGenius University",
+            "password": "securepassword",  # In production, hash this password
+            "role": admin_role,
+            "is_admin": True,
+        },
+    )
 
     # Seed Student User
     print("Seeding student user...")
     student_role = Role.get(Role.name == "Student")
-    student_user = User.get_or_create(
+    student_user, _ = User.get_or_create(
         email="student@example.com",
         defaults={
             "first_name": "John",
@@ -170,19 +214,21 @@ def seed_database(conn_info):
             "role": student_role,
             "is_admin": False,
         },
-    )[0]
+    )
 
     # Seed Thesis
     print("Seeding theses...")
-    if not Thesis.select().where(Thesis.title == "Sample Thesis").exists():
-        thesis = Thesis.create(
-            title="Sample Thesis",
-            abstract="This is a sample abstract.",
-            content="This is the sample content for the thesis.",
-            status="draft",
-            student=student_user,
-        )
+    thesis, created = Thesis.get_or_create(
+        title="Sample Thesis",
+        defaults={
+            "abstract": "This is a sample abstract.",
+            "content": "This is the sample content for the thesis.",
+            "status": "draft",
+            "student": student_user,
+        },
+    )
 
+    if created:
         # Seed References
         print("Seeding references...")
         Reference.create(
@@ -201,16 +247,52 @@ def seed_database(conn_info):
             publication_year=2023,
         )
 
-    # Seed Posts
-    print("Seeding posts...")
-    if not Posts.select().where(Posts.title == "Welcome Post").exists():
-        post = Posts.create(
-            user=student_user,
-            title="Welcome Post",
-            description="This is the first post in the forum.",
-            content="Welcome to the ThesisGenius forum! Feel free to discuss your ideas and share knowledge.",
+        # Seed Footnotes
+        print("Seeding footnotes...")
+        Footnote.create(
+            thesis=thesis,
+            content="This is a sample footnote.",
+            page_number=1,
         )
 
+        # Seed Tables
+        print("Seeding tables...")
+        TableEntry.create(
+            thesis=thesis,
+            title="Sample Table",
+            description="This is a sample table description.",
+            data="Column1,Column2\nData1,Data2",
+        )
+
+        # Seed Figures
+        print("Seeding figures...")
+        Figure.create(
+            thesis=thesis,
+            title="Sample Figure",
+            description="This is a sample figure description.",
+            image_url="https://example.com/sample-figure.jpg",
+        )
+
+        # Seed Appendices
+        print("Seeding appendices...")
+        Appendix.create(
+            thesis=thesis,
+            title="Sample Appendix",
+            content="This is a sample appendix content.",
+        )
+
+    # Seed Posts
+    print("Seeding posts...")
+    post, created = Posts.get_or_create(
+        title="Welcome Post",
+        defaults={
+            "user": student_user,
+            "description": "This is the first post in the forum.",
+            "content": "Welcome to the ThesisGenius forum! Feel free to discuss your ideas and share knowledge.",
+        },
+    )
+
+    if created:
         # Seed Comments
         print("Seeding post comments...")
         PostComment.create(

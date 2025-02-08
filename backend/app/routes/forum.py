@@ -11,7 +11,20 @@ forum_bp = Blueprint("forum_api", __name__, url_prefix="/api/forum")
 @forum_bp.route("/posts", methods=["GET"])
 def list_posts():
     """
-    Fetch all forum posts with pagination.
+    Fetches and returns a list of forum posts based on the provided parameters. The user can control pagination
+    and sorting of the posts through query parameters. Logs errors if fetching posts fails.
+
+    :param page: The current page number for pagination. Default is 1.
+    :type page: int
+    :param per_page: The number of posts to include per page. Default is 10.
+    :type per_page: int
+    :param order_by: The field by which posts are ordered, including sort direction. Default is 'created_at.desc'.
+    :type order_by: str
+
+    :return: A JSON response containing forum posts and a status code. The response includes a 'success' field
+             (True if posts are fetched successfully; False otherwise). On success, it also includes paginated
+             post data.
+    :rtype: tuple
     """
     forum_service = ForumService(app.logger)
     try:
@@ -31,7 +44,18 @@ def list_posts():
 @forum_bp.route("/posts/<int:post_id>", methods=["GET"])
 def view_post(post_id):
     """
-    Fetch a single forum post and its comments with pagination.
+    Fetch and display the details of a specific forum post along with associated comments.
+
+    This endpoint retrieves a forum post identified by its ID, alongside user details and
+    paginated comments associated with the post.
+
+    :param post_id: The unique identifier of the forum post to be retrieved.
+    :type post_id: int
+    :returns: A JSON response containing the post details, the user who created it, and
+              paginated comments. If the post is not found, a 404 status code is returned
+              with an error message. If an error occurs during processing, a 500 status
+              code with a failure message is returned.
+    :rtype: tuple
     """
     forum_service = ForumService(app.logger)
     try:
@@ -82,7 +106,23 @@ def view_post(post_id):
 @jwt_required
 def create_post():
     """
-    Create a new forum post.
+    Handles the creation of a new forum post. This endpoint is protected by JWT
+    authentication and requires the request to include a valid token. The function
+    expects a JSON body with `title` and `content` fields. If the necessary data
+    is provided, a new post will be created and a successful response will be
+    sent back with the post's details. If any errors occur or validation fails,
+    appropriate error messages and HTTP status codes will be returned.
+
+    :param data: JSON request body containing the `title` and `content` of the post.
+    :type data: dict
+
+    :raises KeyError: If a required field is missing in the request data.
+
+    :return: A JSON response indicating the success or failure of the post creation
+             operation. On success, it includes details such as the user ID,
+             post title, and generated post ID. On failure, an error message
+             is included, potentially along with the HTTP status code.
+    :rtype: tuple
     """
     forum_service = ForumService(app.logger)
     try:
@@ -121,7 +161,18 @@ def create_post():
 @jwt_required
 def update_post(post_id):
     """
-    Update an existing forum post.
+    Handles the PUT request for updating an existing forum post. Ensures the user is
+    authenticated and authorized to update the post. Validates the provided data to confirm
+    that at least one of the fields, `title` or `content`, is supplied for the update. If the
+    post is successfully updated, a success message and status code are returned. Handles
+    errors related to missing data, not found or unauthorized posts, as well as internal
+    server errors.
+
+    :param post_id: The ID of the forum post to be updated
+    :type post_id: int
+    :return: A Flask response object with a JSON payload indicating success or failure,
+        and an appropriate HTTP status code
+    :rtype: werkzeug.wrappers.response.Response
     """
     forum_service = ForumService(app.logger)
     try:
@@ -152,7 +203,19 @@ def update_post(post_id):
 @jwt_required
 def add_comment(post_id):
     """
-    Add a comment to a forum post.
+    Adds a comment to a specific forum post using the provided post ID and
+    content in the request payload.
+
+    This function interacts with the forum service to handle comment creation
+    for a given post. It requires the user to be authenticated and extracts
+    the user ID from the user context (global `g` object). The function
+    expects the request payload to contain the 'content' field.
+
+    :param post_id: ID of the post to which the comment will be added
+    :type post_id: int
+    :return: A JSON response indicating success or failure of the operation.
+    :rtype: flask.Response
+    :raises: Exception - If an unknown error occurs during comment creation.
     """
     forum_service = ForumService(app.logger)
     try:
@@ -176,7 +239,18 @@ def add_comment(post_id):
 @jwt_required
 def delete_post(post_id):
     """
-    Delete a forum post.
+    Deletes a forum post identified by a unique post ID. This endpoint is protected
+    by JWT authentication, ensuring that only authorized users can perform this action.
+    It verifies the logged-in user's permissions to delete the specified post and
+    logs the operation. If the post cannot be found or the user is unauthorized,
+    an appropriate HTTP status and message are returned. In case of an internal error,
+    a 500 status code is returned.
+
+    :param post_id: The unique identifier of the post to be deleted.
+    :type post_id: int
+    :return: A JSON response indicating success or failure of the delete operation,
+        along with an appropriate HTTP status code.
+    :rtype: tuple (flask.Response, int)
     """
     forum_service = ForumService(app.logger)
     try:
@@ -200,7 +274,19 @@ def delete_post(post_id):
 @jwt_required
 def get_comment(post_id, comment_id):
     """
-    Fetch a single comment by ID for a specific post.
+    Retrieves a specific comment based on the given post ID and comment ID. This
+    endpoint is protected by JWT authentication. It uses the ForumService to
+    fetch the comment and returns the result in JSON format. If the comment does
+    not exist, or an error occurs during retrieval, appropriate error responses
+    are returned.
+
+    :param post_id: The ID of the post associated with the comment.
+    :type post_id: int
+    :param comment_id: The ID of the comment to retrieve.
+    :type comment_id: int
+    :return: JSON response including success status, comment data (if found),
+        or error message.
+    :rtype: flask.Response
     """
     forum_service = ForumService(app.logger)
     try:
@@ -217,7 +303,20 @@ def get_comment(post_id, comment_id):
 @jwt_required
 def update_comment(post_id, comment_id):
     """
-    Update a specific comment by ID for a given post.
+    Updates the content of a specific comment associated with a specific post.
+
+    Allows a user to update the content of a comment identified by its ID within a
+    specific post. This function verifies the presence of the required data and
+    attempts the update through the service layer. If successful, the comment content
+    is updated; otherwise, an error response is provided.
+
+    :param post_id: ID of the post the comment is associated with.
+    :type post_id: int
+    :param comment_id: ID of the comment to be updated.
+    :type comment_id: int
+    :return: JSON response indicating success or failure of the operation, along
+             with the corresponding HTTP status code.
+    :rtype: tuple
     """
     forum_service = ForumService(app.logger)
     try:
@@ -241,7 +340,19 @@ def update_comment(post_id, comment_id):
 @jwt_required
 def delete_comment(post_id, comment_id):
     """
-    Delete a specific comment by ID for a given post.
+    Deletes a comment from a specified post.
+
+    This function is responsible for deleting a comment from a post using its identifiers.
+    The user initiating the deletion must be authorized, as determined by their user ID.
+    If successful, the comment will be removed; otherwise, it returns an appropriate error
+    message based on the reason for the failure.
+
+    :param post_id: The ID of the post containing the comment to be deleted.
+    :type post_id: int
+    :param comment_id: The ID of the comment to be deleted.
+    :type comment_id: int
+    :return: A JSON response containing the success status and a message.
+    :rtype: tuple
     """
     forum_service = ForumService(app.logger)
     try:
@@ -265,7 +376,21 @@ def delete_comment(post_id, comment_id):
 @jwt_required
 def delete_all_comments(post_id):
     """
-    Delete all comments for a specific post.
+    Deletes all comments associated with a specified post.
+
+    This endpoint is responsible for removing all comments corresponding to the given post
+    ID. It leverages a forum service to perform the deletion and handles the response in
+    accordance with the outcome, including success, no comments found, or an internal
+    server error.
+
+    :method: DELETE
+
+    :param post_id: The unique identifier of the post whose comments are to be deleted.
+    :type post_id: int
+
+    :return: A JSON response indicating the success status and corresponding message of
+        the operation.
+    :rtype: flask.Response
     """
     forum_service = ForumService(app.logger)
     try:

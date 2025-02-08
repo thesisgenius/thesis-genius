@@ -14,7 +14,17 @@ auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 @auth_bp.route("/signin", methods=["POST"])
 def signin():
     """
-    API endpoint for user sign-in.
+    Handles user sign-in requests by authenticating the user credentials. Checks the
+    presence of required fields in the request body, validates user credentials via
+    the UserService, and generates a JWT token upon successful authentication. Logs
+    successful logins and errors.
+
+    :raises KeyError: If the data dictionary is missing required keys (email or password).
+    :raises Exception: For any generic errors during the sign-in process.
+
+    :return: A JSON response containing success status, token on successful authentication,
+             or error messages with appropriate HTTP status codes.
+    :rtype: tuple
     """
     # Instantiate the UserService
     user_service = UserService(app.logger)
@@ -56,7 +66,17 @@ def signin():
 @auth_bp.route("/register", methods=["POST"])
 def register():
     """
-    API endpoint for user registration.
+    Handles the user registration process by validating input data, creating a new user,
+    and returning appropriate HTTP responses. The function ensures all required fields
+    are provided and valid, processes the user creation logic, and handles potential
+    errors such as database integrity violations or unexpected exceptions.
+
+    :raises IntegrityError: If the email or username violates unique constraints in the database.
+    :raises ValueError: For validation errors that occur during user creation.
+
+    :returns: JSON response indicating the success or failure of the registration process along
+        with an appropriate HTTP status code.
+    :rtype: Tuple[flask.Response, int]
     """
     # Instantiate the UserService
     user_service = UserService(app.logger)
@@ -147,7 +167,16 @@ def register():
 @jwt_required
 def signout():
     """
-    API endpoint for user sign-out.
+    Handles the user sign-out process. This route requires the caller to be authenticated
+    using JWT. It extracts the user ID from the request context and the token from the
+    Authorization header, then delegates the logout process to the UserService. Returns a
+    JSON response indicating the success or failure of the logout process.
+
+    :raises Exception: If an unexpected error occurs during the sign-out process.
+
+    :return: A `flask.Response` object containing a JSON payload indicating success or failure
+             and an HTTP status code. The possible status codes are 200 for a successful logout,
+             400 if the token is missing or logout fails, and 500 for internal errors.
     """
     # Instantiate the UserService
     user_service = UserService(app.logger)
