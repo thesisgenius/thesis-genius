@@ -12,7 +12,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import NewDashBoard from "./pages/NewDashBoard";
-import Dash from "./pages/dash";
+import Dash from "./pages/Dash";
 import Body from "./pages/Body";
 import Part from "./pages/Part";
 import About from "./pages/About";
