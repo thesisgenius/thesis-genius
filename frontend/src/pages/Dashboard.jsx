@@ -10,34 +10,34 @@ const Dashboard = () => {
     const [theses, setTheses] = useState([]);
     const [newThesis, setNewThesis] = useState({ title: "", status: "Draft" });
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
+    const [error, setError] = useState(null); // Add error state
     const navigate = useNavigate();
 
-    useEffect(() => {
-        const fetchInitialData = async () => {
-            try {
-                const token = localStorage.getItem("token");
-                if (!token) {
-                    navigate("/signin");
-                    return;
-                }
-
-                const [userProfile, thesesData] = await Promise.all([
-                    userAPI.getUserProfile(),
-                    thesisAPI.listTheses(),
-                ]);
-
-                setUser(userProfile.user);
-                setTheses(thesesData.theses || []);
-            } catch (error) {
-                console.error("Error loading data:", error);
-                setError("Failed to load data. Please try again.");
-            } finally {
-                setLoading(false);
+    const fetchUserProfile = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                navigate("/signin");
+                return;
             }
-        };
 
-        fetchInitialData();
+            const response = await apiClient.get("/user/profile");
+            setUser(response.data.user);
+        } catch (error) {
+            console.error("Failed to fetch user profile:", error);
+            setError("Failed to load user data. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem("token");
+        navigate("/signin");
+    };
+
+    useEffect(() => {
+        fetchUserProfile();
     }, [navigate]);
 
     const handleInputChange = ({ target: { name, value } }) => {
