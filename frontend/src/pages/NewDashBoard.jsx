@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { Card, CardContent } from "@/components/Card";
-import { Button } from "@/components/Button";
-import { Input } from "@/components/Input";
-import { Textarea } from "@/components/Textarea";
+import { Card, CardContent } from "@/components/card";
+import { Button } from "@/components/button";
+import { Input } from "@/components/input";
+import { Textarea } from "@/components/textarea";
 import { Plus, Edit } from "lucide-react";
 
 const initialParts = [

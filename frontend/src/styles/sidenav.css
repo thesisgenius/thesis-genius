@@ -1,0 +1,67 @@
+.openbtn {
+  font-size: 20px;
+  cursor: pointer;
+  background-color: transparent;
+  /*background-color: #111; */
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  position: fixed; /* Keeps the button fixed */
+  top: 0px;
+  left: 0px;
+  z-index: 1000; /* Ensure it stays on top */
+}
+
+.openbtn:hover {
+  background-color: #444;
+}
+
+.sidenav {
+  height: 100%;
+  position: fixed;
+  top: 0;
+  left: -250px; /* Initially hidden offscreen */
+  background-color: #111;
+  overflow-x: hidden;
+  transition: 0.3s;
+  padding-top: 60px;
+}
+
+.sidenav.open {
+  left: 0; /* When open, slide in from the left */
+}
+
+.sidenav a, .sidenav h2 {
+  padding: 8px 8px 8px 32px;
+  text-decoration: none;
+  font-size: 25px;
+  display: block;
+  transition: 0.3s;
+}
+
+.sidenav h2 {
+  color: #78c0ff;
+}
+
+.sidenav a {
+  color: #818181;
+  font-size: 18px;
+}
+
+.sidenav a:hover {
+  color: #f1f1f1;
+}
+
+.sidenav {
+  font-size: 24px;
+  position: absolute;
+  top: 0;
+  right: 0px;
+  font-weight: bold;
+}
+
+.content {
+  padding: 0px;
+  transition: margin-left 0.3s ease;
+  color: #111;
+}
