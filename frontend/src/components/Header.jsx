@@ -39,7 +39,7 @@ const ExpandableMenu = () => {
         if (!isMenuOpen) {
             await refreshUser(); // Optionally refresh user when menu is opened
         }
-        setIsMenuOpen((prev) => !prev);
+        setIsMenuOpen((prev) => !prev || false);
     };
 
     // Manual User Refresh Button

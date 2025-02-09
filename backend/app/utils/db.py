@@ -44,7 +44,8 @@ def initialize_database(app):
         with database_proxy:
             # Dynamically detect all models in data.py and sync tables
             from peewee import Model
-
+            from peewee import Model, CharField, DateTimeField
+            from playhouse.migrate import MySQLMigrator, SqliteMigrator, migrate
             from ..models import data
 
             database_models = [
@@ -59,7 +60,36 @@ def initialize_database(app):
             app.logger.info(
                 f"Found {len(database_models)} models to sync: {[model.__name__ for model in database_models]}"
             )
+            # Ensure tables exist
             database_proxy.create_tables(database_models, safe=True)
+
+            # Perform schema migrations if necessary
+            app.logger.info("Checking for missing columns...")
+            migrator = MySQLMigrator(db) if conn_info["engine"] == "mysql" else SqliteMigrator(db)
+
+            # Check for missing columns in the Thesis table
+            with database_proxy:
+                existing_columns = db.get_columns("theses")
+                existing_column_names = {col.name for col in existing_columns}
+
+                migrations = []
+                if "author" not in existing_column_names:
+                    app.logger.info("Adding missing column: author")
+                    migrations.append(migrator.add_column("theses", "author", CharField(null=True)))
+
+                if "affiliation" not in existing_column_names:
+                    app.logger.info("Adding missing column: affiliation")
+                    migrations.append(migrator.add_column("theses", "affiliation", CharField(null=True)))
+
+                if "due_date" not in existing_column_names:
+                    app.logger.info("Adding missing column: due_date")
+                    migrations.append(migrator.add_column("theses", "due_date", DateTimeField(null=True)))
+
+                if migrations:
+                    migrate(*migrations)
+                    app.logger.info("Schema migration completed successfully.")
+                else:
+                    app.logger.info("No schema changes detected.")
 
         app.logger.info("Database initialization complete.")
     except Exception as e:
