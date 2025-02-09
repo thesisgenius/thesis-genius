@@ -45,12 +45,14 @@
     "axios": "^1.7.9",
     "bootstrap": "^5.3.3",
     "debounce": "^2.2.0",
+    "dompurify": "^3.2.4",
     "font-awesome": "^4.7.0",
     "jquery": "^3.7.1",
     "lodash": "^4.17.21",
     "lucide-react": "^0.474.0",
     "popper.js": "^1.16.1",
     "preloader": "^4.0.3",
+    "quill": "^2.0.0",
     "react": "^18.3.1",
     "react-bootstrap": "^2.10.8",
     "react-dom": "^18.3.1",
@@ -83,5 +85,10 @@
     "vite": "^6.0.5",
     "vite-plugin-glob": "^0.3.2",
     "vitest": "^3.0.4"
+  },
+  "overrides": {
+    "react-quill": {
+      "quill": "^2.0.0"
+    }
   }
 }

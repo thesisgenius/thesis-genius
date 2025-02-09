@@ -10,7 +10,7 @@ const Footer = () => {
             <h2>Quick Links</h2>
             <ul className="list-unstyled">
               <li>
-                <a href="/home" className="text-white">
+                <a href="/" className="text-white">
                   Home
                 </a>
               </li>
