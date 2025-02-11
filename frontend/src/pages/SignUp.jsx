@@ -1,3 +1,5 @@
+// SignUp.jsx
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import authAPI from "../services/authEndpoint"; // Use authAPI for authentication-related actions
@@ -106,18 +108,6 @@ const SignUp = () => {
                     />
                     <span className="error">{formErrors.email}</span>
 
-                    <label htmlFor="username">Username</label>
-                    <input
-                        type="text"
-                        name="username"
-                        id="username"
-                        autoComplete="username"
-                        value={formData.username}
-                        onChange={handleInputChange}
-                        placeholder="Enter your username"
-                        required
-                    />
-
                     <label htmlFor="first_name">First Name</label>
                     <input
                         type="text"
@@ -188,9 +178,11 @@ const SignUp = () => {
                     />
                     <span className="error">{formErrors.institution}</span>
 
-                    <button type="submit" disabled={loading} className="signup-button">
-                        {loading ? "Signing Up..." : "Sign Up"}
-                    </button>
+                    <div className="signup-button-container">
+                        <button type="submit" disabled={loading} className="signup-button">
+                            {loading ? "Signing Up..." : "Sign Up"}
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>

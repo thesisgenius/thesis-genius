@@ -1,36 +1,32 @@
+/* SignUp.css */
+
 .signup-background {
     background: linear-gradient(135deg, #30c733, #2575fc);
-    height: 80vh;
+    min-height: 100vh; /* Full height to accommodate all content */
     display: flex;
     justify-content: center;
     align-items: center;
     font-family: 'Arial', sans-serif;
-    overflow: hidden; /* Prevent background scrolling */
     color: white;
 }
 
 .signup-container {
     background: white;
     color: #333;
-    padding: 50px 20px; /* Adjust vertical padding */
-    width: 80%; /* Dynamic width for split layout */
-    max-width: 1080px; /* Maximum width for larger screens */
-    max-height: 90vh; /* Restrict vertical height */
+    padding: 20px; /* Reduced padding */
+    width: 80%; /* Reduced width */
+    max-width: 600px; /* Maximum width for larger screens */
     border-radius: 10px;
     display: flex;
     flex-direction: column;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    height: auto; /* Ensure container height is auto */
 }
 
 .signup-header {
     text-align: center;
     padding: 0 20px;
-    margin-bottom: 10px;
-    position: sticky;
-    top: 0;
-    background: white; /* Keep header visible on scroll */
-    z-index: 10;
-    border-bottom: 1px solid #eee;
+    margin-bottom: 20px; /* Increased margin for balanced spacing */
 }
 
 .signup-header h1 {
@@ -45,32 +41,25 @@
     margin: 5px 0 0;
 }
 
-.signup-form form {
+.signup-form {
     display: grid;
-    grid-template-columns: 1fr; /* Default: Single-column layout */
-    gap: 1.5rem; /* Space between fields */
-}
-
-/* Two-column responsive grid for larger screens */
-@media (min-width: 700px) {
-    .signup-form {
-        grid-template-columns: repeat(2, 1fr); /* Two columns */
-        gap: 1rem;
-    }
+    grid-template-columns: 1fr 2fr; /* Two columns: labels and inputs */
+    gap: 0.5rem 1rem; /* Reduced gaps */
+    flex-grow: 1; /* Allow form to grow and take available space */
 }
 
 /* Label styling */
 .signup-form label {
-    display: block; /* Ensures labels take full width above inputs */
     font-weight: bold;
-    margin-bottom: 1px; /* Space between label and input */
+    margin-bottom: 0; /* Remove bottom margin */
+    align-self: center; /* Vertically center align labels */
+    text-align: right; /* Align text to the right */
 }
 
 /* Input styling */
 .signup-form input {
-    width: 100%; /* Input spans full width of its container */
-    padding: 10px;
-    margin: 0; /* Reset margins to ensure consistent spacing */
+    width: 100%;
+    padding: 8px; /* Reduced padding */
     border: 1px solid #ccc;
     border-radius: 5px;
     box-sizing: border-box;
@@ -90,12 +79,20 @@
     color: red;
     font-size: 0.8em;
     margin-top: 5px;
+    grid-column: 2 / 3; /* Span error message under input field */
+}
+
+/* Button container styling */
+.signup-button-container {
+    display: flex;
+    justify-content: center; /* Center the button */
+    margin-top: 20px; /* Add margin at the top */
+    grid-column: 1 / -1; /* Make button container span both columns */
 }
 
 /* Button styling */
 .signup-button {
-    margin: 20px 0;
-    padding: 12px;
+    padding: 10px 20px; /* Normal size button */
     font-size: 1em;
     background: #2575fc;
     border: none;
@@ -103,8 +100,6 @@
     border-radius: 5px;
     cursor: pointer;
     transition: background 0.3s;
-    grid-column: span 2; /* Make button span across both columns */
-    width: 100%;
 }
 
 .signup-button:hover {
@@ -114,16 +109,4 @@
 .signup-button:disabled {
     background: #ccc;
     cursor: not-allowed;
-}
-
-/* Mobile View: Single column fallback */
-@media (max-width: 480px) {
-    .signup-form {
-        grid-template-columns: 1fr; /* Single-column layout for smaller screens */
-        gap: 15px; /* Adjust spacing */
-    }
-
-    .signup-button {
-        grid-column: span 1; /* Button spans across full width */
-    }
 }
