@@ -542,7 +542,10 @@ def update_body_page(thesis_id, page_id):
     try:
         data = request.json
         updated_page = thesis_service.update_body_page(
-            thesis_id, page_id, data["page_number"], data["body"]
+            thesis_id,
+            page_id,
+            data.get("page_number"),
+            data.get("body")
         )
         if updated_page:
             return jsonify({"success": True, "message": "Body page updated"}), 200
@@ -561,6 +564,7 @@ def delete_body_page(thesis_id, page_id):
     the deletion. After successful deletion, it returns a success response
     with a message indicating that the body page has been deleted.
 
+    :param thesis_id:
     :param page_id: The ID of the page to be deleted.
     :type page_id: int
     :return: A dictionary containing success status and deletion message,

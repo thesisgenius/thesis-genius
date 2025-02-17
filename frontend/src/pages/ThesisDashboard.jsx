@@ -1,25 +1,36 @@
-import React, { useState, useEffect, useCallback } from "react";
-import SplitPane, { Pane } from "split-pane-react";
-import "../styles/SplitPane.css";
-import "../styles/apaStyle.css"
-import { useParams } from "react-router-dom";
-import { debounce } from "lodash";
+import React, {useState, useEffect, useCallback} from "react";
+import SplitPane, {Pane} from "split-pane-react";
+import {useParams} from "react-router-dom";
+import {debounce} from "lodash";
 import DOMPurify from "dompurify";
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import {faFile, faBook, faSyncAlt} from "@fortawesome/free-solid-svg-icons";
 import thesisAPI from "../services/thesisEndpoint";
+import "../styles/SplitPane.css";
+import "../styles/apaStyle.css";
 
 const SECTIONS = [
-    "Cover Page", "Table Of Contents", "Abstract", "Body", "Acknowledgements",
-    "References", "Bibliography", "Footnote", "Figure", "Appendix"
+    {name: "Cover Page", icon: faFile},
+    {name: "Table Of Contents", icon: faBook},
+    {name: "Abstract", icon: faFile},
+    {name: "Body", icon: faBook},
+    {name: "Acknowledgements", icon: faFile},
+    {name: "References", icon: faBook},
+    {name: "Bibliography", icon: faBook},
+    {name: "Footnote", icon: faFile},
+    {name: "Figure", icon: faBook},
+    {name: "Appendix", icon: faFile},
 ];
 
 const ThesisDashboard = () => {
-    const { thesisId } = useParams();
+    const {thesisId} = useParams();
     const [sizes, setSizes] = useState(["20%", "40%", "40%"]);
     const [thesis, setThesis] = useState({});
     const [abstract, setAbstract] = useState("");
     const [bodyPages, setBodyPages] = useState([]);
     const [error, setError] = useState("");
-    const [tableOfContents, setTableOfContents] = useState([]);
+    const [tableOfContents,
+        setTableOfContents] = useState([]);
     const [coverPage, setCoverPage] = useState({
         title: "[Title of thesis]",
         author: "[Author's name]",
@@ -53,7 +64,12 @@ const ThesisDashboard = () => {
             } catch (error) {
                 console.error("Failed to fetch cover page:", error);
                 setCoverPage({
-                    title: "[Title of thesis]", author: "[Author's name]", affiliation: "[Affiliation of author]", course: "[Course of study]", instructor: "[Instructor's name]", due_date: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() + 10)
+                    title: "[Title of thesis]",
+                    author: "[Author's name]",
+                    affiliation: "[Affiliation of author]",
+                    course: "[Course of study]",
+                    instructor: "[Instructor's name]",
+                    due_date: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() + 10)
                 });
             }
 
@@ -71,13 +87,13 @@ const ThesisDashboard = () => {
                 // Ensure at least one blank page is always present
                 if (!bodyPagesData || bodyPagesData.length === 0) {
                     console.warn("No body pages found, adding a blank page.");
-                    bodyPagesData = [{ page_number: 1, body: "(This page is intentionally left blank.)" }];
+                    bodyPagesData = [{page_number: 1, body: "(This page is intentionally left blank.)"}];
                 }
 
                 setBodyPages(bodyPagesData);
             } catch (error) {
                 console.error("Failed to fetch body pages:", error.response?.data || error.message);
-                setBodyPages([{ page_number: 1, body: "(This page is intentionally left blank.)" }]);
+                setBodyPages([{page_number: 1, body: "(This page is intentionally left blank.)"}]);
             }
 
             generateLivePreview(thesisData.thesis, coverPage, abstract, bodyPages);
@@ -88,14 +104,14 @@ const ThesisDashboard = () => {
     };
 
     const handleCoverPageChange = (field, value) => {
-        setCoverPage((prev) => ({ ...prev, [field]: value }));
+        setCoverPage((prev) => ({...prev, [field]: value}));
         updateCoverPage(field, value); // Debounced API update
     };
 
     const updateCoverPage = useCallback(
         debounce(async (field, value) => {
             try {
-                await thesisAPI.updateCoverPage(thesisId, { [field]: value });
+                await thesisAPI.updateCoverPage(thesisId, {[field]: value});
                 console.log(`Cover page ${field} updated successfully`);
             } catch (error) {
                 setError(`Failed to update cover page ${field}.`);
@@ -105,44 +121,58 @@ const ThesisDashboard = () => {
         [thesisId]
     );
 
-    /** Handle TOC Updates */
-    const handleTOCChange = (index, field, value) => {
-        const updatedTOC = [...tableOfContents];
-        updatedTOC[index][field] = value;
-        setTableOfContents(updatedTOC);
-        updateTOC(updatedTOC);
-    };
+// Debounced API update for Table of Contents
+    const updateTOC = debounce(async (updatedTOC) => {
+        try {
+            await thesisAPI.updateTableOfContents(thesisId, updatedTOC);
+            console.log("TOC updated successfully");
+        } catch (error) {
+            console.error("Error updating TOC:", error);
+        }
+    }, 500);
 
-    /** Debounced API update */
-    const updateTOC = useCallback(
-        debounce(async (updatedTOC) => {
-            try {
-                await thesisAPI.updateTableOfContents(thesisId, updatedTOC);
-                console.log("TOC updated successfully");
-            } catch (error) {
-                console.error("Error updating TOC:", error);
-            }
-        }, 500),
-        [thesisId]
+// React callback for handling state updates
+    const handleTOCChange = useCallback(
+        (index, field, value) => {
+            // Create a new array to ensure immutability
+            const updatedTOC = [...tableOfContents];
+
+            // Update the specific field for the relevant TOC entry
+            updatedTOC[index][field] = value;
+
+            // Update state immediately to reflect changes in the UI
+            setTableOfContents(updatedTOC);
+
+            // Call the debounced API update function
+            updateTOC(updatedTOC);
+        },
+        [tableOfContents] // Include dependencies like `tableOfContents`
     );
 
-    /** Update state immediately, debounce API update separately */
-    const handleAbstractChange = (e) => {
-        const newValue = e.target.value;
-        setAbstract(newValue);
-        updateAbstract(newValue);
-    };
+// Debounced update function
+    const updateAbstract = debounce(async (value) => {
+        try {
+            await thesisAPI.updateAbstract(thesisId, {text: value});
+            generateLivePreview(thesis, value, bodyPages); // Ensure the live preview gets updated
+            console.log("Abstract updated successfully");
+        } catch (error) {
+            setError("Failed to update abstract.");
+            console.error("Error updating abstract:", error);
+        }
+    }, 500);
 
-    const updateAbstract = useCallback(
-        debounce(async (value) => {
-            try {
-                await thesisAPI.updateAbstract(thesisId, { text: value });
-                generateLivePreview(thesis, value, bodyPages);
-            } catch (error) {
-                setError("Failed to update abstract.");
-            }
-        }, 500),
-        [thesisId, thesis, bodyPages]
+// React callback for input handling
+    const handleAbstractChange = useCallback(
+        (e) => {
+            const newValue = e.target.value;
+
+            // Update the state immediately for a responsive UI
+            setAbstract(newValue);
+
+            // Call the debounced API update function
+            updateAbstract(newValue);
+        },
+        [updateAbstract] // Include debounce function or dependencies if necessary
     );
 
     const handleAddBodyPage = async (thesisId) => {
@@ -157,7 +187,7 @@ const ThesisDashboard = () => {
             });
 
             // Update UI state
-            setBodyPages((prev) => [...prev, { id: newPage.page_id, page_number: nextPageNumber, body: "" }]);
+            setBodyPages((prev) => [...prev, {id: newPage.page_id, page_number: nextPageNumber, body: ""}]);
         } catch (error) {
             setError("Failed to add a new body page.");
             console.error("Error adding new body page:", error);
@@ -178,7 +208,7 @@ const ThesisDashboard = () => {
     const handleBodyPageChange = (thesisId, pageId, newValue) => {
         // Update UI immediately for better user experience
         setBodyPages((prev) =>
-            prev.map((page) => (page.id === pageId ? { ...page, body: newValue } : page))
+            prev.map((page) => (page.id === pageId ? {...page, body: newValue} : page))
         );
 
         // Debounced API update
@@ -186,20 +216,15 @@ const ThesisDashboard = () => {
     };
 
 
-    const updateBodyPage = useCallback(
-        debounce(async (thesisId, pageId, value) => {
-            try {
-                await thesisAPI.updateBodyPage(thesisId, pageId, { body: value });
-                console.log(`Page ${pageId} in Thesis ${thesisId} updated successfully`);
-            } catch (error) {
-                setError("Failed to update body page.");
-                console.error(`Error updating page ${pageId} in Thesis ${thesisId}:`, error);
-            }
-        }, 500),
-        [thesisId]
-    );
-
-
+    const updateBodyPage = debounce(async (thesisId, pageId, value) => {
+        try {
+            await thesisAPI.updateBodyPage(thesisId, pageId, {body: value});
+            console.log(`Page ${pageId} in Thesis ${thesisId} updated successfully`);
+        } catch (error) {
+            setError("Failed to update body page."); // Ensure setError is declared elsewhere
+            console.error(`Error updating page ${pageId} in Thesis ${thesisId}:`, error);
+        }
+    }, 500);
 
     /** Ensure preview updates correctly */
     const generateLivePreview = (thesisData, coverPageData, abstractData, bodyPagesData) => {
@@ -287,26 +312,23 @@ const ThesisDashboard = () => {
         setFormattedContent(DOMPurify.sanitize(previewContent));
     };
 
-    const handleNavigationClick = (section) => {
-        setSelectedSection(section);
 
-        // Map section names to corresponding element IDs in the preview pane
+    // Map section names to corresponding element IDs in the preview pane
+    const handleNavigationClick = (section) => {
+        setSelectedSection(section.name); // Adjust since SECTIONS now includes icons
         const sectionIdMap = {
             "Table Of Contents": "table-of-contents",
             "Abstract": "abstract",
-            "BodyPage": "body-page-1", // Default to first body page
-            "Reference": "references",
+            "Body": "body-page-1",
+            "References": "references",
         };
-
-        const targetElementId = sectionIdMap[section] || `body-page-${section.replace(/\D/g, "")}`;
+        const targetElementId =
+            sectionIdMap[section.name] || `body-page-${section.name.replace(/\D/g, "")}`;
         const targetElement = document.getElementById(targetElementId);
-
         if (targetElement) {
-            targetElement.scrollIntoView({ behavior: "smooth", block: "start" });
+            targetElement.scrollIntoView({behavior: "smooth", block: "start"});
         }
     };
-
-
 
 
     const sashRender = (index, active) => (
@@ -322,8 +344,8 @@ const ThesisDashboard = () => {
     );
 
     return (
-        <div style={{ height: "100vh", overflow: "hidden", background: "#fafafa" }}>
-            {error && <p style={{ color: "red", textAlign: "center" }}>{error}</p>}
+        <div style={{height: "100vh", overflow: "hidden", background: "#fafafa"}}>
+            {error && <p style={{color: "red", textAlign: "center"}}>{error}</p>}
             <SplitPane split="vertical" sizes={sizes} onChange={setSizes} sashRender={sashRender}>
                 {/* Leftmost Pane: Navigation Sidebar */}
                 <Pane>
@@ -332,11 +354,12 @@ const ThesisDashboard = () => {
                         <ul style={navListStyle}>
                             {SECTIONS.map((section) => (
                                 <li
-                                    key={section}
-                                    style={selectedSection === section ? navItemActive : navItemStyle}
+                                    key={section.name}
+                                    style={selectedSection === section.name ? navItemActive : navItemStyle}
                                     onClick={() => handleNavigationClick(section)}
                                 >
-                                    {section}
+                                    <FontAwesomeIcon icon={section.icon} style={{marginRight: "10px"}} />
+                                    {section.name}
                                 </li>
                             ))}
                         </ul>
@@ -348,10 +371,10 @@ const ThesisDashboard = () => {
                 <Pane>
                     <div style={editorPaneStyle}>
                         <h2>Edit {selectedSection}</h2>
+
                         {selectedSection === "Table Of Contents" && (
                             <div style={inputGroupStyle}>
                                 <h3>Table of Contents</h3>
-
                                 {tableOfContents.map((entry, index) => (
                                     <div key={index}>
                                         <input
@@ -427,7 +450,6 @@ const ThesisDashboard = () => {
                         )}
 
 
-
                         {selectedSection === "Abstract" && (
                             <div style={inputGroupStyle}>
                                 <h3>Abstract</h3>
@@ -445,7 +467,7 @@ const ThesisDashboard = () => {
                                 <h3>Body Pages</h3>
 
                                 {bodyPages.map((page, index) => (
-                                    <div key={page.id || index} style={{ marginBottom: "12px" }}>
+                                    <div key={page.id || index} style={{marginBottom: "12px"}}>
                                         <h4>Page {page.page_number}</h4>
                                         <textarea
                                             placeholder={`Edit content for Page ${page.page_number}`}
@@ -470,8 +492,8 @@ const ThesisDashboard = () => {
                         )}
 
 
-
                         <button style={buttonStyle} onClick={fetchThesis}>
+                            <FontAwesomeIcon icon={faSyncAlt} style={{marginRight: "5px"}}/>
                             Refresh Preview
                         </button>
                     </div>
@@ -481,7 +503,7 @@ const ThesisDashboard = () => {
                 <Pane>
                     <div style={previewPaneStyle}>
                         <h2>APA Formatted Preview</h2>
-                        <div className="apa-document" dangerouslySetInnerHTML={{ __html: formattedContent }}></div>
+                        <div className="apa-document" dangerouslySetInnerHTML={{__html: formattedContent}}></div>
                     </div>
                 </Pane>
             </SplitPane>
@@ -490,14 +512,14 @@ const ThesisDashboard = () => {
 };
 
 // Sidebar Styles
-const sidebarStyle = { padding: "20px", background: "#2c3e50", height: "100%", color: "#fff", overflowY: "auto" };
-const navListStyle = { listStyle: "none", padding: 0, margin: 0 };
-const navItemStyle = { padding: "10px", cursor: "pointer", borderBottom: "1px solid rgba(255, 255, 255, 0.2)" };
-const navItemActive = { ...navItemStyle, backgroundColor: "#34495e" };
+const sidebarStyle = {padding: "20px", background: "#2c3e50", height: "100%", color: "#fff", overflowY: "auto"};
+const navListStyle = {listStyle: "none", padding: 0, margin: 0};
+const navItemStyle = {padding: "10px", cursor: "pointer", borderBottom: "1px solid rgba(255, 255, 255, 0.2)"};
+const navItemActive = {...navItemStyle, backgroundColor: "#34495e"};
 
 // Editor & Preview Styles
-const editorPaneStyle = { padding: "20px", background: "#f4f4f4", height: "100%", overflowY: "auto" };
-const previewPaneStyle = { padding: "20px", background: "#ffffff", height: "100%", overflowY: "auto", textAlign: "left" };
+const editorPaneStyle = {padding: "20px", background: "#f4f4f4", height: "100%", overflowY: "auto"};
+const previewPaneStyle = {padding: "20px", background: "#ffffff", height: "100%", overflowY: "auto", textAlign: "left"};
 
 // Input & Button Styles
 const inputStyle = {
@@ -507,9 +529,28 @@ const inputStyle = {
     border: "1px solid #ccc",
     borderRadius: "4px",
 };
-const inputGroupStyle = { marginBottom: "20px" };
-const textareaStyle = { width: "100%", height: "150px", padding: "10px", fontSize: "16px", border: "1px solid #ccc", borderRadius: "4px", resize: "vertical" };
-const buttonStyle = { padding: "10px 20px", fontSize: "16px", color: "#fff", backgroundColor: "#007acc", border: "none", borderRadius: "4px", cursor: "pointer", marginTop: "20px" };
+const inputGroupStyle = {
+    marginBottom: "20px",
+};
+const textareaStyle = {
+    width: "100%",
+    height: "150px",
+    padding: "10px",
+    fontSize: "16px",
+    border: "1px solid #ccc",
+    borderRadius: "4px",
+    resize: "vertical"
+};
+const buttonStyle = {
+    padding: "10px 20px",
+    fontSize: "16px",
+    color: "#fff",
+    backgroundColor: "#007acc",
+    border: "none",
+    borderRadius: "4px",
+    cursor: "pointer",
+    marginTop: "20px"
+};
 const addButtonStyle = {
     padding: "10px 15px",
     fontSize: "14px",
@@ -519,8 +560,9 @@ const addButtonStyle = {
     borderRadius: "4px",
     cursor: "pointer",
     marginTop: "10px",
+    marginLeft: "auto", // Push the button to the right in a flex container
+    display: "inline-block" // Ensures proper alignment as an inline block element
 };
-
 const deleteButtonStyle = {
     padding: "6px 12px",
     fontSize: "12px",
@@ -529,7 +571,8 @@ const deleteButtonStyle = {
     border: "none",
     borderRadius: "4px",
     cursor: "pointer",
-    marginLeft: "10px",
+    marginLeft: "auto", // Push the button to the right in a flex container
+    display: "inline-block" // Ensures proper alignment as an inline block element
 };
 
 export default ThesisDashboard;
