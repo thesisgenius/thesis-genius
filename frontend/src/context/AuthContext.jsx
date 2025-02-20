@@ -1,32 +1,31 @@
 import React, { createContext, useState, useEffect, useContext, useMemo } from "react";
-import authAPI from "../services/authEndpoint"; // Import the authAPI
-import userAPI from "../services/userEndpoint"; // Import the userAPI
+import authAPI from "../services/authEndpoint";
+import userAPI from "../services/userEndpoint";
 
 export const AuthContext = createContext(null);
 
-// Custom hook for using the Auth context
-export const useAuth = () => {
-    return useContext(AuthContext);
-};
+export const useAuth = () => useContext(AuthContext);
 
-// AuthProvider component to manage authentication state
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // Check for an existing token and fetch user profile on mount
-    // Fetch user profile
+    // ✅ Fetch user profile only if token exists
     const fetchUser = async () => {
-        try {
-            const token = localStorage.getItem("token");
-            if (!token) throw new Error("No token found");
+        const token = localStorage.getItem("token");
 
+        if (!token) {
+            setLoading(false); // Stop loading if no token exists
+            return null;       // ✅ No error thrown, just skip fetch
+        }
+
+        try {
             const user = await userAPI.getUserProfile();
             setUser(user);
             return user;
         } catch (error) {
             console.error("Failed to fetch user profile:", error);
-            localStorage.removeItem("token");
+            localStorage.removeItem("token"); // Clear invalid token
             setUser(null);
             return null;
         } finally {
@@ -34,23 +33,21 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // On initialization
+    // 🏃‍♂️ Initialize: Fetch user profile if token is present
     useEffect(() => {
         (async () => {
-            setLoading(true); // Show loading state during initialization
-            await fetchUser(); // Fetch the user's profile
+            setLoading(true); 
+            await fetchUser(); 
         })();
     }, []);
 
-    // Sign-in function
+    // 🔑 Sign-in flow: Save token, fetch user, and refresh page
     const signIn = async (email, password) => {
         try {
-            const { token } = await authAPI.signIn(email, password); // Get token
-            localStorage.setItem("token", token);
-
-            const user = await userAPI.getUserProfile(); // Fetch user profile
-            setUser(user);
-
+            const { token } = await authAPI.signIn(email, password);
+            localStorage.setItem("token", token); 
+            await fetchUser();                      // Fetch profile after setting token
+            window.location.reload();               // 🔄 Refresh UI
             return true;
         } catch (error) {
             console.error("Sign-in failed:", error);
@@ -58,35 +55,31 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    // Sign-out function
+    // 🔓 Sign-out flow: Remove token and reset user
     const signOut = async () => {
         try {
-            await authAPI.signOut(); // Ensure the server logs out
+            await authAPI.signOut(); 
         } catch (error) {
             console.error("Sign-out failed:", error);
         } finally {
             localStorage.removeItem("token");
-            setUser(null);
+            setUser(null); 
+            window.location.reload();  // ✅ Refresh after logout
         }
     };
 
-    // Refresh user explicitly
     const refreshUser = async () => {
-        setLoading(true); // Show loading spinner during refresh
-        await fetchUser(); // Refetch and update user details
+        setLoading(true); 
+        await fetchUser(); // Refetch user info
     };
 
-    // Memoize the context value to optimize re-renders
-    const value = useMemo(
-        () => ({
-            user,
-            loading,
-            signIn,
-            signOut,
-            refreshUser: fetchUser, // Allow refreshUser to be triggered externally
-        }),
-        [user, loading]
-    );
+    const value = useMemo(() => ({
+        user,
+        loading,
+        signIn,
+        signOut,
+        refreshUser: fetchUser, // External refresh capability
+    }), [user, loading]);
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
