@@ -88,6 +88,74 @@ def get_thesis(thesis_id):
         app.logger.error(f"Error fetching thesis {thesis_id}: {e}")
         return jsonify({"success": False, "message": "An internal error occurred"}), 500
 
+@thesis_bp.route("/<int:thesis_id>/cover-page", methods=["GET"])
+@jwt_required
+def get_cover_page(thesis_id):
+    """
+    Retrieves the cover page details for a specific thesis.
+    """
+    thesis_service = ThesisService(app.logger)
+    try:
+        user_id = g.user_id
+        cover_page = thesis_service.get_cover_page(thesis_id, user_id)
+
+        if cover_page:
+            return jsonify({"success": True, "cover_page": cover_page}), 200
+        return jsonify({"success": False, "message": "Cover page not found"}), 404
+
+    except Exception as e:
+        app.logger.error(f"Error fetching cover page for thesis {thesis_id}: {e}")
+        return jsonify({"success": False, "message": "An internal error occurred"}), 500
+
+
+@thesis_bp.route("/<int:thesis_id>/cover-page", methods=["PUT"])
+@jwt_required
+def update_cover_page(thesis_id):
+    """
+    Updates the cover page details for a specific thesis.
+
+    :param thesis_id: The ID of the thesis whose cover page is being updated.
+    :type thesis_id: int
+    :return: A JSON response indicating the success or failure of the update.
+    """
+    thesis_service = ThesisService(app.logger)
+    try:
+        user_id = g.user_id
+        data = request.json
+
+        updated_cover_page = thesis_service.update_cover_page(thesis_id, user_id, dict(data))
+
+        if updated_cover_page:
+            return jsonify({"success": True, "cover_page": updated_cover_page}), 200
+        return jsonify({"success": False, "message": "Failed to update cover page"}), 400
+
+    except Exception as e:
+        app.logger.error(f"Error updating cover page for thesis {thesis_id}: {e}")
+        return jsonify({"success": False, "message": "An internal error occurred"}), 500
+
+@thesis_bp.route("/<int:thesis_id>/table-of-contents", methods=["GET"])
+@jwt_required
+def get_toc(thesis_id):
+    thesis_service = ThesisService(app.logger)
+    try:
+        toc = thesis_service.get_table_of_contents(thesis_id)
+        return jsonify({"success": True, "table_of_contents": toc}), 200
+    except Exception as e:
+        app.logger.error(f"Error retrieving TOC for thesis {thesis_id}: {e}")
+        return jsonify({"success": False, "message": "Failed to retrieve TOC"}), 500
+
+
+@thesis_bp.route("/<int:thesis_id>/table-of-contents", methods=["PUT"])
+@jwt_required
+def update_toc(thesis_id):
+    thesis_service = ThesisService(app.logger)
+    try:
+        data = request.json.get("table_of_contents", [])
+        updated_toc = thesis_service.update_table_of_contents(thesis_id, data)
+        return jsonify({"success": True, "table_of_contents": updated_toc}), 200
+    except Exception as e:
+        app.logger.error(f"Error updating TOC for thesis {thesis_id}: {e}")
+        return jsonify({"success": False, "message": "Failed to update TOC"}), 500
 
 @thesis_bp.route("/new", methods=["POST"])
 @jwt_required
@@ -156,6 +224,7 @@ def create_thesis():
                 thesis, exclude=[Thesis.student]
             )  # Exclude student object
             thesis_dict["student_id"] = thesis.student_id  # Add student_id explicitly
+
             return (
                 jsonify(
                     {
@@ -296,6 +365,35 @@ def delete_thesis(thesis_id):
 
 
 # ----------------- ABSTRACT ROUTES -----------------
+@thesis_bp.route("/<int:thesis_id>/abstract", methods=["GET"])
+@jwt_required
+def get_abstract(thesis_id):
+    """
+    Retrieves the abstract for a specific thesis identified by the provided ID.
+
+    This endpoint allows a user to fetch the abstract of a particular thesis.
+    It requires authentication via JWT. On success, it returns the abstract
+    text for the thesis.
+
+    :param thesis_id: The ID of the thesis whose abstract is to be retrieved.
+    :type thesis_id: int
+    :return: JSON response containing the abstract text and success status, or an
+             error message if the operation fails.
+    :rtype: tuple (dict, int)
+    """
+    thesis_service = ThesisService(app.logger)
+    try:
+        abstract_text = thesis_service.get_abstract(thesis_id)
+        return jsonify({"success": True, "abstract": abstract_text}), 200
+    except ValueError as e:
+        # This exception is raised when no abstract is found for the thesis ID
+        app.logger.info(str(e))
+        return jsonify({"success": False, "message": str(e)}), 404
+    except Exception as e:
+        # Any other unexpected errors
+        app.logger.error(f"Error retrieving abstract for thesis {thesis_id}: {e}")
+        return jsonify({"success": False, "message": "An internal error occurred"}), 500
+
 
 
 @thesis_bp.route("/<int:thesis_id>/abstract", methods=["POST"])
@@ -356,6 +454,39 @@ def delete_abstract(thesis_id):
 
 
 # ----------------- BODY PAGE ROUTES -----------------
+@thesis_bp.route("/<int:thesis_id>/body-pages", methods=["GET"])
+@jwt_required
+def get_body_pages(thesis_id):
+    """
+    Retrieve all body pages for a specific thesis identified by its ID.
+    This function fetches the body pages using ThesisService and returns
+    the data in JSON format.
+
+    :param thesis_id: The ID of the thesis whose body pages are to be retrieved.
+    :type thesis_id: int
+    :return: A JSON response containing success status and a list of body pages if successful,
+             or failure status and a message if unsuccessful.
+    :rtype: flask.Response
+    """
+    thesis_service = ThesisService(app.logger)
+    try:
+        # Call the service method to fetch the body pages
+        body_pages = thesis_service.get_body_pages(thesis_id)
+
+        if body_pages:
+            return jsonify(
+                {
+                    "success": True,
+                    "message": f"Successfully retrieved body pages for thesis ID {thesis_id}",
+                    "body_pages": body_pages,
+                }
+            ), 200
+        else:
+            return jsonify({"success": False, "message": "No body pages found"}), 404
+    except Exception as e:
+        app.logger.error(f"Error retrieving body pages for thesis ID {thesis_id}: {e}")
+        return jsonify({"success": False, "message": "Failed to retrieve body pages"}), 500
+
 
 
 @thesis_bp.route("/<int:thesis_id>/body-pages", methods=["POST"])
@@ -378,7 +509,7 @@ def add_body_page(thesis_id):
     try:
         data = request.json
         page = thesis_service.add_body_page(
-            thesis_id, data["page_number"], data["body"]
+            thesis_id, data.get("page_number"), data.get("body")
         )
         if page:
             return (
@@ -392,14 +523,15 @@ def add_body_page(thesis_id):
         return jsonify({"success": False, "message": "Failed to add body page"}), 400
 
 
-@thesis_bp.route("/<int:page_id>", methods=["PUT"])
+@thesis_bp.route("/<int:thesis_id>/body-pages/<int:page_id>", methods=["PUT"])
 @jwt_required
-def update_body_page(page_id):
+def update_body_page(thesis_id, page_id):
     """
     Updates a thesis body page with the provided details. It uses the ThesisService
     to update the page's content, given the page ID, page number, and body text.
     Returns a success response if the page is updated, otherwise a failure response.
 
+    :param thesis_id:
     :param page_id: The ID of the page to be updated.
     :type page_id: int
     :return: A Flask JSON response indicating the success or failure of the operation.
@@ -409,8 +541,11 @@ def update_body_page(page_id):
     thesis_service = ThesisService(app.logger)
     try:
         data = request.json
-        updated_page = thesis_service.add_body_page(
-            page_id, data["page_number"], data["body"]
+        updated_page = thesis_service.update_body_page(
+            thesis_id,
+            page_id,
+            data.get("page_number"),
+            data.get("body")
         )
         if updated_page:
             return jsonify({"success": True, "message": "Body page updated"}), 200
@@ -419,15 +554,17 @@ def update_body_page(page_id):
         return jsonify({"success": False, "message": "Failed to update body page"}), 400
 
 
-@thesis_bp.route("/<int:page_id>", methods=["DELETE"])
+@thesis_bp.route("/<int:thesis_id>/body-pages/<int:page_id>", methods=["DELETE"])
 @jwt_required
-def delete_body_page(page_id):
+def delete_body_page(thesis_id, page_id):
+
     """
     Deletes a body page from a thesis by its page ID. This function is protected
     by JWT authentication and interacts with the `ThesisService` to perform
     the deletion. After successful deletion, it returns a success response
     with a message indicating that the body page has been deleted.
 
+    :param thesis_id:
     :param page_id: The ID of the page to be deleted.
     :type page_id: int
     :return: A dictionary containing success status and deletion message,
@@ -436,7 +573,9 @@ def delete_body_page(page_id):
     """
     thesis_service = ThesisService(app.logger)
     try:
-        thesis_service.delete_body_page(page_id)
+        success = thesis_service.delete_body_page(thesis_id, page_id)
+        if success:
+            return jsonify({"success": True, "message": "Body page deleted successfully"}), 200
     except Exception as e:
         app.logger.error(f"Failed to delete body page: {e}")
         return jsonify({"success": False, "message": "Failed to delete body page"}), 400

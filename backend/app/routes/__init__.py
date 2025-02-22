@@ -1,9 +1,8 @@
 from flask import jsonify, request  # Added imports
 from flask_cors import CORS
-
+from .chat import chat_bp  # Import chat API
 from .auth import auth_bp
 from .format import format_bp
-from .forum import forum_bp
 from .status import status_bp
 from .thesis import thesis_bp
 from .user import user_bp
@@ -44,8 +43,9 @@ def register_routes(app):
         app.register_blueprint(auth_bp)
         app.register_blueprint(user_bp)
         app.register_blueprint(thesis_bp)
-        app.register_blueprint(forum_bp)
+     
         app.register_blueprint(format_bp)
+        app.register_blueprint(chat_bp)
     except Exception as e:
         app.logger.error(f"Failed to register blueprints: {e}")
         raise

@@ -33,9 +33,16 @@ def create_app(config_name="testing"):
 
     @app.before_request
     def log_request_info():
+        """Logs request method, URL, and headers while redacting sensitive data."""
+        headers = dict(request.headers)
+
+        # Redact Authorization header if present
+        if "Authorization" in headers:
+            headers["Authorization"] = "Bearer [REDACTED]"
+
         app.logger.debug(f"Request Method: {request.method}")
         app.logger.debug(f"Request URL: {request.url}")
-        app.logger.debug(f"Request Headers: {request.headers}")
+        app.logger.debug(f"Request Headers: {headers}")
         app.logger.debug(f"Request Body: {request.get_data()}")
 
     # Ensure the database connection is closed after each request

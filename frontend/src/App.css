@@ -1,42 +1,78 @@
-#root {
-  max-width: auto;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-}
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Home from "./pages/Home";
+import SignIn from "./pages/SignIn";
+import Signup from "./pages/SignUp";
+import Dashboard from "./pages/Dashboard";
+import Thesis from "./pages/Thesis";
+import ThesisDashboard from "./pages/ThesisDashboard";
+import Forum from "./components/Forum";
+import NotFound from "./pages/NotFound";
+import ProtectedRoute from "./components/ProtectedRoute";
+import Header from "./components/Header";
+import Footer from "./components/Footer";
+import NewDashBoard from "./pages/NewDashBoard";
+import Dash from "./pages/Dash";
+import Body from "./pages/Body";
+import Part from "./pages/Part";
+import About from "./pages/About";
+import ThesisBody from "./pages/ThesisBody";
+import DynamicPart from "./pages/DynamicPart";
+import ChatWindow from "./pages/ChatWindow";
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
+const App = () => {
+  return (
+    <Router>
+      <Header />
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<Home />} />
+        <Route path="/signin" element={<SignIn />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/forum" element={<Forum />} /> {/* Forum accessible without login */}
+        <Route path="/about" element={<About />} />
+        <Route path="/chat" element={<ChatWindow />} />
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
+        {/* Protected Routes */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/thesis"
+          element={
+            <ProtectedRoute>
+              <Thesis />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/thesis/:thesisId"
+          element={
+            <ProtectedRoute>
+              <ThesisDashboard />
+            </ProtectedRoute>
+          }
+        />
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
+        {/* Additional Pages */}
+        <Route path="/newdashboard" element={<NewDashBoard />} />
+        <Route path="/dash" element={<Dash />} />
+        <Route path="/body" element={<ThesisBody />} />
+        <Route path="/thesisbody" element={<ThesisBody />} />
+        <Route path="/part" element={<Part />} />
+        <Route path="/dynamicpart" element={<DynamicPart />} />
 
-.card {
-  padding: 2em;
-}
+        {/* Catch-All */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      <Footer />
+    </Router>
+  );
+};
 
-.read-the-docs {
-  color: #888;
-}
+export default App;
