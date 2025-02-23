@@ -93,6 +93,7 @@ class User(BaseModel):
     is_authenticated = BooleanField(default=False)
     created_at = DateTimeField(default=datetime.now(timezone.utc))
     updated_at = DateTimeField(default=datetime.now(timezone.utc))
+    profile_picture = CharField(null=True)
 
     class Meta:
         table_name = "users"

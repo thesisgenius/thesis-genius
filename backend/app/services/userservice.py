@@ -1,4 +1,7 @@
-from peewee import IntegrityError
+import os
+import uuid
+import imghdr
+from peewee import IntegrityError, DoesNotExist
 from playhouse.shortcuts import model_to_dict
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -8,6 +11,25 @@ from ..utils.redis_helper import blacklist_token
 
 DEFAULT_ROLE = "Student"
 ADMIN_ROLE = "Admin"
+
+# Store in local static folder (for development)
+UPLOAD_FOLDER = "static/uploads/profile_pictures"
+
+# Ensure the upload folder exists
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+# Allowed image extensions and MIME types
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB max
+
+def allowed_file(file):
+    """Validate file extension and MIME type."""
+    filename = file.filename.lower()
+    return (
+            "." in filename and filename.rsplit(".", 1)[1] in ALLOWED_EXTENSIONS
+            and imghdr.what(file) in ALLOWED_EXTENSIONS
+    )
 
 
 class UserService:
@@ -229,13 +251,48 @@ class UserService:
                 return True
 
             self.logger.warning(f"No rows updated for user {user_id}.")
-            return False
+            return True
         except IntegrityError as e:
             self.logger.error(f"IntegrityError updating user {user_id}: {e}")
             return False
         except Exception as e:
             self.logger.error(f"Error updating user {user_id}: {e}")
             return False
+
+    @staticmethod
+    def update_profile_picture(user_id, file):
+        """Handles secure profile picture upload and updates the user profile."""
+        if not file:
+            return {"success": False, "message": "No file provided"}, 400
+
+        if file.content_length > MAX_FILE_SIZE:
+            return {"success": False, "message": "File is too large (max 5MB)"}, 400
+
+        if not allowed_file(file):
+            return {"success": False, "message": "Invalid file format"}, 400
+
+        try:
+            user = User.get_by_id(user_id)
+
+            # Generate unique filename with UUID
+            file_extension = file.filename.rsplit(".", 1)[1].lower()
+            unique_filename = f"user_{user.id}_{uuid.uuid4().hex}.{file_extension}"
+            filepath = os.path.join(UPLOAD_FOLDER, unique_filename)
+
+            # Save the file
+            file.save(filepath)
+
+            # Update the user profile picture path in the database
+            user.profile_picture = filepath
+            user.save()
+
+            return {"success": True, "message": "Profile picture updated", "profile_picture": filepath}, 200
+
+        except DoesNotExist:
+            return {"success": False, "message": "User not found"}, 404
+
+        except Exception as e:
+            return {"success": False, "message": str(e)}, 500
 
     def change_user_status(self, user_id, is_active, token=None):
         """
