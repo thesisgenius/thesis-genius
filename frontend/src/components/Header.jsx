@@ -1,45 +1,21 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-    faUser,
-    faUserCircle,
-    faSignOutAlt,
-    faSignInAlt,
-    faDashboard,
-    faComments,
-    faBars,
-    faTimes,
-} from "@fortawesome/free-solid-svg-icons";
-import "../styles/Header.css";
+import { Link, useNavigate } from 'react-router-dom';
 
-const LOGO_PATH = "/owl.png";
-const LOGO_ALT = "ThesisGenius";
-const NAV_LINKS = [
-    { to: "/dashboard", label: "Dashboard", icon: faDashboard },
-    { to: "https://resources.nu.edu/Chatpage", label: "Forum", icon: faComments },
-    { to: "/about", label: "About", icon: faUserCircle},
-    { to: "/signup", label: "Sign Up", icon: faUser },
-];
+import Logo from '/owl.png';
+import { Button } from './ui/button';
 
-const ExpandableMenu = () => {
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Menu } from 'lucide-react';
+
+import { useAuth } from '../context/AuthContext';
+
+export default function NewHeader() {
     const { user, signOut, refreshUser } = useAuth(); // Include refreshUser
     const navigate = useNavigate();
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     // Handle Logout
     const handleLogout = () => {
         signOut(); // Log the user out
-        navigate("/"); // Redirect to home after logout
-    };
-
-    // Handle Menu Toggle with Optional User Refresh
-    const toggleMenu = async () => {
-        if (!isMenuOpen) {
-            await refreshUser(); // Optionally refresh user when menu is opened
-        }
-        setIsMenuOpen((prev) => !prev || false);
+        navigate('/'); // Redirect to home after logout
     };
 
     // Manual User Refresh Button
@@ -47,64 +23,92 @@ const ExpandableMenu = () => {
         await refreshUser(); // Explicit action for the user to refresh their auth state/profile
     };
 
-    // Render Navigation Links
-    const renderNavLinks = () =>
-        NAV_LINKS.map(({ to, label, icon }) => (
-            <li key={to}>
-                <Link to={to}>
-                    <FontAwesomeIcon icon={icon} /> {label}
-                </Link>
-            </li>
-        ));
-
-    // Render Authentication Section
-    const renderAuthSection = user ? (
-        <>
-            <li>
-                <button onClick={handleRefresh} className="refresh-button">
-                    <FontAwesomeIcon icon={faUser} /> Refresh Profile
-                </button>
-            </li>
-            <li>
-                <button onClick={handleLogout} className="logout-button">
-                    <FontAwesomeIcon icon={faSignOutAlt} /> Logout
-                </button>
-            </li>
-        </>
-    ) : (
-        <li>
-            <Link to="/signin">
-                <FontAwesomeIcon icon={faSignInAlt} /> Sign In
-            </Link>
-        </li>
-    );
-
-    // Render Component
     return (
-        <div className="header">
-            {/* Logo Section */}
-            <div className="logo" onClick={() => navigate("/")}>
-                <img src={LOGO_PATH} alt={LOGO_ALT} style={{ width: "50px" }}/>
-                <Link to="/">ThesisGenius</Link>
-                <sub>write smart, stress less</sub>
-            </div>
+        <header className='bg-gray-800 py-3 px-4 lg:!px-8'>
+            <nav className='flex justify-between items-center'>
+                <Link to='/' className='inline-flex gap-2 items-center'>
+                    <img className='h-12 w-auto' src={Logo} alt='logo' />
+                    <div>
+                        <h1 className='font-bold text-2xl text-sky-300'>ThesisGenius</h1>
+                        <p className='italic text-white'>write smart, write less</p>
+                    </div>
+                </Link>
 
-            {/* Menu Toggle Button */}
-            <div className="menu-toggle" onClick={toggleMenu}>
-                <FontAwesomeIcon icon={isMenuOpen ? faTimes : faBars} size="lg" />
-            </div>
+                <Sheet>
+                    <SheetTrigger className='lg:hidden'>
+                        <Menu className='text-white' />
+                    </SheetTrigger>
+                    <SheetContent className='flex flex-col pt-16'>
+                        <Button variant='link'>
+                            <Link to='/about'>About</Link>
+                        </Button>
+                        <Button variant='link'>
+                            <Link to='/app/title'>Dashboard</Link>
+                        </Button>
+                        <Button variant='link'>
+                            <Link to='https://resources.nu.edu/Chatpage'>Forum</Link>
+                        </Button>
+                        {user ? (
+                            <>
+                                <Button variant='link' onClick={handleRefresh}>
+                                    Refresh Profile
+                                </Button>
+                                <Button variant='link' onClick={handleLogout}>
+                                    Log out
+                                </Button>
+                            </>
+                        ) : (
+                            <>
+                                <Button variant='link'>
+                                    <Link to='/signin'>Sign in</Link>
+                                </Button>
+                                <Button variant='link'>
+                                    <Link to='/signup'>Register</Link>
+                                </Button>
+                            </>
+                        )}
+                    </SheetContent>
+                </Sheet>
 
-            {/* Expandable Menu */}
-            {isMenuOpen && (
-                <nav className={`menu ${isMenuOpen ? "open" : ""}`}>
-                    <ul>
-                        {renderNavLinks()}
-                        {renderAuthSection}
-                    </ul>
-                </nav>
-            )}
-        </div>
+                <div className='gap-4 hidden lg:flex'>
+                    <Button variant='link'>
+                        <Link className='text-white' to='/about'>
+                            About
+                        </Link>
+                    </Button>
+                    <Button variant='link'>
+                        <Link className='text-white' to='/app/title'>
+                            Dashboard
+                        </Link>
+                    </Button>
+                    <Button variant='link'>
+                        <Link className='text-white' to='https://resources.nu.edu/Chatpage'>
+                            Forum
+                        </Link>
+                    </Button>
+                </div>
+
+                {user ? (
+                    <div className='hidden lg:flex gap-4'>
+                        <Button onClick={handleRefresh} variant='outline'>
+                            Refresh Profile
+                        </Button>
+
+                        <Button onClick={handleLogout} variant='destructive'>
+                            Log out
+                        </Button>
+                    </div>
+                ) : (
+                    <div className='hidden lg:flex gap-4'>
+                        <Button asChild>
+                            <Link to='signin'>Sign In</Link>
+                        </Button>
+                        <Button variant='outline' asChild>
+                            <Link to='signup'>Register</Link>
+                        </Button>
+                    </div>
+                )}
+            </nav>
+        </header>
     );
-};
-
-export default ExpandableMenu;
+}

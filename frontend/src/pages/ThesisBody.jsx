@@ -98,7 +98,7 @@ const ThesisBody = () => {
         <FadingBanner />
       </div>
       <div className="col-md-2">
-        <Link to="/dash" className="btn btn-primary mb-3">
+        <Link to="/dashboard" className="btn btn-primary mb-3">
           Back to Dashboard
         </Link>
       </div>

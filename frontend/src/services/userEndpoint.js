@@ -21,6 +21,20 @@ const userAPI = {
         }
     },
 
+    // Upload profile picture
+    uploadProfilePicture: async (formData) => {
+        try {
+            const response = await apiClient.post("/user/profile-picture", formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    },
+
     // Activate a user by ID
     activateUser: async (userId) => {
         try {
