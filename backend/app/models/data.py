@@ -157,7 +157,9 @@ class Thesis(BaseModel):
     # Cover Page Fields
     author = CharField(null=True)  # Name of the author
     affiliation = CharField(null=True)  # Institution name
-    due_date = DateTimeField(null=True, default=datetime.now(timezone.utc))  # Thesis due date
+    due_date = DateTimeField(
+        null=True, default=datetime.now(timezone.utc)
+    )  # Thesis due date
 
     class Meta:
         table_name = "theses"

@@ -173,7 +173,9 @@ class ThesisService:
                 "affiliation": thesis.affiliation,
                 "course": thesis.course,
                 "instructor": thesis.instructor,
-                "due_date": thesis.due_date.strftime("%Y-%m-%d") if thesis.due_date else None,
+                "due_date": (
+                    thesis.due_date.strftime("%Y-%m-%d") if thesis.due_date else None
+                ),
             }
 
         except Exception as e:
@@ -194,15 +196,21 @@ class ThesisService:
         :rtype: dict or None
         """
         try:
-            query = Thesis.select().where(Thesis.id == thesis_id, Thesis.student_id == user_id)
+            query = Thesis.select().where(
+                Thesis.id == thesis_id, Thesis.student_id == user_id
+            )
             thesis = query.get_or_none()
             if not thesis:
                 return None
 
             # Update fields only if they are provided in the request
-            update_data = {key: value for key, value in cover_data.items() if value is not None}
+            update_data = {
+                key: value for key, value in cover_data.items() if value is not None
+            }
             if "due_date" in update_data and update_data["due_date"]:
-                update_data["due_date"] = datetime.strptime(update_data["due_date"], "%Y-%m-%d")
+                update_data["due_date"] = datetime.strptime(
+                    update_data["due_date"], "%Y-%m-%d"
+                )
 
             if update_data:
                 Thesis.update(**update_data).where(Thesis.id == thesis_id).execute()
@@ -214,14 +222,18 @@ class ThesisService:
                 "affiliation": update_data.get("affiliation", thesis.affiliation),
                 "course": update_data.get("course", thesis.course),
                 "instructor": update_data.get("instructor", thesis.instructor),
-                "due_date": update_data.get("due_date", thesis.due_date).strftime("%Y-%m-%d")
-                if thesis.due_date else None,
+                "due_date": (
+                    update_data.get("due_date", thesis.due_date).strftime("%Y-%m-%d")
+                    if thesis.due_date
+                    else None
+                ),
             }
 
         except Exception as e:
-            self.logger.error(f"Failed to update cover page for thesis {thesis_id}: {e}")
+            self.logger.error(
+                f"Failed to update cover page for thesis {thesis_id}: {e}"
+            )
             return None
-
 
     def add_table_of_contents_entry(self, thesis_id, section_title, page_number, order):
         """
@@ -260,7 +272,9 @@ class ThesisService:
         """
         try:
             # Clear existing TOC entries
-            TableOfContents.delete().where(TableOfContents.thesis_id == thesis_id).execute()
+            TableOfContents.delete().where(
+                TableOfContents.thesis_id == thesis_id
+            ).execute()
 
             # Insert new TOC entries
             for entry in toc_entries:
@@ -288,26 +302,48 @@ class ThesisService:
         """
         try:
             # Fetch stored TOC entries
-            toc_entries = TableOfContents.select().where(TableOfContents.thesis_id == thesis_id).order_by(TableOfContents.order)
+            toc_entries = (
+                TableOfContents.select()
+                .where(TableOfContents.thesis_id == thesis_id)
+                .order_by(TableOfContents.order)
+            )
             result = [model_to_dict(entry) for entry in toc_entries]
 
             # If no entries exist, generate TOC dynamically
             if not result:
-                self.logger.info(f"No TOC found for thesis {thesis_id}, generating dynamically.")
+                self.logger.info(
+                    f"No TOC found for thesis {thesis_id}, generating dynamically."
+                )
 
                 # Generate TOC based on document structure
                 sections = [
                     {"section_title": "Cover Page", "page_number": 1, "order": 1},
-                    {"section_title": "Abstract", "page_number": 2, "order": 2}
+                    {"section_title": "Abstract", "page_number": 2, "order": 2},
                 ]
 
                 # Fetch body pages and generate section entries
-                body_pages = BodyPage.select().where(BodyPage.thesis_id == thesis_id).order_by(BodyPage.page_number)
+                body_pages = (
+                    BodyPage.select()
+                    .where(BodyPage.thesis_id == thesis_id)
+                    .order_by(BodyPage.page_number)
+                )
                 for i, page in enumerate(body_pages, start=3):
-                    sections.append({"section_title": f"Page {page.page_number}", "page_number": i, "order": i})
+                    sections.append(
+                        {
+                            "section_title": f"Page {page.page_number}",
+                            "page_number": i,
+                            "order": i,
+                        }
+                    )
 
                 # Add references at the end
-                sections.append({"section_title": "References", "page_number": len(sections) + 1, "order": len(sections) + 1})
+                sections.append(
+                    {
+                        "section_title": "References",
+                        "page_number": len(sections) + 1,
+                        "order": len(sections) + 1,
+                    }
+                )
 
                 # Store in database
                 for entry in sections:
@@ -319,7 +355,6 @@ class ThesisService:
         except Exception as e:
             self.logger.error(f"Error fetching TOC for thesis {thesis_id}: {e}")
             raise
-
 
     def delete_table_of_contents_entry(self, entry_id):
         """
@@ -458,8 +493,15 @@ class ThesisService:
             result = [model_to_dict(page) for page in pages]
 
             if not result:
-                self.logger.warning(f"No body pages found for thesis {thesis_id}, returning default blank page.")
-                return [{"page_number": 1, "body": "(This page is intentionally left blank.)"}]  # Default blank page
+                self.logger.warning(
+                    f"No body pages found for thesis {thesis_id}, returning default blank page."
+                )
+                return [
+                    {
+                        "page_number": 1,
+                        "body": "(This page is intentionally left blank.)",
+                    }
+                ]  # Default blank page
 
             return result
         except Exception as e:
@@ -471,18 +513,23 @@ class ThesisService:
         Deletes a body page from a thesis, ensuring it belongs to the correct thesis.
         """
         try:
-            body_page = BodyPage.get_or_none((BodyPage.id == page_id) & (BodyPage.thesis_id == thesis_id))
+            body_page = BodyPage.get_or_none(
+                (BodyPage.id == page_id) & (BodyPage.thesis_id == thesis_id)
+            )
             if not body_page:
-                self.logger.warning(f"Body page {page_id} not found for thesis {thesis_id}.")
+                self.logger.warning(
+                    f"Body page {page_id} not found for thesis {thesis_id}."
+                )
                 return False
 
             body_page.delete_instance()
-            self.logger.info(f"Body page {page_id} deleted successfully from thesis {thesis_id}.")
+            self.logger.info(
+                f"Body page {page_id} deleted successfully from thesis {thesis_id}."
+            )
             return True
         except Exception as e:
             self.logger.error(f"Error deleting body page {page_id}: {e}")
             raise
-
 
     def create_thesis(self, thesis_data):
         """
@@ -552,7 +599,9 @@ class ThesisService:
                     )
             else:
                 # Add a default blank body page
-                self.add_body_page(thesis.id, 1, "(This page is intentionally left blank.)")
+                self.add_body_page(
+                    thesis.id, 1, "(This page is intentionally left blank.)"
+                )
 
             self.logger.info(f"Thesis created successfully: {thesis.id}")
             return thesis
@@ -638,9 +687,13 @@ class ThesisService:
         Updates a body page's content in an existing thesis.
         """
         try:
-            body_page = BodyPage.get_or_none((BodyPage.id == page_id) & (BodyPage.thesis_id == thesis_id))
+            body_page = BodyPage.get_or_none(
+                (BodyPage.id == page_id) & (BodyPage.thesis_id == thesis_id)
+            )
             if not body_page:
-                raise ValueError(f"Body page {page_id} for thesis {thesis_id} not found.")
+                raise ValueError(
+                    f"Body page {page_id} for thesis {thesis_id} not found."
+                )
 
             body_page.page_number = page_number
             body_page.body = body_text

@@ -1,7 +1,6 @@
 import pytest
 from app.models.data import Role
-from unittest.mock import patch, MagicMock
-from flask.testing import FlaskClient
+
 
 @pytest.fixture
 def create_role():
@@ -109,6 +108,7 @@ def test_create_thesis_with_abstract_and_body(client, user_token):
     assert response.json["success"] is True
     assert response.json["id"] is not None
 
+
 def test_add_body_page_success(client, user_token, sample_thesis):
     """
     Test successful addition of a body page to a thesis.
@@ -129,7 +129,7 @@ def test_add_body_page_failure(client, user_token, sample_thesis):
     Test failure when adding a body page to a thesis.
     """
     response = client.post(
-        f"/api/thesis/417/body-pages",
+        "/api/thesis/417/body-pages",
         json={"page_number": 1, "body": "Test body content"},
         headers={"Authorization": f"Bearer {user_token}"},
     )
@@ -150,6 +150,7 @@ def test_add_body_page_invalid_payload(client, user_token, sample_thesis):
     assert response.status_code == 400
     assert response.json["success"] is False
     assert response.json["message"] == "Failed to add body page"
+
 
 def test_create_thesis_missing_fields(client, user_token):
     """Test creating a thesis with missing required fields."""

@@ -88,6 +88,7 @@ def get_thesis(thesis_id):
         app.logger.error(f"Error fetching thesis {thesis_id}: {e}")
         return jsonify({"success": False, "message": "An internal error occurred"}), 500
 
+
 @thesis_bp.route("/<int:thesis_id>/cover-page", methods=["GET"])
 @jwt_required
 def get_cover_page(thesis_id):
@@ -123,15 +124,21 @@ def update_cover_page(thesis_id):
         user_id = g.user_id
         data = request.json
 
-        updated_cover_page = thesis_service.update_cover_page(thesis_id, user_id, dict(data))
+        updated_cover_page = thesis_service.update_cover_page(
+            thesis_id, user_id, dict(data)
+        )
 
         if updated_cover_page:
             return jsonify({"success": True, "cover_page": updated_cover_page}), 200
-        return jsonify({"success": False, "message": "Failed to update cover page"}), 400
+        return (
+            jsonify({"success": False, "message": "Failed to update cover page"}),
+            400,
+        )
 
     except Exception as e:
         app.logger.error(f"Error updating cover page for thesis {thesis_id}: {e}")
         return jsonify({"success": False, "message": "An internal error occurred"}), 500
+
 
 @thesis_bp.route("/<int:thesis_id>/table-of-contents", methods=["GET"])
 @jwt_required
@@ -156,6 +163,7 @@ def update_toc(thesis_id):
     except Exception as e:
         app.logger.error(f"Error updating TOC for thesis {thesis_id}: {e}")
         return jsonify({"success": False, "message": "Failed to update TOC"}), 500
+
 
 @thesis_bp.route("/new", methods=["POST"])
 @jwt_required
@@ -395,7 +403,6 @@ def get_abstract(thesis_id):
         return jsonify({"success": False, "message": "An internal error occurred"}), 500
 
 
-
 @thesis_bp.route("/<int:thesis_id>/abstract", methods=["POST"])
 @jwt_required
 def create_or_update_abstract(thesis_id):
@@ -474,19 +481,24 @@ def get_body_pages(thesis_id):
         body_pages = thesis_service.get_body_pages(thesis_id)
 
         if body_pages:
-            return jsonify(
-                {
-                    "success": True,
-                    "message": f"Successfully retrieved body pages for thesis ID {thesis_id}",
-                    "body_pages": body_pages,
-                }
-            ), 200
+            return (
+                jsonify(
+                    {
+                        "success": True,
+                        "message": f"Successfully retrieved body pages for thesis ID {thesis_id}",
+                        "body_pages": body_pages,
+                    }
+                ),
+                200,
+            )
         else:
             return jsonify({"success": False, "message": "No body pages found"}), 404
     except Exception as e:
         app.logger.error(f"Error retrieving body pages for thesis ID {thesis_id}: {e}")
-        return jsonify({"success": False, "message": "Failed to retrieve body pages"}), 500
-
+        return (
+            jsonify({"success": False, "message": "Failed to retrieve body pages"}),
+            500,
+        )
 
 
 @thesis_bp.route("/<int:thesis_id>/body-pages", methods=["POST"])
@@ -542,10 +554,7 @@ def update_body_page(thesis_id, page_id):
     try:
         data = request.json
         updated_page = thesis_service.update_body_page(
-            thesis_id,
-            page_id,
-            data.get("page_number"),
-            data.get("body")
+            thesis_id, page_id, data.get("page_number"), data.get("body")
         )
         if updated_page:
             return jsonify({"success": True, "message": "Body page updated"}), 200
@@ -557,7 +566,6 @@ def update_body_page(thesis_id, page_id):
 @thesis_bp.route("/<int:thesis_id>/body-pages/<int:page_id>", methods=["DELETE"])
 @jwt_required
 def delete_body_page(thesis_id, page_id):
-
     """
     Deletes a body page from a thesis by its page ID. This function is protected
     by JWT authentication and interacts with the `ThesisService` to perform
@@ -575,7 +583,10 @@ def delete_body_page(thesis_id, page_id):
     try:
         success = thesis_service.delete_body_page(thesis_id, page_id)
         if success:
-            return jsonify({"success": True, "message": "Body page deleted successfully"}), 200
+            return (
+                jsonify({"success": True, "message": "Body page deleted successfully"}),
+                200,
+            )
     except Exception as e:
         app.logger.error(f"Failed to delete body page: {e}")
         return jsonify({"success": False, "message": "Failed to delete body page"}), 400

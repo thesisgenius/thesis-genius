@@ -63,6 +63,12 @@ lint: check-venv ## Run black, isort, and ruff Python code linters
 	@$(PYTHON_BIN)/isort .
 	@$(PYTHON_BIN)/ruff check .
 
+.PHONY: lint-fix
+lint-fix: check-venv ## Run black, isort, and ruff Python code linters
+	@$(PYTHON_BIN)/black . --fix
+	@$(PYTHON_BIN)/isort . --fix
+	@$(PYTHON_BIN)/ruff check . --fix
+
 .PHONY: check
 check: check-venv ## Lint check formatting
 	@$(PYTHON_BIN)/black --check .

@@ -43,9 +43,10 @@ def initialize_database(app):
         app.logger.info("Connecting to the database...")
         with database_proxy:
             # Dynamically detect all models in data.py and sync tables
-            from peewee import Model
-            from peewee import Model, CharField, DateTimeField
-            from playhouse.migrate import MySQLMigrator, SqliteMigrator, migrate
+            from peewee import CharField, DateTimeField, Model
+            from playhouse.migrate import (MySQLMigrator, SqliteMigrator,
+                                           migrate)
+
             from ..models import data
 
             database_models = [
@@ -65,7 +66,11 @@ def initialize_database(app):
 
             # Perform schema migrations if necessary
             app.logger.info("Checking for missing columns...")
-            migrator = MySQLMigrator(db) if conn_info["engine"] == "mysql" else SqliteMigrator(db)
+            migrator = (
+                MySQLMigrator(db)
+                if conn_info["engine"] == "mysql"
+                else SqliteMigrator(db)
+            )
 
             # Check for missing columns in the Thesis table
             with database_proxy:
@@ -75,15 +80,25 @@ def initialize_database(app):
                 migrations = []
                 if "author" not in existing_column_names:
                     app.logger.info("Adding missing column: author")
-                    migrations.append(migrator.add_column("theses", "author", CharField(null=True)))
+                    migrations.append(
+                        migrator.add_column("theses", "author", CharField(null=True))
+                    )
 
                 if "affiliation" not in existing_column_names:
                     app.logger.info("Adding missing column: affiliation")
-                    migrations.append(migrator.add_column("theses", "affiliation", CharField(null=True)))
+                    migrations.append(
+                        migrator.add_column(
+                            "theses", "affiliation", CharField(null=True)
+                        )
+                    )
 
                 if "due_date" not in existing_column_names:
                     app.logger.info("Adding missing column: due_date")
-                    migrations.append(migrator.add_column("theses", "due_date", DateTimeField(null=True)))
+                    migrations.append(
+                        migrator.add_column(
+                            "theses", "due_date", DateTimeField(null=True)
+                        )
+                    )
 
                 if migrations:
                     migrate(*migrations)
