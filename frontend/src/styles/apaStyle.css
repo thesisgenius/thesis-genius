@@ -223,6 +223,12 @@ html {
   height: 20px;
 }
 
+.page-break {
+  page-break-before: always;
+  border: none;
+  height: 0;
+}
+
 /* Page Numbering */
 .apa-page-number {
   text-align: right;
