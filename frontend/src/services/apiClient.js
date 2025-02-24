@@ -1,34 +1,56 @@
 import axios from "axios";
 
-// Create an Axios instance
+/**
+ * Central Axios instance with:
+ * - Base URL and JSON headers
+ * - Credential support
+ * - Automatic token injection
+ * - 401 handling (logout + redirect)
+ */
 const apiClient = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8557/api", // Backend API URL
-    headers: { "Content-Type": "application/json" },
-    withCredentials: true, // Include credentials
+  baseURL: import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8557/api",
+  headers: { "Content-Type": "application/json" },
+  withCredentials: true,
 });
 
-// Add request interceptor to include JWT token
 apiClient.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem("token");
-        if (token) {
-            config.headers["Authorization"] = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => Promise.reject(error)
+  (config) => {
+    const token = localStorage.getItem("token");
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    return config;
+  },
+  (error) => Promise.reject(error),
 );
 
-// Add response interceptor for error handling
 apiClient.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response && error.response.status === 401) {
-            localStorage.removeItem("token");
-            window.location.href = "/signin"; // Redirect to sign-in
-        }
-        return Promise.reject(error);
+  (response) => response,
+  (error) => {
+    if (error?.response?.status === 401) {
+      localStorage.removeItem("token");
+      window.location.href = "/signin";
     }
+    return Promise.reject(error);
+  },
 );
+
+/**
+ * Generic helper to call the Axios instance and return .data
+ * @param {string} method - "get" | "post" | "put" | "delete"
+ * @param {string} url - Endpoint path
+ * @param {any} [payload] - Body data or config
+ * @param {object} [config] - Optional axios config overrides
+ */
+export const request = async (method, url, payload, config = {}) => {
+  // For GET/DELETE, we pass payload as config params if needed
+  const needsBody = ["post", "put"].includes(method);
+  const response = await apiClient({
+    method,
+    url,
+    ...(needsBody ? { data: payload } : {}),
+    ...(!needsBody ? { params: payload } : {}),
+    ...config,
+  });
+  return response.data;
+};
 
 export default apiClient;

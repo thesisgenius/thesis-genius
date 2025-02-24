@@ -1,6 +1,7 @@
 from flask import Blueprint
 from flask import current_app as app
 from flask import g, jsonify, request
+from peewee import DoesNotExist
 from playhouse.shortcuts import model_to_dict
 
 from ..models.data import Thesis
@@ -591,6 +592,193 @@ def delete_body_page(thesis_id, page_id):
         app.logger.error(f"Failed to delete body page: {e}")
         return jsonify({"success": False, "message": "Failed to delete body page"}), 400
 
+# Only the NEW or UPDATED chapter routes for thesis.py (example Flask style)
+
+@thesis_bp.route("/<int:thesis_id>/chapters", methods=["GET"])
+def get_chapters_for_thesis(thesis_id):
+    """
+    Retrieves all chapters for a specific thesis based on its ID. The chapters 
+    are returned in a list of dictionaries, each containing information about 
+    the chapter's ID, name, content, and order. If there are no chapters, an 
+    empty list is returned. Handles unexpected exceptions and returns an error 
+    response in such cases.
+
+    :param thesis_id: Unique identifier for the thesis
+    :type thesis_id: int
+    :return: JSON response containing the list of chapters with details if found, 
+             otherwise an empty list. In case of an exception, returns an 
+             error message with a status code 500.
+    :rtype: flask.Response
+    """
+    thesis_service = ThesisService(app.logger)
+    try:
+        chapters = thesis_service.get_chapters_for_thesis(thesis_id)
+        if not chapters:
+            return jsonify({"chapters": []}), 200  # or 404 if you prefer
+
+        # Convert each Chapter object to a dict
+        results = []
+        for ch in chapters:
+            results.append({
+                "id": ch.id,
+                "name": ch.name,
+                "content": ch.content,
+                "order": ch.order
+            })
+
+        return jsonify({"chapters": results}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@thesis_bp.route("/<int:thesis_id>/chapters", methods=["POST"])
+def create_chapter_for_thesis(thesis_id):
+    """
+    Creates a new chapter for a specific thesis.
+
+    This function handles the creation of a chapter related to a given thesis. It expects
+    a JSON payload containing chapter details. If successful, it returns the newly created
+    chapter's details. If there is an error, it returns an error message.
+
+    :param thesis_id: The unique identifier of the thesis for which the chapter is being
+        created.
+    :type thesis_id: int
+    :raises Exception: Raises an exception if there is an error during the chapter creation
+        process.
+    :return: A dictionary representing the created chapter, including its ID, name, content,
+        and order, and an HTTP status code 201 on success or an error dictionary with
+        an HTTP status code 500 on failure.
+    :rtype: tuple
+    """
+    thesis_service = ThesisService(app.logger)
+    try:
+        data = request.get_json()
+        name = data.get("name", "Untitled Chapter")
+        content = data.get("content", "")
+        order = data.get("order", None)
+
+        chapter = thesis_service.create_chapter(thesis_id, name, content, order)
+        return jsonify({
+            "chapter": {
+                "id": chapter.id,
+                "name": chapter.name,
+                "content": chapter.content,
+                "order": chapter.order
+            }
+        }), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@thesis_bp.route("/<int:thesis_id>/chapters/<int:chapter_id>", methods=["GET"])
+def get_single_chapter(thesis_id, chapter_id):
+    """
+    Handles retrieving a single chapter associated with a specific thesis. This endpoint
+    fetches a chapter based on the provided `thesis_id` and `chapter_id`. If the chapter
+    does not belong to the specified thesis or does not exist, a 404 error is returned.
+    If an unexpected error occurs, a 500 error is returned.
+
+    :param thesis_id: The ID of the thesis containing the chapter
+    :type thesis_id: int
+    :param chapter_id: The ID of the chapter to retrieve
+    :type chapter_id: int
+    :return: Returns a JSON response containing chapter details if found, or an error
+     message otherwise
+    :rtype: tuple
+    """
+    thesis_service = ThesisService(app.logger)
+    try:
+        chapter = thesis_service.get_chapter(chapter_id)
+        if not chapter or chapter.thesis_id != thesis_id:
+            return jsonify({"error": "Chapter not found"}), 404
+
+        return jsonify({
+            "chapter": {
+                "id": chapter.id,
+                "name": chapter.name,
+                "content": chapter.content,
+                "order": chapter.order
+            }
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@thesis_bp.route("/<int:thesis_id>/chapters/<int:chapter_id>", methods=["PUT"])
+def update_single_chapter(thesis_id, chapter_id):
+    """
+    Handles the update of a single chapter for a specific thesis. It verifies that the chapter
+    belongs to the specified thesis, processes the update using the provided data, and
+    returns the updated chapter details if successful.
+
+    :param thesis_id: Identifier of the thesis to which the chapter belongs.
+    :type thesis_id: int
+    :param chapter_id: Identifier of the chapter to be updated.
+    :type chapter_id: int
+    :return: A JSON response containing the updated chapter details upon success
+        or an error message with appropriate HTTP status code if the update fails.
+    :rtype: werkzeug.wrappers.Response
+    """
+    thesis_service = ThesisService(app.logger)
+    try:
+        # Confirm that the chapter belongs to the given thesis
+        existing_chapter = thesis_service.get_chapter(chapter_id)
+        if not existing_chapter or existing_chapter.thesis_id != thesis_id:
+            return jsonify({"error": "Chapter not found"}), 404
+
+        data = request.get_json()
+        updated = thesis_service.update_chapter(chapter_id, data)
+        if not updated:
+            return jsonify({"error": "Chapter not found"}), 404
+
+        return jsonify({
+            "chapter": {
+                "id": updated.id,
+                "name": updated.name,
+                "content": updated.content,
+                "order": updated.order
+            }
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@thesis_bp.route("/<int:thesis_id>/chapters/<int:chapter_id>", methods=["DELETE"])
+def delete_single_chapter(thesis_id, chapter_id):
+    """
+    Deletes a specific chapter associated with a given thesis ID. This endpoint
+    is used to ensure that the chapter is part of the specified thesis before
+    attempting to delete it. Returns appropriate HTTP response codes and error
+    messages if the operation fails.
+
+    :param thesis_id: The ID of the thesis to which the chapter belongs.
+    :type thesis_id: int
+    :param chapter_id: The ID of the chapter to delete.
+    :type chapter_id: int
+    :return: A JSON object indicating success or failure, with appropriate HTTP 
+             status codes. Possible status codes:
+             - 200: Chapter successfully deleted.
+             - 400: Chapter could not be deleted.
+             - 404: Chapter not found or does not belong to the provided thesis.
+             - 500: Internal server error.
+
+    :rtype: flask.Response
+    """
+    thesis_service = ThesisService(app.logger)
+    try:
+        # Confirm that the chapter belongs to the given thesis
+        existing_chapter = thesis_service.get_chapter(chapter_id)
+        if not existing_chapter or existing_chapter.thesis_id != thesis_id:
+            return jsonify({"error": "Chapter not found"}), 404
+
+        success = thesis_service.delete_chapter(chapter_id)
+        if not success:
+            return jsonify({"error": "Chapter could not be deleted"}), 400
+
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 # --- References Endpoints ---
 @thesis_bp.route("/<int:thesis_id>/references", methods=["POST"])
@@ -991,7 +1179,7 @@ def list_figures(thesis_id):
         return jsonify({"success": False, "message": str(e)}), 400
 
 
-@thesis_bp.route("/figure/<int:figure_id>", methods=["PUT"])
+@thesis_bp.route("/<int:thesis_id>/figure/<int:figure_id>", methods=["PUT"])
 @jwt_required
 def update_figure(figure_id):
     """
@@ -1162,3 +1350,206 @@ def delete_appendix(appendix_id):
     except Exception as e:
         app.logger.error(f"Error deleting appendix: {e}")
         return jsonify({"success": False, "message": str(e)}), 400
+
+@thesis_bp.route("/<int:thesis_id>/copyright", methods=["GET"])
+def get_copyright_page(thesis_id):
+    """
+    Retrieves the copyright page content for a specified thesis using the given
+    thesis ID. The function interacts with the ThesisService to fetch this
+    information. If the page is not found, it returns an empty content response
+    with HTTP status code 200. In the case of an error during execution, it
+    returns an error message with HTTP status code 500.
+
+    :param thesis_id: The unique identifier of the thesis to retrieve the
+        copyright page for.
+    :type thesis_id: int
+    :return: JSON response containing the copyright page content if found
+        or an error message in case of failure. If the page is not available,
+        it returns an empty content response.
+    :rtype: flask.Response
+    """
+    thesis_service = ThesisService(app.logger)
+    try:
+        page = thesis_service.get_copyright_page(thesis_id)
+        if page is None:
+            return jsonify({"content": ""}), 200  # or 404 if you prefer
+        return jsonify({"content": page.content}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@thesis_bp.route("/<int:thesis_id>/copyright", methods=["PUT"])
+def create_or_update_copyright_page(thesis_id):
+    """
+    Handles the creation or update of the copyright page for a given thesis. This endpoint
+    processes incoming PUT requests, retrieves the provided payload, and delegates
+    the content update to the ThesisService. It returns the updated content upon
+    success or an error message in case of failure.
+
+    :param thesis_id: ID of the thesis for which the copyright page is being created
+        or updated
+    :type thesis_id: int
+    :return: A JSON response containing the updated content of the copyright page
+        with HTTP status code 200 for success, or an error message with HTTP status
+        code 500 in case of a failure
+    :rtype: tuple (dict, int)
+    """
+    thesis_service = ThesisService(app.logger)
+    data = request.get_json()
+    content = data.get("content", "")
+    try:
+        page = thesis_service.create_or_update_copyright_page(thesis_id, content)
+        return jsonify({"content": page.content}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@thesis_bp.route("/<int:thesis_id>/signature", methods=["GET"])
+def get_signature_page(thesis_id):
+    """
+    Fetches the signature page for a specific thesis using the provided thesis ID.
+
+    This endpoint handles fetching the signature page associated with a thesis.
+    It utilizes the ThesisService to retrieve the content. If no content is
+    available, it returns an empty response. If an error occurs during the process,
+    an error response is returned.
+
+    :param thesis_id: The unique identifier of the thesis whose signature page
+        is to be retrieved.
+    :type thesis_id: int
+    :return: A JSON response containing the content of the signature page or
+        an empty content if no page is found. In case of an error, it returns
+        a JSON object describing the error and a 500 status code.
+    :rtype: flask.Response
+    """
+    thesis_service = ThesisService(app.logger)
+    try:
+        page = thesis_service.get_signature_page(thesis_id)
+        if page is None:
+            return jsonify({"content": ""}), 200
+        return jsonify({"content": page.content}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@thesis_bp.route("/<int:thesis_id>/signature", methods=["PUT"])
+def create_or_update_signature_page(thesis_id):
+    """
+    Handles the creation or update of a signature page for a given thesis.
+
+    Fetches the JSON data from the request, extracts the content for
+    the signature page, and performs the necessary operations using
+    the ThesisService. Returns the updated content of the signature page
+    or an error message in case any exception occurs.
+
+    :param thesis_id: The unique identifier for the thesis.
+    :type thesis_id: int
+    :return: A JSON response containing the updated signature page content
+        and a success status code, or an error message with a failure
+        status code.
+    :rtype: flask.Response
+    """
+    thesis_service = ThesisService(app.logger)
+    data = request.get_json()
+    content = data.get("content", "")
+    try:
+        page = thesis_service.create_or_update_signature_page(thesis_id, content)
+        return jsonify({"content": page.content}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@thesis_bp.route("/<int:thesis_id>/other-info", methods=["GET"])
+def get_other_info_page(thesis_id):
+    """
+    Fetches other information page for a specific thesis based on its ID.
+
+    This function handles the HTTP GET request to retrieve the content of the
+    "other-info" page associated with a given thesis. It communicates with the
+    ThesisService to fetch the required page data.
+
+    :param thesis_id: The unique identifier of the thesis for which the other
+                      information page is being requested.
+    :type thesis_id: int
+    :return: A JSON response containing the content of the requested page or an
+             empty content string if no page is found, along with the HTTP status code.
+    :rtype: (Response, int)
+    :raises Exception: If an unexpected error occurs during the request handling.
+    """
+    thesis_service = ThesisService(app.logger)
+    try:
+        page = thesis_service.get_other_info_page(thesis_id)
+        if page is None:
+            return jsonify({"content": ""}), 200
+        return jsonify({"content": page.content}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@thesis_bp.route("/<int:thesis_id>/other-info", methods=["PUT"])
+def create_or_update_other_info_page(thesis_id):
+    """
+    Handles the creation or update of the "Other Info" page for a thesis.
+
+    This view accepts a PUT request and processes input data to create or update the
+    additional information associated with the thesis. It interacts with the
+    ThesisService for database operation and returns a JSON response indicating
+    success or failure.
+
+    :param thesis_id: The ID of the specific thesis for which the "Other Info" page
+        will be created or updated.
+    :return: A JSON response containing the updated content of the "Other Info" page,
+        with HTTP status 200 on success, or an error message with HTTP status 500
+        on failure.
+    """
+    thesis_service = ThesisService(app.logger)
+    data = request.get_json()
+    content = data.get("content", "")
+    try:
+        page = thesis_service.create_or_update_other_info_page(thesis_id, content)
+        return jsonify({"content": page.content}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@thesis_bp.route("/<int:thesis_id>/dedication", methods=["GET"])
+def get_dedication_page(thesis_id):
+    """
+    Fetches the dedication page content for a specific thesis by its ID. If no content exists
+    for the given ID, it will return empty content. Handles potential exceptions and provides
+    appropriate HTTP responses based on the outcome of the operation.
+
+    :param thesis_id: The unique identifier of the thesis whose dedication page content is to be fetched
+    :type thesis_id: int
+    :return: JSON response containing the dedication page content or an error message, with HTTP status codes 200 or 500
+    :rtype: flask.Response
+    """
+    thesis_service = ThesisService(app.logger)
+    try:
+        page = thesis_service.get_dedication_page(thesis_id)
+        if page is None:
+            return jsonify({"content": ""}), 200
+        return jsonify({"content": page.content}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@thesis_bp.route("/<int:thesis_id>/dedication", methods=["PUT"])
+def create_or_update_dedication_page(thesis_id):
+    """
+    Handles the creation or update of the dedication page for a specific thesis identified
+    by its unique ID. The function retrieves JSON data from the incoming PUT request and
+    updates the dedication page content accordingly. It utilizes the ThesisService for
+    the underlying operations and manages any exceptions by returning an appropriate
+    error response.
+
+    :param thesis_id: An integer representing the unique identifier of the thesis for
+        which the dedication page needs to be created or updated.
+    :return: A JSON response containing the updated dedication page content if the
+        operation is successful, along with a 200 status code. If the operation fails, a
+        JSON response containing the error message is returned with a 500 status code.
+    """
+    thesis_service = ThesisService(app.logger)
+    data = request.get_json()
+    content = data.get("content", "")
+    try:
+        page = thesis_service.create_or_update_dedication_page(thesis_id, content)
+        return jsonify({"content": page.content}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

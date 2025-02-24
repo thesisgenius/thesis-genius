@@ -12,7 +12,7 @@ const DynamicPart = ({ headerText, sections }) => {
     sections.reduce((acc, section) => {
       acc[section.title] = section.content || "";
       return acc;
-    }, {})
+    }, {}),
   );
 
   // Handle section change

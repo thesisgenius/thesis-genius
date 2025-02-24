@@ -1,10 +1,10 @@
 from datetime import datetime, timezone
 
-from peewee import IntegrityError, PeeweeException
+from peewee import IntegrityError, PeeweeException, DoesNotExist
 from playhouse.shortcuts import model_to_dict
 
-from ..models.data import (Abstract, Appendix, BodyPage, Figure, Footnote,
-                           Reference, TableEntry, TableOfContents, Thesis,
+from ..models.data import (Abstract, Appendix, BodyPage, Chapter, CopyrightPage, DedicationPage, Figure, Footnote,
+                           OtherInfoPage, Reference, SignaturePage,TableEntry, TableOfContents, Thesis,
                            User)
 
 
@@ -530,6 +530,90 @@ class ThesisService:
         except Exception as e:
             self.logger.error(f"Error deleting body page {page_id}: {e}")
             raise
+
+    def get_chapters_for_thesis(self, thesis_id):
+        """
+        Return all chapters for a given thesis, ordered if 'order' is used.
+        """
+        try:
+            chapters = (Chapter
+                        .select()
+                        .where(Chapter.thesis_id == thesis_id)
+                        .order_by(Chapter.order))
+            return list(chapters)
+        except DoesNotExist:
+            return []
+        except Exception as e:
+            # Log or handle the error as you do elsewhere
+            raise e
+
+    def get_chapter(self, chapter_id):
+        """
+        Return a single chapter by ID.
+        """
+        try:
+            return Chapter.get_by_id(chapter_id)
+        except DoesNotExist:
+            return None
+        except Exception as e:
+            raise e
+
+    def create_chapter(self, thesis_id, name, content=None, order=None):
+        """
+        Create a new chapter in the given thesis.
+        """
+        try:
+            chapter = Chapter.create(
+                thesis=thesis_id,
+                name=name or "Untitled Chapter",
+                content=content or "",
+                order=order
+            )
+            return chapter
+        except Exception as e:
+            raise e
+
+    def update_chapter(self, chapter_id, new_data):
+        """
+        Update an existing chapter's fields based on new_data.
+        """
+        try:
+            chapter = Chapter.get_by_id(chapter_id)
+        except DoesNotExist:
+            return None
+        except Exception as e:
+            raise e
+
+        try:
+            if "name" in new_data:
+                chapter.name = new_data["name"]
+            if "content" in new_data:
+                chapter.content = new_data["content"]
+            if "order" in new_data:
+                chapter.order = new_data["order"]
+            chapter.save()
+            return chapter
+        except Exception as e:
+            raise e
+
+    @staticmethod
+    def delete_chapter(self, chapter_id):
+        """
+        Delete a chapter by ID.
+        """
+        try:
+            chapter = Chapter.get_by_id(chapter_id)
+        except DoesNotExist:
+            return False
+        except Exception as e:
+            raise e
+
+        try:
+            chapter.delete_instance()
+            return True
+        except Exception as e:
+            raise e
+
 
     def create_thesis(self, thesis_data):
         """
@@ -1302,3 +1386,133 @@ class ThesisService:
         except Exception as e:
             self.logger.error(f"Error deleting appendix {appendix_id}: {e}")
             raise
+
+    # ---------------------------------
+    # COPYRIGHT PAGE
+    # ---------------------------------
+    def get_copyright_page(self, thesis_id):
+        """
+        Retrieve the copyright page for a given thesis.
+        """
+        try:
+            return CopyrightPage.get(
+                (CopyrightPage.thesis == thesis_id)
+            )
+        except DoesNotExist:
+            return None
+
+    def create_or_update_copyright_page(self, thesis_id, content):
+        """
+        Creates or updates the copyright page for a given thesis.
+        If it already exists, update it; otherwise, create a new record.
+        """
+        try:
+            page = self.get_copyright_page(thesis_id)
+            if page is None:
+                # create a new record
+                page = CopyrightPage.create(
+                    thesis=thesis_id,
+                    content=content
+                )
+            else:
+                page.content = content
+                page.save()
+            return page
+        except Exception as e:
+            raise e
+
+    # ---------------------------------
+    # SIGNATURE PAGE
+    # ---------------------------------
+    def get_signature_page(self, thesis_id):
+        """
+        Retrieve the signature page for a given thesis.
+        """
+        try:
+            return SignaturePage.get(
+                (SignaturePage.thesis == thesis_id)
+            )
+        except DoesNotExist:
+            return None
+
+    def create_or_update_signature_page(self, thesis_id, content):
+        """
+        Creates or updates the signature page for a given thesis.
+        """
+        try:
+            page = self.get_signature_page(thesis_id)
+            if page is None:
+                page = SignaturePage.create(
+                    thesis=thesis_id,
+                    content=content
+                )
+            else:
+                page.content = content
+                page.save()
+            return page
+        except Exception as e:
+            raise e
+
+    # ---------------------------------
+    # OTHER INFO PAGE
+    # ---------------------------------
+    def get_other_info_page(self, thesis_id):
+        """
+        Retrieve the other info page for a given thesis.
+        """
+        try:
+            return OtherInfoPage.get(
+                (OtherInfoPage.thesis == thesis_id)
+            )
+        except DoesNotExist:
+            return None
+
+    def create_or_update_other_info_page(self, thesis_id, content):
+        """
+        Creates or updates the other info page for a given thesis.
+        """
+        try:
+            page = self.get_other_info_page(thesis_id)
+            if page is None:
+                page = OtherInfoPage.create(
+                    thesis=thesis_id,
+                    content=content
+                )
+            else:
+                page.content = content
+                page.save()
+            return page
+        except Exception as e:
+            raise e
+
+    # ---------------------------------
+    # DEDICATION PAGE
+    # ---------------------------------
+    def get_dedication_page(self, thesis_id):
+        """
+        Retrieve the dedication page for a given thesis.
+        """
+        try:
+            return DedicationPage.get(
+                (DedicationPage.thesis == thesis_id)
+            )
+        except DoesNotExist:
+            return None
+
+    def create_or_update_dedication_page(self, thesis_id, content):
+        """
+        Creates or updates the dedication page for a given thesis.
+        """
+        try:
+            page = self.get_dedication_page(thesis_id)
+            if page is None:
+                page = DedicationPage.create(
+                    thesis=thesis_id,
+                    content=content
+                )
+            else:
+                page.content = content
+                page.save()
+            return page
+        except Exception as e:
+            raise e

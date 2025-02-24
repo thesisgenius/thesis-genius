@@ -54,8 +54,8 @@ export default function ThesisDashboard() {
       parts.map((part) =>
         part.id === selectedPart.id
           ? { ...part, content: e.target.value }
-          : part
-      )
+          : part,
+      ),
     );
   };
 

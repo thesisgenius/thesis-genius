@@ -1,41 +1,139 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useParams } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css"; // Import Quill's CSS
 import FadingBanner from "../components/FadingBanner";
+import thesisAPI from "../services/thesisEndpoint";
+
+const PREDEFINED_SECTIONS = [
+  "Chapter I: Introduction",
+  "Chapter II: Literature Review",
+  "Chapter III: Methods",
+  "Chapter IV: Results",
+  "Chapter V: Discussion",
+];
 
 const ThesisBody = () => {
-  // State for selected section and content
-  const [selectedSection, setSelectedSection] = useState(
-    "Chapter I: Introduction"
-  );
-  const [sectionContent, setSectionContent] = useState({
-    "Chapter I: Introduction":
-      "This is where the introduction content of the thesis will go...",
-    "Chapter II: Literature Review":
-      "The literature review is a critical analysis of the existing research on the topic of the dissertation. It provides an overview of the key findings and debates in the field. The literature review helps to situate the research within the broader context of the discipline and identify gaps in the existing research that the dissertation aims to address.",
-    "Chapter III: Methods":
-      "The methodology section outlines the research methods used in the study. It describes how the data was collected, analyzed, and interpreted.",
-    "Chapter IV: Results":
-      "The results section presents the findings of the study. It provides a detailed summary of the data, including tables, graphs, and statistical analyses.",
-    "Chapter V: Discussion":
-      "The discussion section interprets the results of the study. It explains the significance of the findings and how they relate to the research questions and objectives.",
-  });
+  const { thesisId } = useParams();
 
-  // Function to change selected section
+  const [selectedSection, setSelectedSection] = useState(
+    PREDEFINED_SECTIONS[0],
+  );
+
+  const [sectionContent, setSectionContent] = useState(
+    PREDEFINED_SECTIONS.reduce((content, section) => {
+      content[section] = `Placeholder for ${section.toLowerCase()}...`;
+      return content;
+    }, {}),
+  );
+
+  const [chapterIds, setChapterIds] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const loadChapters = async () => {
+      setLoading(true);
+      try {
+        console.log("Starting to fetch chapters for thesisId:", thesisId);
+
+        // Ensure we get the chapters array from the response object
+        const response = await thesisAPI.getChapters(thesisId);
+        const dbChapters = response || []; // Safely access the chapters array
+        console.log("Fetched chapters from API:", dbChapters);
+
+        const sectionUpdates = await Promise.all(
+          PREDEFINED_SECTIONS.map(async (sectionName) => {
+            const found = dbChapters.find(
+              (chapter) => chapter.name === sectionName,
+            );
+            console.log(`Processing section: ${sectionName}`);
+            if (found) {
+              console.log(`Found section in DB: ${sectionName}`, found);
+              return {
+                name: sectionName,
+                content: found.content || "",
+                id: found.id,
+              };
+            } else {
+              console.log(
+                `Section not found in DB: ${sectionName}, creating new one.`,
+              );
+              const newChapter = await thesisAPI.addChapter(thesisId, {
+                name: sectionName,
+                content: sectionContent[sectionName] || "",
+              });
+              console.log(
+                `Created new chapter in DB: ${sectionName}`,
+                newChapter,
+              );
+              return {
+                name: sectionName,
+                content: newChapter.content || "",
+                id: newChapter.id,
+              };
+            }
+          }),
+        );
+
+        const newSectionContent = {};
+        const newChapterIds = {};
+        sectionUpdates.forEach(({ name, content, id }) => {
+          newSectionContent[name] = content;
+          newChapterIds[name] = id;
+        });
+
+        console.log("Final sectionContent:", newSectionContent);
+        console.log("Final chapterIds:", newChapterIds);
+
+        setSectionContent(newSectionContent);
+        setChapterIds(newChapterIds);
+      } catch (err) {
+        console.error("Failed to fetch or create chapters:", err);
+        setError("Error loading chapters. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (thesisId) {
+      loadChapters();
+    } else {
+      setError("Invalid Thesis ID.");
+    }
+  }, [thesisId]);
+
   const handleSectionChange = (section) => {
     setSelectedSection(section);
   };
 
-  // Function to update content dynamically
-  const handleContentChange = (value) => {
+  const handleContentChange = async (newValue) => {
     setSectionContent({
       ...sectionContent,
-      [selectedSection]: value, // Store HTML content
+      [selectedSection]: newValue,
     });
+
+    try {
+      const chapterId = chapterIds[selectedSection];
+      if (chapterId) {
+        await thesisAPI.updateChapter(thesisId, chapterId, {
+          content: newValue,
+        });
+      }
+    } catch (err) {
+      console.error("Failed to update chapter content:", err);
+      setError("Error updating chapter content. Please try again.");
+    }
   };
+
+  if (loading) {
+    return <div className="container">Loading chapters...</div>;
+  }
+  if (error) {
+    return <div className="container text-danger">{error}</div>;
+  }
 
   return (
     <div className="container">
@@ -45,7 +143,7 @@ const ThesisBody = () => {
           {/* Sidebar Navigation */}
           <div className="col-md-2">
             <ul className="list-group">
-              {Object.keys(sectionContent).map((section) => (
+              {PREDEFINED_SECTIONS.map((section) => (
                 <li
                   key={section}
                   className="list-group-item"
@@ -98,7 +196,7 @@ const ThesisBody = () => {
         <FadingBanner />
       </div>
       <div className="col-md-2">
-        <Link to="/dashboard" className="btn btn-primary mb-3">
+        <Link to="/app/manage-theses" className="btn btn-primary mb-3">
           Back to Dashboard
         </Link>
       </div>

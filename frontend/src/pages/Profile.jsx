@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/authContext";
 import userAPI from "@/services/userEndpoint";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,9 +43,7 @@ export default function ProfilePage() {
       }
 
       // Fetch user profile
-      const [userProfile] = await Promise.all([
-        userAPI.getUserProfile(),
-      ]);
+      const [userProfile] = await Promise.all([userAPI.getUserProfile()]);
 
       const userData = userProfile.user ?? {};
       profileCache.current = userData; // Cache the user data
@@ -97,7 +95,9 @@ export default function ProfilePage() {
       alert("Profile updated successfully!");
     } catch (error) {
       console.error("Error updating profile:", error.response?.data || error);
-      alert(`Failed to update profile: ${error.response?.data?.message || "Unexpected error"}`);
+      alert(
+        `Failed to update profile: ${error.response?.data?.message || "Unexpected error"}`,
+      );
     }
   };
 
@@ -140,123 +140,140 @@ export default function ProfilePage() {
 
   if (error) {
     return (
-        <div className="container mx-auto px-4 py-8">
-          <h1 className="text-4xl font-bold mb-8">Profile</h1>
-          <div className="text-red-600 text-lg mb-4">{error}</div>
-          <Button onClick={() => window.location.reload()}>Retry</Button>
-        </div>
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-4xl font-bold mb-8">Profile</h1>
+        <div className="text-red-600 text-lg mb-4">{error}</div>
+        <Button onClick={() => window.location.reload()}>Retry</Button>
+      </div>
     );
   }
 
   if (loading || !profile) {
     return (
-        <div className="container mx-auto px-4 py-8">
-          <h1 className="text-4xl font-bold mb-8">Loading profile...</h1>
-        </div>
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-4xl font-bold mb-8">Loading profile...</h1>
+      </div>
     );
   }
 
   return (
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-4xl font-bold mb-8">Your Profile</h1>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-4xl font-bold mb-8">Your Profile</h1>
 
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Profile Picture Card */}
-          <Card className="shadow-md">
-            <CardHeader>
-              <CardTitle className="text-xl font-bold">Profile Picture</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center space-y-4">
-              <Avatar className="w-32 h-32">
-                <AvatarImage
-                    src={profile.profile_picture || "/placeholder-avatar.jpg"}
-                    alt="Profile Picture"
-                />
-                <AvatarFallback>
-                  {profile.first_name && profile.last_name ? profile.first_name.charAt(0) + profile.last_name.charAt(0) : "PP"}
-                </AvatarFallback>
-              </Avatar>
+      <div className="grid md:grid-cols-2 gap-8">
+        {/* Profile Picture Card */}
+        <Card className="shadow-md">
+          <CardHeader>
+            <CardTitle className="text-xl font-bold">Profile Picture</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center space-y-4">
+            <Avatar className="w-32 h-32">
+              <AvatarImage
+                src={profile.profile_picture || "/placeholder-avatar.jpg"}
+                alt="Profile Picture"
+              />
+              <AvatarFallback>
+                {profile.first_name && profile.last_name
+                  ? profile.first_name.charAt(0) + profile.last_name.charAt(0)
+                  : "PP"}
+              </AvatarFallback>
+            </Avatar>
 
-              <div className="flex flex-col items-center space-y-2">
-                <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="block w-full text-sm text-gray-100 file:mr-4 file:py-2 file:px-4
+            <div className="flex flex-col items-center space-y-2">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="block w-full text-sm text-gray-100 file:mr-4 file:py-2 file:px-4
                   file:rounded-full file:border-0 file:text-sm file:font-semibold
                   file:bg-blue-600 file:text-white hover:file:bg-blue-700
                   cursor-pointer"
-                />
-                <Button onClick={handleUpload} disabled={uploading} className="w-full md:w-auto">
-                  {uploading ? "Uploading..." : "Upload Picture"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Personal Information Card */}
-          <Card className="shadow-md">
-            <CardHeader>
-              <CardTitle className="text-xl font-bold">Personal Information</CardTitle>
-              <CardDescription>Update your personal details</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label htmlFor="first_name" className="block text-sm font-medium mb-1">
-                  First Name
-                </label>
-                <Input
-                    id="first_name"
-                    value={profile.first_name ?? ""}
-                    onChange={handleChange}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="last_name" className="block text-sm font-medium mb-1">
-                  Last Name
-                </label>
-                <Input
-                    id="last_name"
-                    value={profile.last_name ?? ""}
-                    onChange={handleChange}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium mb-1">
-                  Email
-                </label>
-                <Input
-                    id="email"
-                    type="email"
-                    value={profile.email ?? ""}
-                    readOnly
-                    className="bg-gray-800 cursor-not-allowed"
-                />
-                <p className="text-xs text-gray-500">
-                  Validated email address for account (cannot change).
-                </p>
-              </div>
-
-              <div>
-                <label htmlFor="institution" className="block text-sm font-medium mb-1">
-                  Institution
-                </label>
-                <Input
-                    id="institution"
-                    value={profile.institution ?? ""}
-                    onChange={handleChange}
-                />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={handleSave} className="ml-auto">
-                Save Changes
+              />
+              <Button
+                onClick={handleUpload}
+                disabled={uploading}
+                className="w-full md:w-auto"
+              >
+                {uploading ? "Uploading..." : "Upload Picture"}
               </Button>
-            </CardFooter>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Personal Information Card */}
+        <Card className="shadow-md">
+          <CardHeader>
+            <CardTitle className="text-xl font-bold">
+              Personal Information
+            </CardTitle>
+            <CardDescription>Update your personal details</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label
+                htmlFor="first_name"
+                className="block text-sm font-medium mb-1"
+              >
+                First Name
+              </label>
+              <Input
+                id="first_name"
+                value={profile.first_name ?? ""}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="last_name"
+                className="block text-sm font-medium mb-1"
+              >
+                Last Name
+              </label>
+              <Input
+                id="last_name"
+                value={profile.last_name ?? ""}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium mb-1">
+                Email
+              </label>
+              <Input
+                id="email"
+                type="email"
+                value={profile.email ?? ""}
+                readOnly
+                className="bg-gray-800 cursor-not-allowed"
+              />
+              <p className="text-xs text-gray-500">
+                Validated email address for account (cannot change).
+              </p>
+            </div>
+
+            <div>
+              <label
+                htmlFor="institution"
+                className="block text-sm font-medium mb-1"
+              >
+                Institution
+              </label>
+              <Input
+                id="institution"
+                value={profile.institution ?? ""}
+                onChange={handleChange}
+              />
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button onClick={handleSave} className="ml-auto">
+              Save Changes
+            </Button>
+          </CardFooter>
+        </Card>
       </div>
+    </div>
   );
 }
