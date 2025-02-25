@@ -52,7 +52,7 @@ thesis-genius/
 │   ├── public/            # Static files (e.g., index.html, favicon.ico)
 │   ├── src/               # React source code
 │   │   ├── components/    # Reusable React components (Header, Footer, etc.)
-│   │   ├── pages/         # Pages (SignIn, SignUp, Dashboard, ForumDashboard, etc.)
+│   │   ├── pages/         # Pages (SignIn, SignUp, ManageThesis, ForumDashboard, etc.)
 │   │   ├── hooks/         # Custom React hooks
 │   │   ├── services/      # API service integration
 │   │   └── styles/        # Component-specific stylesheets

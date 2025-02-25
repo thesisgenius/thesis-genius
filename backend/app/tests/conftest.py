@@ -162,3 +162,38 @@ def runner(app):
     Provide a test runner for the app.
     """
     return app.test_cli_runner()
+
+
+@pytest.fixture
+def create_role():
+    """
+    Fixture to create default roles in the database.
+    """
+    for role_name in ["Student", "Teacher", "Admin"]:
+        data.Role.get_or_create(name=role_name)
+
+
+@pytest.fixture
+def user_token(client, create_role):
+    """
+    Fixture to register and log in a user, returning the JWT token.
+    """
+    client.post(
+        "/api/auth/register",
+        json={
+            "first_name": "Test",
+            "last_name": "User",
+            "email": "test@example.com",
+            "institution": "National University",
+            "username": "testuser",
+            "password": "password123",
+            "role": "Student",
+        },
+    )
+    login_response = client.post(
+        "/api/auth/signin",
+        json={"email": "test@example.com", "password": "password123"},
+    )
+    token = login_response.json["token"]
+    assert token is not None
+    return token

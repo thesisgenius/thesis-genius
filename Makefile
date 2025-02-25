@@ -58,10 +58,30 @@ docker-clean: ## Remove all development Docker containers and images
 
 ##@ Linting
 .PHONY: lint
-lint: check-venv ## Run black, isort, and ruff Python code linters
+lint: lint-backend lint-frontend
+
+.PHONY: lint-backend
+lint-backend: check-venv ## Run black, isort, and ruff Python code linters
+	@echo "==> Linting Python backend..."
 	@$(PYTHON_BIN)/black .
 	@$(PYTHON_BIN)/isort .
 	@$(PYTHON_BIN)/ruff check .
+
+.PHONY: lint-frontend
+lint-frontend:
+	@echo "==> Linting React frontend..."
+	cd frontend && npm install && npm run lint
+
+.PHONY: lint-fix-backend
+lint-fix-backend: check-venv ## Run black, isort, and ruff Python code linters
+	@$(PYTHON_BIN)/black . --fix
+	@$(PYTHON_BIN)/isort . --fix
+	@$(PYTHON_BIN)/ruff check . --fix
+
+.PHONY: lint-fix-frontend
+lint-fix-frontend:
+	@echo "==> Running lint + fix (React frontend)..."
+	cd frontend && npm install && npm run lint:fix
 
 .PHONY: check
 check: check-venv ## Lint check formatting

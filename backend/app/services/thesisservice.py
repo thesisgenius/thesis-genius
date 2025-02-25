@@ -1,11 +1,12 @@
 from datetime import datetime, timezone
 
-from peewee import IntegrityError, PeeweeException
+from peewee import DoesNotExist, IntegrityError, PeeweeException
 from playhouse.shortcuts import model_to_dict
 
-from ..models.data import (Abstract, Appendix, BodyPage, Figure, Footnote,
-                           Reference, TableEntry, TableOfContents, Thesis,
-                           User)
+from ..models.data import (Abstract, Appendix, BodyPage, Chapter,
+                           CopyrightPage, DedicationPage, Figure, Footnote,
+                           OtherInfoPage, Reference, SignaturePage, TableEntry,
+                           TableOfContents, Thesis, User)
 
 
 class ThesisService:
@@ -140,6 +141,100 @@ class ThesisService:
         except Exception as e:
             self.logger.error(f"Failed to fetch thesis {thesis_id}: {e}")
             return None
+        except Thesis.DoesNotExist as thesis_not_found:
+            self.logger.error(
+                f"Thesis with ID {thesis_id} does not exist. {thesis_not_found}"
+                f"Thesis with ID {thesis_id} was not found in the database. {thesis_not_found}"
+            )
+            return None
+
+    def get_cover_page(self, thesis_id, user_id=None):
+        """
+        Retrieves the cover page details for a given thesis.
+
+        :param thesis_id: The ID of the thesis whose cover page needs to be retrieved.
+        :type thesis_id: int
+        :param user_id: (Optional) The ID of the user requesting the cover page.
+        :type user_id: int
+        :return: A dictionary containing the cover page details.
+        :rtype: dict
+        """
+        try:
+            query = Thesis.select().where(Thesis.id == thesis_id)
+            if user_id:
+                query = query.where(Thesis.student_id == user_id)
+
+            thesis = query.get_or_none()
+            if not thesis:
+                return None
+
+            return {
+                "title": thesis.title,
+                "author": thesis.author,
+                "affiliation": thesis.affiliation,
+                "course": thesis.course,
+                "instructor": thesis.instructor,
+                "due_date": (
+                    thesis.due_date.strftime("%Y-%m-%d") if thesis.due_date else None
+                ),
+            }
+
+        except Exception as e:
+            self.logger.error(f"Failed to fetch cover page for thesis {thesis_id}: {e}")
+            return None
+
+    def update_cover_page(self, thesis_id, user_id, cover_data):
+        """
+        Updates the cover page details for a given thesis.
+
+        :param thesis_id: The ID of the thesis whose cover page is being updated.
+        :type thesis_id: int
+        :param user_id: The ID of the user attempting to update the cover page.
+        :type user_id: int
+        :param cover_data: A dictionary containing the updated cover page details.
+        :type cover_data: dict
+        :return: The updated cover page data or None if an error occurs.
+        :rtype: dict or None
+        """
+        try:
+            query = Thesis.select().where(
+                Thesis.id == thesis_id, Thesis.student_id == user_id
+            )
+            thesis = query.get_or_none()
+            if not thesis:
+                return None
+
+            # Update fields only if they are provided in the request
+            update_data = {
+                key: value for key, value in cover_data.items() if value is not None
+            }
+            if "due_date" in update_data and update_data["due_date"]:
+                update_data["due_date"] = datetime.strptime(
+                    update_data["due_date"], "%Y-%m-%d"
+                )
+
+            if update_data:
+                Thesis.update(**update_data).where(Thesis.id == thesis_id).execute()
+
+            # Return the updated cover page details
+            return {
+                "title": thesis.title,
+                "author": update_data.get("author", thesis.author),
+                "affiliation": update_data.get("affiliation", thesis.affiliation),
+                "course": update_data.get("course", thesis.course),
+                "instructor": update_data.get("instructor", thesis.instructor),
+                "due_date": (
+                    update_data.get("due_date", thesis.due_date).strftime("%Y-%m-%d")
+                    if thesis.due_date
+                    else None
+                ),
+            }
+
+        except Exception as e:
+            self.logger.error(
+                f"Failed to update cover page for thesis {thesis_id}: {e}"
+            )
+            return None
 
     def add_table_of_contents_entry(self, thesis_id, section_title, page_number, order):
         """
@@ -172,22 +267,92 @@ class ThesisService:
             self.logger.error(f"Error adding TOC entry to thesis {thesis_id}: {e}")
             raise
 
-    def get_table_of_contents(self, thesis_id):
+    def update_table_of_contents(self, thesis_id, toc_entries):
         """
-        Retrieves the table of contents for a thesis.
-
-        :param thesis_id: The ID of the thesis whose TOC is to be retrieved.
-        :type thesis_id: int
-        :return: A list of table of contents entries.
-        :rtype: list[dict]
+        Allows users to manually update the TOC.
         """
         try:
+            # Clear existing TOC entries
+            TableOfContents.delete().where(
+                TableOfContents.thesis_id == thesis_id
+            ).execute()
+
+            # Insert new TOC entries
+            for entry in toc_entries:
+                TableOfContents.create(thesis_id=thesis_id, **entry)
+
+            return self.get_table_of_contents(thesis_id)  # Return updated TOC
+        except Exception as e:
+            self.logger.error(f"Error updating TOC for thesis {thesis_id}: {e}")
+            raise
+
+    def get_table_of_contents(self, thesis_id):
+        """
+        Fetches or generates a table of contents (TOC) for the given thesis. If a pre-existing TOC
+        is stored in the database, it retrieves and returns it. Otherwise, the method dynamically
+        creates a TOC based on the structure of the thesis document, including body pages and a
+        reference section. The dynamically generated TOC is stored in the database for future use.
+
+        :param thesis_id: Identifier of the thesis for which to fetch or generate the table of
+            contents.
+        :type thesis_id: int
+        :return: A list of table of contents entries, with each entry containing information
+            about a section such as title, page number, and order.
+        :rtype: list[dict]
+        :raises Exception: If there is an issue with fetching or generating the table of contents.
+        """
+        try:
+            # Fetch stored TOC entries
             toc_entries = (
                 TableOfContents.select()
                 .where(TableOfContents.thesis_id == thesis_id)
                 .order_by(TableOfContents.order)
             )
-            return [model_to_dict(entry) for entry in toc_entries]
+            result = [model_to_dict(entry) for entry in toc_entries]
+
+            # If no entries exist, generate TOC dynamically
+            if not result:
+                self.logger.info(
+                    f"No TOC found for thesis {thesis_id}, generating dynamically."
+                )
+
+                # Generate TOC based on document structure
+                sections = [
+                    {"section_title": "Cover Page", "page_number": 1, "order": 1},
+                    {"section_title": "Abstract", "page_number": 2, "order": 2},
+                ]
+
+                # Fetch body pages and generate section entries
+                body_pages = (
+                    BodyPage.select()
+                    .where(BodyPage.thesis_id == thesis_id)
+                    .order_by(BodyPage.page_number)
+                )
+                for i, page in enumerate(body_pages, start=3):
+                    sections.append(
+                        {
+                            "section_title": f"Page {page.page_number}",
+                            "page_number": i,
+                            "order": i,
+                        }
+                    )
+
+                # Add references at the end
+                sections.append(
+                    {
+                        "section_title": "References",
+                        "page_number": len(sections) + 1,
+                        "order": len(sections) + 1,
+                    }
+                )
+
+                # Store in database
+                for entry in sections:
+                    TableOfContents.create(thesis_id=thesis_id, **entry)
+
+                result = sections  # Return generated TOC
+
+            return result
         except Exception as e:
             self.logger.error(f"Error fetching TOC for thesis {thesis_id}: {e}")
             raise
@@ -326,31 +491,130 @@ class ThesisService:
         """
         try:
             pages = BodyPage.select().where(BodyPage.thesis_id == thesis_id)
-            return [model_to_dict(page) for page in pages]
+            result = [model_to_dict(page) for page in pages]
+
+            if not result:
+                self.logger.warning(
+                    f"No body pages found for thesis {thesis_id}, returning default blank page."
+                )
+                return [
+                    {
+                        "page_number": 1,
+                        "body": "(This page is intentionally left blank.)",
+                    }
+                ]  # Default blank page
+
+            return result
         except Exception as e:
             self.logger.error(f"Error fetching body pages for thesis {thesis_id}: {e}")
             raise
 
-    def delete_body_page(self, page_id):
+    def delete_body_page(self, thesis_id, page_id):
         """
-        Deletes a specific body page by its ID.
-
-        :param page_id: The ID of the body page to delete.
-        :type page_id: int
-        :return: True if the deletion is successful.
-        :rtype: bool
+        Deletes a body page from a thesis, ensuring it belongs to the correct thesis.
         """
         try:
-            body_page = BodyPage.get_or_none(BodyPage.id == page_id)
+            body_page = BodyPage.get_or_none(
+                (BodyPage.id == page_id) & (BodyPage.thesis_id == thesis_id)
+            )
             if not body_page:
-                self.logger.warning(f"Body page {page_id} not found.")
+                self.logger.warning(
+                    f"Body page {page_id} not found for thesis {thesis_id}."
+                )
                 return False
+
             body_page.delete_instance()
-            self.logger.info(f"Body page {page_id} deleted successfully.")
+            self.logger.info(
+                f"Body page {page_id} deleted successfully from thesis {thesis_id}."
+            )
             return True
         except Exception as e:
             self.logger.error(f"Error deleting body page {page_id}: {e}")
             raise
+
+    def get_chapters_for_thesis(self, thesis_id):
+        """
+        Return all chapters for a given thesis, ordered if 'order' is used.
+        """
+        try:
+            chapters = (
+                Chapter.select()
+                .where(Chapter.thesis_id == thesis_id)
+                .order_by(Chapter.order)
+            )
+            return list(chapters)
+        except DoesNotExist:
+            return []
+        except Exception as e:
+            # Log or handle the error as you do elsewhere
+            raise e
+
+    def get_chapter(self, chapter_id):
+        """
+        Return a single chapter by ID.
+        """
+        try:
+            return Chapter.get_by_id(chapter_id)
+        except DoesNotExist:
+            return None
+        except Exception as e:
+            raise e
+
+    def create_chapter(self, thesis_id, name, content=None, order=None):
+        """
+        Create a new chapter in the given thesis.
+        """
+        try:
+            chapter = Chapter.create(
+                thesis=thesis_id,
+                name=name or "Untitled Chapter",
+                content=content or "",
+                order=order,
+            )
+            return chapter
+        except Exception as e:
+            raise e
+
+    def update_chapter(self, chapter_id, new_data):
+        """
+        Update an existing chapter's fields based on new_data.
+        """
+        try:
+            chapter = Chapter.get_by_id(chapter_id)
+        except DoesNotExist:
+            return None
+        except Exception as e:
+            raise e
+
+        try:
+            if "name" in new_data:
+                chapter.name = new_data["name"]
+            if "content" in new_data:
+                chapter.content = new_data["content"]
+            if "order" in new_data:
+                chapter.order = new_data["order"]
+            chapter.save()
+            return chapter
+        except Exception as e:
+            raise e
+
+    @staticmethod
+    def delete_chapter(self, chapter_id):
+        """
+        Delete a chapter by ID.
+        """
+        try:
+            chapter = Chapter.get_by_id(chapter_id)
+        except DoesNotExist:
+            return False
+        except Exception as e:
+            raise e
+
+        try:
+            chapter.delete_instance()
+            return True
+        except Exception as e:
+            raise e
 
     def create_thesis(self, thesis_data):
         """
@@ -418,6 +682,11 @@ class ThesisService:
                     self.add_body_page(
                         thesis.id, page.get("page_number"), page.get("body")
                     )
+            else:
+                # Add a default blank body page
+                self.add_body_page(
+                    thesis.id, 1, "(This page is intentionally left blank.)"
+                )
 
             self.logger.info(f"Thesis created successfully: {thesis.id}")
             return thesis
@@ -497,6 +766,29 @@ class ThesisService:
                 f"Failed to update thesis {thesis_id}: {e}. Thesis: {type(thesis)}"
             )
             return None
+
+    def update_body_page(self, thesis_id, page_id, page_number, body_text):
+        """
+        Updates a body page's content in an existing thesis.
+        """
+        try:
+            body_page = BodyPage.get_or_none(
+                (BodyPage.id == page_id) & (BodyPage.thesis_id == thesis_id)
+            )
+            if not body_page:
+                raise ValueError(
+                    f"Body page {page_id} for thesis {thesis_id} not found."
+                )
+
+            body_page.page_number = page_number
+            body_page.body = body_text
+            body_page.save()
+
+            self.logger.info(f"Body page {page_id} updated successfully.")
+            return body_page
+        except Exception as e:
+            self.logger.error(f"Error updating body page {page_id}: {e}")
+            raise
 
     def delete_thesis(self, thesis_id, user_id):
         """
@@ -929,7 +1221,7 @@ class ThesisService:
             self.logger.error(f"Error fetching figures for thesis {thesis_id}: {e}")
             raise
 
-    def update_figure(self, figure_id, updated_data):
+    def update_figure(self, thesis_id, figure_id, updated_data):
         """
         Updates an existing figure in the database with new data. Retrieves the figure
         by its ID, applies the updates, executes the update query, and fetches the
@@ -950,7 +1242,9 @@ class ThesisService:
             if not figure:
                 raise ValueError(f"Figure with ID {figure_id} not found.")
 
-            query = Figure.update(**updated_data).where(Figure.id == figure_id)
+            query = Figure.update(**updated_data).where(
+                Figure.id == figure_id, Figure.thesis_id == thesis_id
+            )
             query.execute()
 
             updated_figure = Figure.get(Figure.id == figure_id)
@@ -1095,3 +1389,113 @@ class ThesisService:
         except Exception as e:
             self.logger.error(f"Error deleting appendix {appendix_id}: {e}")
             raise
+
+    # ---------------------------------
+    # COPYRIGHT PAGE
+    # ---------------------------------
+    def get_copyright_page(self, thesis_id):
+        """
+        Retrieve the copyright page for a given thesis.
+        """
+        try:
+            return CopyrightPage.get((CopyrightPage.thesis == thesis_id))
+        except DoesNotExist:
+            return None
+
+    def create_or_update_copyright_page(self, thesis_id, content):
+        """
+        Creates or updates the copyright page for a given thesis.
+        If it already exists, update it; otherwise, create a new record.
+        """
+        try:
+            page = self.get_copyright_page(thesis_id)
+            if page is None:
+                # create a new record
+                page = CopyrightPage.create(thesis=thesis_id, content=content)
+            else:
+                page.content = content
+                page.save()
+            return page
+        except Exception as e:
+            raise e
+
+    # ---------------------------------
+    # SIGNATURE PAGE
+    # ---------------------------------
+    def get_signature_page(self, thesis_id):
+        """
+        Retrieve the signature page for a given thesis.
+        """
+        try:
+            return SignaturePage.get((SignaturePage.thesis == thesis_id))
+        except DoesNotExist:
+            return None
+
+    def create_or_update_signature_page(self, thesis_id, content):
+        """
+        Creates or updates the signature page for a given thesis.
+        """
+        try:
+            page = self.get_signature_page(thesis_id)
+            if page is None:
+                page = SignaturePage.create(thesis=thesis_id, content=content)
+            else:
+                page.content = content
+                page.save()
+            return page
+        except Exception as e:
+            raise e
+
+    # ---------------------------------
+    # OTHER INFO PAGE
+    # ---------------------------------
+    def get_other_info_page(self, thesis_id):
+        """
+        Retrieve the other info page for a given thesis.
+        """
+        try:
+            return OtherInfoPage.get((OtherInfoPage.thesis == thesis_id))
+        except DoesNotExist:
+            return None
+
+    def create_or_update_other_info_page(self, thesis_id, content):
+        """
+        Creates or updates the other info page for a given thesis.
+        """
+        try:
+            page = self.get_other_info_page(thesis_id)
+            if page is None:
+                page = OtherInfoPage.create(thesis=thesis_id, content=content)
+            else:
+                page.content = content
+                page.save()
+            return page
+        except Exception as e:
+            raise e
+
+    # ---------------------------------
+    # DEDICATION PAGE
+    # ---------------------------------
+    def get_dedication_page(self, thesis_id):
+        """
+        Retrieve the dedication page for a given thesis.
+        """
+        try:
+            return DedicationPage.get((DedicationPage.thesis == thesis_id))
+        except DoesNotExist:
+            return None
+
+    def create_or_update_dedication_page(self, thesis_id, content):
+        """
+        Creates or updates the dedication page for a given thesis.
+        """
+        try:
+            page = self.get_dedication_page(thesis_id)
+            if page is None:
+                page = DedicationPage.create(thesis=thesis_id, content=content)
+            else:
+                page.content = content
+                page.save()
+            return page
+        except Exception as e:
+            raise e

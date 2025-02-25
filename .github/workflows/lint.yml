@@ -39,4 +39,4 @@ jobs:
       - name: Run Linting
         run: |
           make setup-venv
-          make lint
+          make lint-backend

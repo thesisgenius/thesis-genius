@@ -5,21 +5,21 @@ import { vi, describe, it, expect } from "vitest";
 
 // Mock AuthContext
 vi.mock("../context/AuthContext", () => ({
-    useAuth: () => ({
-        user: { first_name: "Test User" },
-        signOut: vi.fn(),
-    }),
+  useAuth: () => ({
+    user: { first_name: "Test User" },
+    signOut: vi.fn(),
+  }),
 }));
 
 describe("Header", () => {
-    it("renders Header with correct title", () => {
-        render(
-            <MemoryRouter>
-                <Header />
-            </MemoryRouter>
-        );
+  it("renders Header with correct title", () => {
+    render(
+      <MemoryRouter>
+        <Header />
+      </MemoryRouter>,
+    );
 
-        const headerElement = screen.getByText(/ThesisGenius/i);
-        expect(headerElement).toBeInTheDocument();
-    });
+    const headerElement = screen.getByText(/ThesisGenius/i);
+    expect(headerElement).toBeInTheDocument();
+  });
 });

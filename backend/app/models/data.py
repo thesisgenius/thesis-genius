@@ -93,6 +93,7 @@ class User(BaseModel):
     is_authenticated = BooleanField(default=False)
     created_at = DateTimeField(default=datetime.now(timezone.utc))
     updated_at = DateTimeField(default=datetime.now(timezone.utc))
+    profile_picture = CharField(null=True)
 
     class Meta:
         table_name = "users"
@@ -146,6 +147,7 @@ class Thesis(BaseModel):
     id = AutoField(primary_key=True, column_name="thesis_id")
     title = CharField()
     course = CharField(null=True)
+
     instructor = CharField(null=True)
     status = CharField()
     created_at = DateTimeField(default=datetime.now(timezone.utc))
@@ -153,6 +155,14 @@ class Thesis(BaseModel):
     student = ForeignKeyField(
         User, backref="theses", column_name="student_id", on_delete="CASCADE"
     )
+
+    # Cover Page Fields
+    author = CharField(null=True)  # Name of the author
+    affiliation = CharField(null=True)  # Institution name
+    degree = CharField(null=True)  # Degree Name
+    due_date = DateTimeField(
+        null=True, default=datetime.now(timezone.utc)
+    )  # Thesis due date
 
     class Meta:
         table_name = "theses"
@@ -262,6 +272,117 @@ class BodyPage(BaseModel):
     class Meta:
         table_name = "thesis_body_pages"
         indexes = ((("thesis", "page_number"), True),)
+
+
+class Chapter(BaseModel):
+    """
+    Represents a chapter entity that is part of a thesis.
+
+    This class corresponds to a database table named "chapters", which stores
+    information about individual chapters in a thesis. Each chapter is linked to
+    a specific thesis and may include additional properties such as name, content,
+    and order. The purpose of this class is to facilitate working with chapter-related
+    data in the application, providing easy-to-use abstractions for operations related
+    to chapters.
+
+    :ivar id: Unique identifier of the chapter, serves as the primary key.
+    :type id: AutoField
+    :ivar thesis: Reference to the associated thesis, establishes a foreign key
+        relationship and enforces deletion on cascade when the thesis is deleted.
+    :type thesis: ForeignKeyField
+    :ivar name: The name or title of the chapter.
+    :type name: CharField
+    :ivar content: Textual content of the chapter. May be null if no content is
+        provided.
+    :type content: TextField
+    :ivar order: The order or sequence number of the chapter within the thesis.
+        May be null if chapter order tracking is not utilized.
+    :type order: IntegerField
+    """
+
+    id = AutoField(primary_key=True, column_name="chapter_id")
+    thesis = ForeignKeyField(
+        Thesis, backref="chapters", column_name="thesis_id", on_delete="CASCADE"
+    )
+    name = CharField()
+    content = TextField(null=True)
+    order = IntegerField(null=True)  # If you want to track chapter order
+
+    class Meta:
+        table_name = "chapters"
+
+
+class CopyrightPage(BaseModel):
+    """
+    Stores content for a 'copyright' page, linked to a specific Thesis.
+    """
+
+    id = AutoField(primary_key=True, column_name="copyright_id")
+    thesis = ForeignKeyField(
+        Thesis, backref="copyright_page", column_name="thesis_id", on_delete="CASCADE"
+    )
+    content = TextField(null=True)  # The main text content
+    created_at = DateTimeField(default=datetime.now(timezone.utc))
+    updated_at = DateTimeField(default=datetime.now(timezone.utc))
+
+    class Meta:
+        table_name = "copyright_pages"
+
+
+class SignaturePage(BaseModel):
+    """
+    Stores content for a 'signature' page, e.g. committee signature blocks.
+    """
+
+    id = AutoField(primary_key=True, column_name="signature_id")
+    thesis = ForeignKeyField(
+        Thesis, backref="signature_page", column_name="thesis_id", on_delete="CASCADE"
+    )
+    content = TextField(null=True)
+    chair = CharField(null=True)
+    student = ForeignKeyField(
+        User, backref="signature_page", column_name="student_id", on_delete="CASCADE"
+    )
+
+    created_at = DateTimeField(default=datetime.now(timezone.utc))
+    updated_at = DateTimeField(default=datetime.now(timezone.utc))
+
+    class Meta:
+        table_name = "signature_pages"
+
+
+class OtherInfoPage(BaseModel):
+    """
+    Stores content for an 'other-info' page, used for miscellaneous info.
+    """
+
+    id = AutoField(primary_key=True, column_name="other_info_id")
+    thesis = ForeignKeyField(
+        Thesis, backref="other_info_page", column_name="thesis_id", on_delete="CASCADE"
+    )
+    content = TextField(null=True)
+    created_at = DateTimeField(default=datetime.now(timezone.utc))
+    updated_at = DateTimeField(default=datetime.now(timezone.utc))
+
+    class Meta:
+        table_name = "other_info_pages"
+
+
+class DedicationPage(BaseModel):
+    """
+    Stores content for a 'dedication' page of a thesis.
+    """
+
+    id = AutoField(primary_key=True, column_name="dedication_id")
+    thesis = ForeignKeyField(
+        Thesis, backref="dedication_page", column_name="thesis_id", on_delete="CASCADE"
+    )
+    content = TextField(null=True)
+    created_at = DateTimeField(default=datetime.now(timezone.utc))
+    updated_at = DateTimeField(default=datetime.now(timezone.utc))
+
+    class Meta:
+        table_name = "dedication_pages"
 
 
 class Reference(BaseModel):
