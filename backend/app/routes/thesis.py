@@ -1,7 +1,6 @@
 from flask import Blueprint
 from flask import current_app as app
 from flask import g, jsonify, request
-from peewee import DoesNotExist
 from playhouse.shortcuts import model_to_dict
 
 from ..models.data import Thesis
@@ -592,21 +591,23 @@ def delete_body_page(thesis_id, page_id):
         app.logger.error(f"Failed to delete body page: {e}")
         return jsonify({"success": False, "message": "Failed to delete body page"}), 400
 
+
 # Only the NEW or UPDATED chapter routes for thesis.py (example Flask style)
+
 
 @thesis_bp.route("/<int:thesis_id>/chapters", methods=["GET"])
 def get_chapters_for_thesis(thesis_id):
     """
-    Retrieves all chapters for a specific thesis based on its ID. The chapters 
-    are returned in a list of dictionaries, each containing information about 
-    the chapter's ID, name, content, and order. If there are no chapters, an 
-    empty list is returned. Handles unexpected exceptions and returns an error 
+    Retrieves all chapters for a specific thesis based on its ID. The chapters
+    are returned in a list of dictionaries, each containing information about
+    the chapter's ID, name, content, and order. If there are no chapters, an
+    empty list is returned. Handles unexpected exceptions and returns an error
     response in such cases.
 
     :param thesis_id: Unique identifier for the thesis
     :type thesis_id: int
-    :return: JSON response containing the list of chapters with details if found, 
-             otherwise an empty list. In case of an exception, returns an 
+    :return: JSON response containing the list of chapters with details if found,
+             otherwise an empty list. In case of an exception, returns an
              error message with a status code 500.
     :rtype: flask.Response
     """
@@ -619,12 +620,9 @@ def get_chapters_for_thesis(thesis_id):
         # Convert each Chapter object to a dict
         results = []
         for ch in chapters:
-            results.append({
-                "id": ch.id,
-                "name": ch.name,
-                "content": ch.content,
-                "order": ch.order
-            })
+            results.append(
+                {"id": ch.id, "name": ch.name, "content": ch.content, "order": ch.order}
+            )
 
         return jsonify({"chapters": results}), 200
     except Exception as e:
@@ -658,14 +656,19 @@ def create_chapter_for_thesis(thesis_id):
         order = data.get("order", None)
 
         chapter = thesis_service.create_chapter(thesis_id, name, content, order)
-        return jsonify({
-            "chapter": {
-                "id": chapter.id,
-                "name": chapter.name,
-                "content": chapter.content,
-                "order": chapter.order
-            }
-        }), 201
+        return (
+            jsonify(
+                {
+                    "chapter": {
+                        "id": chapter.id,
+                        "name": chapter.name,
+                        "content": chapter.content,
+                        "order": chapter.order,
+                    }
+                }
+            ),
+            201,
+        )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -692,14 +695,19 @@ def get_single_chapter(thesis_id, chapter_id):
         if not chapter or chapter.thesis_id != thesis_id:
             return jsonify({"error": "Chapter not found"}), 404
 
-        return jsonify({
-            "chapter": {
-                "id": chapter.id,
-                "name": chapter.name,
-                "content": chapter.content,
-                "order": chapter.order
-            }
-        }), 200
+        return (
+            jsonify(
+                {
+                    "chapter": {
+                        "id": chapter.id,
+                        "name": chapter.name,
+                        "content": chapter.content,
+                        "order": chapter.order,
+                    }
+                }
+            ),
+            200,
+        )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -731,14 +739,19 @@ def update_single_chapter(thesis_id, chapter_id):
         if not updated:
             return jsonify({"error": "Chapter not found"}), 404
 
-        return jsonify({
-            "chapter": {
-                "id": updated.id,
-                "name": updated.name,
-                "content": updated.content,
-                "order": updated.order
-            }
-        }), 200
+        return (
+            jsonify(
+                {
+                    "chapter": {
+                        "id": updated.id,
+                        "name": updated.name,
+                        "content": updated.content,
+                        "order": updated.order,
+                    }
+                }
+            ),
+            200,
+        )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -755,7 +768,7 @@ def delete_single_chapter(thesis_id, chapter_id):
     :type thesis_id: int
     :param chapter_id: The ID of the chapter to delete.
     :type chapter_id: int
-    :return: A JSON object indicating success or failure, with appropriate HTTP 
+    :return: A JSON object indicating success or failure, with appropriate HTTP
              status codes. Possible status codes:
              - 200: Chapter successfully deleted.
              - 400: Chapter could not be deleted.
@@ -1011,7 +1024,7 @@ def delete_footnote(footnote_id):
 
 
 # --- Tables Endpoints ---
-@thesis_bp.route("/<int:thesis_id>/tables", methods=["POST"])
+@thesis_bp.route("/<int:thesis_id>/list-of-tables", methods=["POST"])
 @jwt_required
 def add_table(thesis_id):
     """
@@ -1037,7 +1050,7 @@ def add_table(thesis_id):
         return jsonify({"success": False, "message": str(e)}), 400
 
 
-@thesis_bp.route("/<int:thesis_id>/tables", methods=["GET"])
+@thesis_bp.route("/<int:thesis_id>/list-of-tables", methods=["GET"])
 @jwt_required
 def list_tables(thesis_id):
     """
@@ -1126,7 +1139,7 @@ def delete_table(table_id):
 
 
 # --- Figures Endpoints ---
-@thesis_bp.route("/<int:thesis_id>/figures", methods=["POST"])
+@thesis_bp.route("/<int:thesis_id>/list-of-figures", methods=["POST"])
 @jwt_required
 def add_figure(thesis_id):
     """
@@ -1151,7 +1164,7 @@ def add_figure(thesis_id):
         return jsonify({"success": False, "message": str(e)}), 400
 
 
-@thesis_bp.route("/<int:thesis_id>/figures", methods=["GET"])
+@thesis_bp.route("/<int:thesis_id>/list-of-figures", methods=["GET"])
 @jwt_required
 def list_figures(thesis_id):
     """
@@ -1181,12 +1194,13 @@ def list_figures(thesis_id):
 
 @thesis_bp.route("/<int:thesis_id>/figure/<int:figure_id>", methods=["PUT"])
 @jwt_required
-def update_figure(figure_id):
+def update_figure(thesis_id, figure_id):
     """
     Updates a specific figure by its ID with the provided new data. This endpoint
     is protected and requires a valid JWT for access. The updated figure details
     are returned in JSON format upon success.
 
+    :param thesis_id:
     :param figure_id: The ID of the figure to be updated
     :type figure_id: int
     :return: JSON response containing the updated figure details and a success
@@ -1197,7 +1211,7 @@ def update_figure(figure_id):
     thesis_service = ThesisService(app.logger)
     try:
         data = request.json
-        updated_figure = thesis_service.update_figure(figure_id, data)
+        updated_figure = thesis_service.update_figure(thesis_id, figure_id, data)
         return jsonify({"success": True, "figure": model_to_dict(updated_figure)}), 200
     except Exception as e:
         app.logger.error(f"Error updating figure: {e}")
@@ -1351,6 +1365,7 @@ def delete_appendix(appendix_id):
         app.logger.error(f"Error deleting appendix: {e}")
         return jsonify({"success": False, "message": str(e)}), 400
 
+
 @thesis_bp.route("/<int:thesis_id>/copyright", methods=["GET"])
 def get_copyright_page(thesis_id):
     """
@@ -1376,6 +1391,7 @@ def get_copyright_page(thesis_id):
         return jsonify({"content": page.content}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @thesis_bp.route("/<int:thesis_id>/copyright", methods=["PUT"])
 def create_or_update_copyright_page(thesis_id):
@@ -1430,6 +1446,7 @@ def get_signature_page(thesis_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 @thesis_bp.route("/<int:thesis_id>/signature", methods=["PUT"])
 def create_or_update_signature_page(thesis_id):
     """
@@ -1483,6 +1500,7 @@ def get_other_info_page(thesis_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 @thesis_bp.route("/<int:thesis_id>/other-info", methods=["PUT"])
 def create_or_update_other_info_page(thesis_id):
     """
@@ -1529,6 +1547,7 @@ def get_dedication_page(thesis_id):
         return jsonify({"content": page.content}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @thesis_bp.route("/<int:thesis_id>/dedication", methods=["PUT"])
 def create_or_update_dedication_page(thesis_id):

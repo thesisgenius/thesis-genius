@@ -94,9 +94,7 @@ const ManageThesis = () => {
       const response = await thesisAPI.exportThesis(thesisId, format);
       // Attempt to parse 'content-disposition' header for filename
       const contentDisposition = response.headers["content-disposition"];
-      const fileName = contentDisposition
-        ? contentDisposition.match(/filename="?([^;"]+)"?/)[1]
-        : `thesis_${thesisId}.${format}`;
+      const fileName = contentDisposition ? contentDisposition.match(/filename="?([^;"]+)"?/)[1] : `thesis_${thesisId}.${format}`;
 
       // Download logic
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -115,7 +113,15 @@ const ManageThesis = () => {
   // 3) A new helper function to set the active thesis in context
   const handleSelectThesis = async (thesisId) => {
     setActiveThesisId(thesisId);
-    navigate(`/app/${activeThesisId}/title`);
+    try {
+      navigate(`/app/${activeThesisId}/title`);
+    }
+    catch (error) {
+      console.error("Error navigating to thesis:", error);
+      setError("Failed to navigate to thesis. Please try again.");
+      alert("Please select a thesis to edit first.");
+      navigate("/app/manage-theses");
+    }
   };
 
   if (loading) return <p>Loading...</p>;

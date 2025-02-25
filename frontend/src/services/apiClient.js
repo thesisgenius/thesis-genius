@@ -34,23 +34,35 @@ apiClient.interceptors.response.use(
 );
 
 /**
- * Generic helper to call the Axios instance and return .data
+ * Generic helper to call the Axios instance and return either:
+ *  - response.data (default), or
+ *  - the entire Axios response if config.fullResponse = true
+ *
  * @param {string} method - "get" | "post" | "put" | "delete"
- * @param {string} url - Endpoint path
- * @param {any} [payload] - Body data or config
+ * @param {string} url - Endpoint path (relative to baseURL)
+ * @param {any} [payload] - Body data (for POST/PUT) or query params (for GET/DELETE)
  * @param {object} [config] - Optional axios config overrides
+ *   config.fullResponse: boolean (if true, returns full Axios response; otherwise returns response.data)
+ *
+ * @returns {Promise<any>} - Either response.data or the full response object
  */
 export const request = async (method, url, payload, config = {}) => {
-  // For GET/DELETE, we pass payload as config params if needed
-  const needsBody = ["post", "put"].includes(method);
-  const response = await apiClient({
-    method,
-    url,
-    ...(needsBody ? { data: payload } : {}),
-    ...(!needsBody ? { params: payload } : {}),
-    ...config,
-  });
-  return response.data;
+    // If config.fullResponse is set, store & remove so we don't pass it along to axios
+    const { fullResponse = false, ...axiosConfig } = config;
+
+    // For GET/DELETE, we pass payload as config params if needed
+    const needsBody = ["post", "put", "patch"].includes(method.toLowerCase());
+
+    const response = await apiClient({
+        method,
+        url,
+        ...(needsBody ? { data: payload } : { params: payload }),
+        ...axiosConfig,
+    });
+
+    // If fullResponse is true, return entire response (headers included).
+    // Otherwise, return just response.data (the default).
+    return fullResponse ? response : response.data;
 };
 
 export default apiClient;

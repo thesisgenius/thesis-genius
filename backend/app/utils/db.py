@@ -100,6 +100,25 @@ def initialize_database(app):
                         )
                     )
 
+                if "degree" not in existing_column_names:
+                    app.logger.info("Adding missing column: degree")
+                    migrations.append(
+                        migrator.add_column("theses", "degree", CharField(null=True))
+                    )
+
+                existing_columns_signature = db.get_columns("signature_pages")
+                existing_columns_signature_name = {
+                    col.name for col in existing_columns_signature
+                }
+
+                if "chair" not in existing_columns_signature_name:
+                    app.logger.info("Adding missing column: chair")
+                    migrations.append(
+                        migrator.add_column(
+                            "signature_pages", "chair", CharField(null=True)
+                        )
+                    )
+
                 if migrations:
                     migrate(*migrations)
                     app.logger.info("Schema migration completed successfully.")

@@ -20,6 +20,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { useLocation, Link } from "react-router-dom";
+import {isInteger} from "lodash";
 
 // For demonstration, we might import from context
 // import { useMyThesisContext } from "../context/ThesisContext";
@@ -97,9 +98,9 @@ export function AppSidebar({ ...props }) {
 
                       // Build the path
                       const fullPath =
-                        needsThesisId && activeThesisId
+                          activeThesisId !== null && needsThesisId
                           ? `/app/${activeThesisId}/${navItem.url}`
-                          : `/app/${navItem.url}`;
+                          : `/app/manage-theses`;
 
                       return (
                         <SidebarMenuItem key={navItem.title}>

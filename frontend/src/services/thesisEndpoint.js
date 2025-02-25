@@ -88,7 +88,7 @@ const thesisAPI = {
   deleteFigure: (figureId) => request("delete", `/thesis/figure/${figureId}`),
 
   exportThesis: (id, format) =>
-    request("get", `/format/apa/${id}`, { format }, { responseType: "blob" }),
+    request("get", `/format/apa/${id}`, { format }, { responseType: "blob", fullResponse: true, }),
 };
 
 export default thesisAPI;

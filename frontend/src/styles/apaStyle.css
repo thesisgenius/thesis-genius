@@ -236,3 +236,40 @@ html {
   margin-top: -40px;
   margin-right: 20px;
 }
+
+/* =====================
+   APA Copyright Page
+   ===================== */
+
+/**
+ * Wrap your HTML for the copyright page in something like:
+ *
+ * <div class="apa-page apa-copyright-page">
+ *   <p>&copy; 2020 John Smith</p>
+ * </div>
+ *
+ * so it is forced onto its own “page.”
+ */
+.apa-copyright-page {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end; /* push content to bottom */
+  align-items: center;
+  height: 100vh;  /* mimic a full page */
+  text-align: center;
+  padding-bottom: 2in;  /* space from bottom */
+  box-sizing: border-box; /* safer for padding */
+  font-size: 12pt;
+  page-break-after: always; /* ensure it prints on its own page */
+  /* If you want no box-shadow or border, override apa-page below */
+}
+
+/**
+ * If you want to override anything that .apa-page
+ * sets (like margin or padding), you can do so here. For example:
+*/
+.apa-copyright-page.apa-page {
+   margin: 0;
+   padding: 0;
+   box-shadow: none;
+}

@@ -513,10 +513,8 @@ const Part = ({ headerText, textAreaPlaceholder }) => {
       case "Copyright Page":
         previewHTML = `
           <div class="apa-document">
-            <div id="copyright-page" class="apa-page">
-              ${heading}
-              <h2 class="apa-heading-1">Copyright</h2>
-              <div class="apa-paragraph">${copyrightText}</div>
+            <div id="copyright-page" class="apa-copyright-page">
+              <div class="apa-paragraph"><p>${copyrightText ? ("&copy" + copyrightText) : ("&copy" + "2025 John Smith")}</p></div>
             </div>
           </div>
         `;
@@ -566,13 +564,13 @@ const Part = ({ headerText, textAreaPlaceholder }) => {
       <div className="col-md-12">
         <h3 className="flex text-center">{headerText}</h3>
         <p>
-          An attached example{" "}
+          Download APA sample paper{" "}
           <a
-            href="https://apastyle.apa.org/instructional-aids/abstract-keywords-guide.pdf"
+            href="https://apastyle.apa.org/style-grammar-guidelines/paper-format/professional-paper.docx"
             target="_blank"
             rel="noreferrer"
           >
-            example linked
+            -- Link
           </a>
         </p>
         <p>
@@ -582,7 +580,7 @@ const Part = ({ headerText, textAreaPlaceholder }) => {
             target="_blank"
             rel="noreferrer"
           >
-            Rules Linked
+            -- Link
           </a>
         </p>
         <div className="row">
@@ -778,7 +776,7 @@ const Part = ({ headerText, textAreaPlaceholder }) => {
                     try {
                       // We’ll fix the small bug in the snippet above
                       // (we wrote `copyrightText(val)` by mistake).
-                      // Instead:
+                      // Instead:d
                       debounceCopyright(val);
                     } catch (err) {
                       console.error(err);

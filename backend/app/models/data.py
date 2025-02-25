@@ -147,6 +147,7 @@ class Thesis(BaseModel):
     id = AutoField(primary_key=True, column_name="thesis_id")
     title = CharField()
     course = CharField(null=True)
+
     instructor = CharField(null=True)
     status = CharField()
     created_at = DateTimeField(default=datetime.now(timezone.utc))
@@ -158,6 +159,7 @@ class Thesis(BaseModel):
     # Cover Page Fields
     author = CharField(null=True)  # Name of the author
     affiliation = CharField(null=True)  # Institution name
+    degree = CharField(null=True)  # Degree Name
     due_date = DateTimeField(
         null=True, default=datetime.now(timezone.utc)
     )  # Thesis due date
@@ -271,6 +273,7 @@ class BodyPage(BaseModel):
         table_name = "thesis_body_pages"
         indexes = ((("thesis", "page_number"), True),)
 
+
 class Chapter(BaseModel):
     """
     Represents a chapter entity that is part of a thesis.
@@ -299,10 +302,7 @@ class Chapter(BaseModel):
 
     id = AutoField(primary_key=True, column_name="chapter_id")
     thesis = ForeignKeyField(
-        Thesis,
-        backref="chapters",
-        column_name="thesis_id",
-        on_delete="CASCADE"
+        Thesis, backref="chapters", column_name="thesis_id", on_delete="CASCADE"
     )
     name = CharField()
     content = TextField(null=True)
@@ -311,14 +311,15 @@ class Chapter(BaseModel):
     class Meta:
         table_name = "chapters"
 
+
 class CopyrightPage(BaseModel):
     """
     Stores content for a 'copyright' page, linked to a specific Thesis.
     """
+
     id = AutoField(primary_key=True, column_name="copyright_id")
     thesis = ForeignKeyField(
-        Thesis, backref="copyright_page",
-        column_name="thesis_id", on_delete="CASCADE"
+        Thesis, backref="copyright_page", column_name="thesis_id", on_delete="CASCADE"
     )
     content = TextField(null=True)  # The main text content
     created_at = DateTimeField(default=datetime.now(timezone.utc))
@@ -332,12 +333,17 @@ class SignaturePage(BaseModel):
     """
     Stores content for a 'signature' page, e.g. committee signature blocks.
     """
+
     id = AutoField(primary_key=True, column_name="signature_id")
     thesis = ForeignKeyField(
-        Thesis, backref="signature_page",
-        column_name="thesis_id", on_delete="CASCADE"
+        Thesis, backref="signature_page", column_name="thesis_id", on_delete="CASCADE"
     )
     content = TextField(null=True)
+    chair = CharField(null=True)
+    student = ForeignKeyField(
+        User, backref="signature_page", column_name="student_id", on_delete="CASCADE"
+    )
+
     created_at = DateTimeField(default=datetime.now(timezone.utc))
     updated_at = DateTimeField(default=datetime.now(timezone.utc))
 
@@ -349,10 +355,10 @@ class OtherInfoPage(BaseModel):
     """
     Stores content for an 'other-info' page, used for miscellaneous info.
     """
+
     id = AutoField(primary_key=True, column_name="other_info_id")
     thesis = ForeignKeyField(
-        Thesis, backref="other_info_page",
-        column_name="thesis_id", on_delete="CASCADE"
+        Thesis, backref="other_info_page", column_name="thesis_id", on_delete="CASCADE"
     )
     content = TextField(null=True)
     created_at = DateTimeField(default=datetime.now(timezone.utc))
@@ -366,10 +372,10 @@ class DedicationPage(BaseModel):
     """
     Stores content for a 'dedication' page of a thesis.
     """
+
     id = AutoField(primary_key=True, column_name="dedication_id")
     thesis = ForeignKeyField(
-        Thesis, backref="dedication_page",
-        column_name="thesis_id", on_delete="CASCADE"
+        Thesis, backref="dedication_page", column_name="thesis_id", on_delete="CASCADE"
     )
     content = TextField(null=True)
     created_at = DateTimeField(default=datetime.now(timezone.utc))
@@ -377,6 +383,7 @@ class DedicationPage(BaseModel):
 
     class Meta:
         table_name = "dedication_pages"
+
 
 class Reference(BaseModel):
     """

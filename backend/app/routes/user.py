@@ -7,6 +7,7 @@ from ..utils.auth import admin_required, jwt_required
 
 user_bp = Blueprint("user_api", __name__, url_prefix="/api/user")
 
+
 @user_bp.route("/profile-picture", methods=["POST"])
 @jwt_required
 def upload_profile_picture():
@@ -23,6 +24,7 @@ def upload_profile_picture():
     except Exception as e:
         app.logger.error(f"Error uploading profile picture: {e}")
         return jsonify({"success": False, "message": "An internal error occurred"}), 500
+
 
 @user_bp.route("/profile", methods=["GET"])
 @jwt_required

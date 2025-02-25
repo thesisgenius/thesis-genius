@@ -1,11 +1,12 @@
 from datetime import datetime, timezone
 
-from peewee import IntegrityError, PeeweeException, DoesNotExist
+from peewee import DoesNotExist, IntegrityError, PeeweeException
 from playhouse.shortcuts import model_to_dict
 
-from ..models.data import (Abstract, Appendix, BodyPage, Chapter, CopyrightPage, DedicationPage, Figure, Footnote,
-                           OtherInfoPage, Reference, SignaturePage,TableEntry, TableOfContents, Thesis,
-                           User)
+from ..models.data import (Abstract, Appendix, BodyPage, Chapter,
+                           CopyrightPage, DedicationPage, Figure, Footnote,
+                           OtherInfoPage, Reference, SignaturePage, TableEntry,
+                           TableOfContents, Thesis, User)
 
 
 class ThesisService:
@@ -536,10 +537,11 @@ class ThesisService:
         Return all chapters for a given thesis, ordered if 'order' is used.
         """
         try:
-            chapters = (Chapter
-                        .select()
-                        .where(Chapter.thesis_id == thesis_id)
-                        .order_by(Chapter.order))
+            chapters = (
+                Chapter.select()
+                .where(Chapter.thesis_id == thesis_id)
+                .order_by(Chapter.order)
+            )
             return list(chapters)
         except DoesNotExist:
             return []
@@ -567,7 +569,7 @@ class ThesisService:
                 thesis=thesis_id,
                 name=name or "Untitled Chapter",
                 content=content or "",
-                order=order
+                order=order,
             )
             return chapter
         except Exception as e:
@@ -613,7 +615,6 @@ class ThesisService:
             return True
         except Exception as e:
             raise e
-
 
     def create_thesis(self, thesis_data):
         """
@@ -1220,7 +1221,7 @@ class ThesisService:
             self.logger.error(f"Error fetching figures for thesis {thesis_id}: {e}")
             raise
 
-    def update_figure(self, figure_id, updated_data):
+    def update_figure(self, thesis_id, figure_id, updated_data):
         """
         Updates an existing figure in the database with new data. Retrieves the figure
         by its ID, applies the updates, executes the update query, and fetches the
@@ -1241,7 +1242,9 @@ class ThesisService:
             if not figure:
                 raise ValueError(f"Figure with ID {figure_id} not found.")
 
-            query = Figure.update(**updated_data).where(Figure.id == figure_id)
+            query = Figure.update(**updated_data).where(
+                Figure.id == figure_id, Figure.thesis_id == thesis_id
+            )
             query.execute()
 
             updated_figure = Figure.get(Figure.id == figure_id)
@@ -1395,9 +1398,7 @@ class ThesisService:
         Retrieve the copyright page for a given thesis.
         """
         try:
-            return CopyrightPage.get(
-                (CopyrightPage.thesis == thesis_id)
-            )
+            return CopyrightPage.get((CopyrightPage.thesis == thesis_id))
         except DoesNotExist:
             return None
 
@@ -1410,10 +1411,7 @@ class ThesisService:
             page = self.get_copyright_page(thesis_id)
             if page is None:
                 # create a new record
-                page = CopyrightPage.create(
-                    thesis=thesis_id,
-                    content=content
-                )
+                page = CopyrightPage.create(thesis=thesis_id, content=content)
             else:
                 page.content = content
                 page.save()
@@ -1429,9 +1427,7 @@ class ThesisService:
         Retrieve the signature page for a given thesis.
         """
         try:
-            return SignaturePage.get(
-                (SignaturePage.thesis == thesis_id)
-            )
+            return SignaturePage.get((SignaturePage.thesis == thesis_id))
         except DoesNotExist:
             return None
 
@@ -1442,10 +1438,7 @@ class ThesisService:
         try:
             page = self.get_signature_page(thesis_id)
             if page is None:
-                page = SignaturePage.create(
-                    thesis=thesis_id,
-                    content=content
-                )
+                page = SignaturePage.create(thesis=thesis_id, content=content)
             else:
                 page.content = content
                 page.save()
@@ -1461,9 +1454,7 @@ class ThesisService:
         Retrieve the other info page for a given thesis.
         """
         try:
-            return OtherInfoPage.get(
-                (OtherInfoPage.thesis == thesis_id)
-            )
+            return OtherInfoPage.get((OtherInfoPage.thesis == thesis_id))
         except DoesNotExist:
             return None
 
@@ -1474,10 +1465,7 @@ class ThesisService:
         try:
             page = self.get_other_info_page(thesis_id)
             if page is None:
-                page = OtherInfoPage.create(
-                    thesis=thesis_id,
-                    content=content
-                )
+                page = OtherInfoPage.create(thesis=thesis_id, content=content)
             else:
                 page.content = content
                 page.save()
@@ -1493,9 +1481,7 @@ class ThesisService:
         Retrieve the dedication page for a given thesis.
         """
         try:
-            return DedicationPage.get(
-                (DedicationPage.thesis == thesis_id)
-            )
+            return DedicationPage.get((DedicationPage.thesis == thesis_id))
         except DoesNotExist:
             return None
 
@@ -1506,10 +1492,7 @@ class ThesisService:
         try:
             page = self.get_dedication_page(thesis_id)
             if page is None:
-                page = DedicationPage.create(
-                    thesis=thesis_id,
-                    content=content
-                )
+                page = DedicationPage.create(thesis=thesis_id, content=content)
             else:
                 page.content = content
                 page.save()

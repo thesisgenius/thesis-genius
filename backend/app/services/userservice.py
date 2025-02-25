@@ -1,7 +1,8 @@
+import imghdr
 import os
 import uuid
-import imghdr
-from peewee import IntegrityError, DoesNotExist
+
+from peewee import DoesNotExist, IntegrityError
 from playhouse.shortcuts import model_to_dict
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -23,12 +24,14 @@ if not os.path.exists(UPLOAD_FOLDER):
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB max
 
+
 def allowed_file(file):
     """Validate file extension and MIME type."""
     filename = file.filename.lower()
     return (
-            "." in filename and filename.rsplit(".", 1)[1] in ALLOWED_EXTENSIONS
-            and imghdr.what(file) in ALLOWED_EXTENSIONS
+        "." in filename
+        and filename.rsplit(".", 1)[1] in ALLOWED_EXTENSIONS
+        and imghdr.what(file) in ALLOWED_EXTENSIONS
     )
 
 
@@ -286,7 +289,11 @@ class UserService:
             user.profile_picture = filepath
             user.save()
 
-            return {"success": True, "message": "Profile picture updated", "profile_picture": filepath}, 200
+            return {
+                "success": True,
+                "message": "Profile picture updated",
+                "profile_picture": filepath,
+            }, 200
 
         except DoesNotExist:
             return {"success": False, "message": "User not found"}, 404

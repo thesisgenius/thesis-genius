@@ -34,6 +34,7 @@ class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "dev")
     FLASK_PORT = os.getenv("FLASK_PORT", 5000)
     FLASK_APP = os.getenv("FLASK_APP", "backend.app:create_app")
+
     DEBUG = False
     TESTING = False
     # Peewee Database Configuration (default to test connection)
