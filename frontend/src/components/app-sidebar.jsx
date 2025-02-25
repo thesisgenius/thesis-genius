@@ -20,7 +20,6 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { useLocation, Link } from "react-router-dom";
-import {isInteger} from "lodash";
 
 // For demonstration, we might import from context
 // import { useMyThesisContext } from "../context/ThesisContext";
