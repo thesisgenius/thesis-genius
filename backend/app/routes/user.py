@@ -8,6 +8,24 @@ from ..utils.auth import admin_required, jwt_required
 user_bp = Blueprint("user_api", __name__, url_prefix="/api/user")
 
 
+@user_bp.route("/profile-picture", methods=["POST"])
+@jwt_required
+def upload_profile_picture():
+    """Endpoint to upload and update a user's profile picture."""
+    user_service = UserService(app.logger)
+    try:
+        user_id = g.user_id
+        if "profile_picture" not in request.files:
+            return jsonify({"success": False, "message": "No file uploaded"}), 400
+
+        file = request.files["profile_picture"]
+        response, status_code = user_service.update_profile_picture(user_id, file)
+        return jsonify(response), status_code
+    except Exception as e:
+        app.logger.error(f"Error uploading profile picture: {e}")
+        return jsonify({"success": False, "message": "An internal error occurred"}), 500
+
+
 @user_bp.route("/profile", methods=["GET"])
 @jwt_required
 def get_user_profile():

@@ -1,40 +1,4 @@
 import pytest
-from app.models.data import Role
-
-
-@pytest.fixture
-def create_role():
-    """
-    Fixture to create default roles in the database.
-    """
-    for role_name in ["Student", "Teacher", "Admin"]:
-        Role.get_or_create(name=role_name)
-
-
-@pytest.fixture
-def user_token(client, create_role):
-    """
-    Fixture to register and log in a user, returning the JWT token.
-    """
-    client.post(
-        "/api/auth/register",
-        json={
-            "first_name": "Test",
-            "last_name": "User",
-            "email": "test@example.com",
-            "institution": "National University",
-            "username": "testuser",
-            "password": "password123",
-            "role": "Student",
-        },
-    )
-    login_response = client.post(
-        "/api/auth/signin",
-        json={"email": "test@example.com", "password": "password123"},
-    )
-    token = login_response.json["token"]
-    assert token is not None
-    return token
 
 
 @pytest.fixture
@@ -107,6 +71,49 @@ def test_create_thesis_with_abstract_and_body(client, user_token):
     assert response.status_code == 201
     assert response.json["success"] is True
     assert response.json["id"] is not None
+
+
+def test_add_body_page_success(client, user_token, sample_thesis):
+    """
+    Test successful addition of a body page to a thesis.
+    """
+    response = client.post(
+        f"/api/thesis/{sample_thesis}/body-pages",
+        json={"page_number": 1, "body": "Test body content"},
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert response.status_code == 201
+    assert response.json["success"] is True
+    assert response.json["message"] == "Body page added"
+    assert response.json["page_id"] is not None
+
+
+def test_add_body_page_failure(client, user_token, sample_thesis):
+    """
+    Test failure when adding a body page to a thesis.
+    """
+    response = client.post(
+        "/api/thesis/417/body-pages",
+        json={"page_number": 1, "body": "Test body content"},
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert response.status_code == 400
+    assert response.json["success"] is False
+    assert response.json["message"] == "Failed to add body page"
+
+
+def test_add_body_page_invalid_payload(client, user_token, sample_thesis):
+    """
+    Test failure when the request payload is invalid.
+    """
+    response = client.post(
+        f"/api/thesis/{sample_thesis}/body-pages",
+        json={"page_number": None, "body": ""},
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert response.status_code == 400
+    assert response.json["success"] is False
+    assert response.json["message"] == "Failed to add body page"
 
 
 def test_create_thesis_missing_fields(client, user_token):
@@ -277,7 +284,7 @@ def test_add_table(client, user_token, sample_thesis):
     Test adding a table to a thesis.
     """
     response = client.post(
-        f"/api/thesis/{sample_thesis}/tables",
+        f"/api/thesis/{sample_thesis}/list-of-tables",
         json={"caption": "Sample Table", "file_path": "/path/to/table.png"},
         headers={"Authorization": f"Bearer {user_token}"},
     )
@@ -291,7 +298,7 @@ def test_list_tables(client, user_token, sample_thesis):
     Test listing all tables for a thesis.
     """
     response = client.get(
-        f"/api/thesis/{sample_thesis}/tables",
+        f"/api/thesis/{sample_thesis}/list-of-tables",
         headers={"Authorization": f"Bearer {user_token}"},
     )
     assert response.status_code == 200
@@ -305,7 +312,7 @@ def test_update_table(client, user_token, sample_thesis):
     """
     # Add a table
     add_response = client.post(
-        f"/api/thesis/{sample_thesis}/tables",
+        f"/api/thesis/{sample_thesis}/list-of-tables",
         json={"caption": "Sample Table", "file_path": "/path/to/table.png"},
         headers={"Authorization": f"Bearer {user_token}"},
     )
@@ -327,7 +334,7 @@ def test_delete_table(client, user_token, sample_thesis):
     """
     # Add a table
     add_response = client.post(
-        f"/api/thesis/{sample_thesis}/tables",
+        f"/api/thesis/{sample_thesis}/list-of-tables",
         json={"caption": "Sample Table", "file_path": "/path/to/table.png"},
         headers={"Authorization": f"Bearer {user_token}"},
     )
@@ -347,7 +354,7 @@ def test_add_figure(client, user_token, sample_thesis):
     Test adding a figure to a thesis.
     """
     response = client.post(
-        f"/api/thesis/{sample_thesis}/figures",
+        f"/api/thesis/{sample_thesis}/list-of-figures",
         json={"caption": "Sample Figure", "file_path": "/path/to/figure.png"},
         headers={"Authorization": f"Bearer {user_token}"},
     )
@@ -361,7 +368,7 @@ def test_list_figures(client, user_token, sample_thesis):
     Test listing all figures for a thesis.
     """
     response = client.get(
-        f"/api/thesis/{sample_thesis}/figures",
+        f"/api/thesis/{sample_thesis}/list-of-figures",
         headers={"Authorization": f"Bearer {user_token}"},
     )
     assert response.status_code == 200
@@ -375,7 +382,7 @@ def test_update_figure(client, user_token, sample_thesis):
     """
     # Add a figure
     add_response = client.post(
-        f"/api/thesis/{sample_thesis}/figures",
+        f"/api/thesis/{sample_thesis}/list-of-figures",
         json={"caption": "Sample Figure", "file_path": "/path/to/figure.png"},
         headers={"Authorization": f"Bearer {user_token}"},
     )
@@ -383,7 +390,7 @@ def test_update_figure(client, user_token, sample_thesis):
 
     # Update the figure
     update_response = client.put(
-        f"/api/thesis/figure/{figure_id}",
+        f"/api/thesis/{sample_thesis}/figure/{figure_id}",
         json={"caption": "Updated Figure Caption"},
         headers={"Authorization": f"Bearer {user_token}"},
     )
@@ -397,7 +404,7 @@ def test_delete_figure(client, user_token, sample_thesis):
     """
     # Add a figure
     add_response = client.post(
-        f"/api/thesis/{sample_thesis}/figures",
+        f"/api/thesis/{sample_thesis}/list-of-figures",
         json={"caption": "Sample Figure", "file_path": "/path/to/figure.png"},
         headers={"Authorization": f"Bearer {user_token}"},
     )

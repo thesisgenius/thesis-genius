@@ -103,3 +103,21 @@ curl -X POST http://127.0.0.1:8557/api/thesis/new \
               {"page_number": 2, "body": "This is the second page."}
           ]
         }'
+
+curl -X POST http://127.0.0.1:8557/api/thesis/new \
+     -H "Authorization: Bearer ${TOKEN}" \
+     -H "Content-Type: application/json" \
+     -d '{"title": "New Thesis", "status": "Pending"}'
+
+curl -X POST http://127.0.0.1:8557/api/thesis/1/abstract \
+     -H "Authorization: Bearer ${TOKEN}" \
+     -H "Content-Type: application/json" \
+     -d '{"text": "This is the abstract"}'
+
+curl -X POST http://127.0.0.1:8557/api/thesis/1/body-pages \
+     -H "Authorization: Bearer ${TOKEN}" \
+     -H "Content-Type: application/json" \
+     -d '{"page_number": 1, "body": "This is page 1"}'
+
+curl -X GET http://127.0.0.1:8557/api/thesis/1/body-pages \
+     -H "Authorization: Bearer ${TOKEN}"

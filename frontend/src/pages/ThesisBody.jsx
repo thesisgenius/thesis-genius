@@ -1,109 +1,153 @@
+// ThesisBody.jsx
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import "bootstrap/dist/css/bootstrap.min.css";
-import "bootstrap/dist/js/bootstrap.bundle.min.js";
+import { Link, useParams } from "react-router-dom";
 import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css"; // Import Quill's CSS
+import "react-quill/dist/quill.snow.css";
+import "../styles/apaStyle.css";
 import FadingBanner from "../components/FadingBanner";
+import { useThesisBody } from "../hooks/useThesisBody";
 
-const ThesisBody = () => {
-  // State for selected section and content
-  const [selectedSection, setSelectedSection] = useState(
-    "Chapter I: Introduction"
-  );
-  const [sectionContent, setSectionContent] = useState({
-    "Chapter I: Introduction":
-      "This is where the introduction content of the thesis will go...",
-    "Chapter II: Literature Review":
-      "The literature review is a critical analysis of the existing research on the topic of the dissertation. It provides an overview of the key findings and debates in the field. The literature review helps to situate the research within the broader context of the discipline and identify gaps in the existing research that the dissertation aims to address.",
-    "Chapter III: Methods":
-      "The methodology section outlines the research methods used in the study. It describes how the data was collected, analyzed, and interpreted.",
-    "Chapter IV: Results":
-      "The results section presents the findings of the study. It provides a detailed summary of the data, including tables, graphs, and statistical analyses.",
-    "Chapter V: Discussion":
-      "The discussion section interprets the results of the study. It explains the significance of the findings and how they relate to the research questions and objectives.",
-  });
+export default function ThesisBody() {
+  const { thesisId } = useParams();
+  const {
+    chapters,
+    selectedChapter,
+    loading,
+    error,
+    formattedContent,
+    moveChapterUp,
+    moveChapterDown,
+    updateChapterContent,
+    addNewChapter,
+    deleteChapter,
+    setSelectedChapterId,
+  } = useThesisBody(thesisId, [
+    // if you only want to auto-create these if no chapters exist
+    "Chapter I: Introduction",
+    "Chapter II: Literature Review",
+    "Chapter III: Methods",
+    "Chapter IV: Results",
+    "Chapter V: Discussion",
+  ]);
 
-  // Function to change selected section
-  const handleSectionChange = (section) => {
-    setSelectedSection(section);
-  };
+  const [newChapterName, setNewChapterName] = useState("");
 
-  // Function to update content dynamically
-  const handleContentChange = (value) => {
-    setSectionContent({
-      ...sectionContent,
-      [selectedSection]: value, // Store HTML content
-    });
-  };
+  if (loading) return <div className="container">Loading chapters...</div>;
+  if (error) return <div className="container text-danger">{error}</div>;
 
   return (
-    <div className="container">
-      <div className="col-md-12">
-        <h3 className="flex">{selectedSection}</h3>
-        <div className="row">
-          {/* Sidebar Navigation */}
-          <div className="col-md-2">
-            <ul className="list-group">
-              {Object.keys(sectionContent).map((section) => (
-                <li
-                  key={section}
-                  className="list-group-item"
-                  onClick={() => handleSectionChange(section)}
-                  style={{
-                    cursor: "pointer",
-                    backgroundColor:
-                      selectedSection === section ? "#e9ecef" : "white",
-                  }}
+      <div className="container">
+        <div className="col-md-12">
+          <h3 className="flex">Thesis Body (Add/Remove & Reorder, No Duplicates)</h3>
+
+          <div className="row">
+            {/* Sidebar */}
+            <div className="col-md-2">
+              {/* Add Chapter */}
+              <div style={{ marginBottom: "10px" }}>
+                <input
+                    type="text"
+                    className="form-control"
+                    placeholder="New Chapter Name"
+                    value={newChapterName}
+                    onChange={(e) => setNewChapterName(e.target.value)}
+                />
+                <button
+                    className="btn btn-sm btn-primary mt-2"
+                    onClick={() => {
+                      if (newChapterName.trim()) {
+                        addNewChapter(newChapterName.trim());
+                        setNewChapterName("");
+                      }
+                    }}
                 >
-                  {section}
-                </li>
-              ))}
-            </ul>
-          </div>
+                  + Add Chapter
+                </button>
+              </div>
 
-          {/* Rich Text Editor */}
-          <div className="col-md-5 border">
-            <ReactQuill
-              theme="snow"
-              value={sectionContent[selectedSection]}
-              onChange={handleContentChange}
-              modules={{
-                toolbar: [
-                  [{ header: [1, 2, 3, false] }],
-                  ["bold", "italic", "underline"],
-                  [{ list: "ordered" }, { list: "bullet" }],
-                  ["blockquote", "code-block"],
-                  ["link", "image"], // Allows inserting images
-                  ["clean"], // Clears formatting
-                ],
-              }}
-            />
-          </div>
+              {/* Chapters list */}
+              <ul className="list-group">
+                {chapters.map((ch, idx) => (
+                    <li
+                        key={ch.id}
+                        className="list-group-item"
+                        style={{
+                          cursor: "pointer",
+                          backgroundColor:
+                              selectedChapter?.id === ch.id ? "#e9ecef" : "white",
+                        }}
+                    >
+                      <div onClick={() => setSelectedChapterId(ch.id)}>
+                        {ch.name}
+                      </div>
 
-          {/* Display Screen (Renders HTML Content) */}
-          <div className="col-md-5 border display-screen">
-            <h4>{selectedSection}</h4>
-            <div
-              dangerouslySetInnerHTML={{
-                __html: sectionContent[selectedSection],
-              }}
-            />
+                      <div style={{ marginTop: "5px" }}>
+                        <button
+                            className="btn btn-sm btn-outline-secondary"
+                            onClick={() => moveChapterUp(ch.id)}
+                            disabled={idx === 0}
+                        >
+                          ↑
+                        </button>
+                        <button
+                            className="btn btn-sm btn-outline-secondary"
+                            style={{ marginLeft: "5px" }}
+                            onClick={() => moveChapterDown(ch.id)}
+                            disabled={idx === chapters.length - 1}
+                        >
+                          ↓
+                        </button>
+                        <button
+                            className="btn btn-sm btn-danger"
+                            style={{ marginLeft: "5px" }}
+                            onClick={() => deleteChapter(ch.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Middle: Quill */}
+            <div className="col-md-5 border">
+              {selectedChapter ? (
+                  <ReactQuill
+                      theme="snow"
+                      value={selectedChapter.content || ""}
+                      onChange={(val) => updateChapterContent(selectedChapter.id, val)}
+                      modules={{
+                        toolbar: [
+                          [{ header: [1, 2, 3, false] }],
+                          ["bold", "italic", "underline"],
+                          [{ list: "ordered" }, { list: "bullet" }],
+                          ["blockquote", "code-block"],
+                          ["link", "image"],
+                          ["clean"],
+                        ],
+                      }}
+                  />
+              ) : (
+                  <p>Select or create a chapter to start editing.</p>
+              )}
+            </div>
+
+            {/* Right: APA Preview */}
+            <div className="col-md-5 border display-screen">
+              <div dangerouslySetInnerHTML={{ __html: formattedContent }} />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Fading Banner */}
-      <div className="row">
-        <FadingBanner />
+        <div className="row">
+          <FadingBanner />
+        </div>
+        <div className="col-md-2">
+          <Link to="/app/manage-theses" className="btn btn-primary mb-3">
+            Back to Dashboard
+          </Link>
+        </div>
       </div>
-      <div className="col-md-2">
-        <Link to="/dash" className="btn btn-primary mb-3">
-          Back to Dashboard
-        </Link>
-      </div>
-    </div>
   );
-};
-
-export default ThesisBody;
+}

@@ -1,264 +1,223 @@
-import logging
-import os
+# formatter.py
+import io
 
-from docx import Document
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-
-logger = logging.getLogger(__name__)
-
-# Key APA Guidelines for Theses
-#
-# 1. Title Page:
-#   - Title: Centered, bold, and written in title case.
-#   - Author Name: Centered, with the first name followed by the last name.
-#   - Institution: Full name of the institution.
-#   - Course, instructor, and submission date (if applicable).
-#
-# 2. Abstract:
-#   - Title: Centered and bold.
-#   - Content: A single paragraph, double-spaced, and no more than 250 words.
-#
-# 3. Body Text:
-#   - Use a consistent font (e.g., Times New Roman, 12pt).
-#   - Double-space throughout, with no extra spaces between paragraphs.
-#   - Margins: 1 inch on all sides.
-#
-# 4. References:
-#   - Use a hanging indent (first line flush left, subsequent lines indented).
-#   - Format references according to APA rules:
-#     - Author last name, first initial.
-#     - Year in parentheses.
-#     - Italicize book titles or journal names.
-#     - Include DOIs or URLs where applicable.
-#
-# 5. Headings:
-#   - Follow APA heading levels (5 levels, each with a specific formatting style).
+import pdfkit
+from app.utils.apa import create_apa_docx
 
 
-def format_to_apa(thesis_data, references):
-    """
-    Formats thesis data into APA-compliant Word format.
-    :param thesis_data: Dictionary containing thesis metadata (title, author, abstract).
-    :param references: List of dictionaries containing reference metadata.
-    :return: Path to the formatted APA Word document.
-    """
-    # Validate thesis data
-    try:
-        validate_thesis_data(thesis_data)
-    except ValueError as e:
-        logger.error(f"Invalid thesis data: {e}")
-        raise
+class APAFormatter:
 
-    # Validate references
-    try:
-        validate_references(references)
-    except ValueError as e:
-        logger.error(f"Invalid reference data: {e}")
-        raise
+    @staticmethod
+    def to_html(data: dict) -> str:
+        """
+        Generates an APA 7–style HTML that, when printed,
+        uses near-APA margins, fonts, line spacing, etc.
+        """
+        cover = data.get("cover", {})
+        toc_list = data.get("table_of_contents", [])
+        # etc.
 
-    try:
-        # Create a new Word document
-        doc = Document()
+        # Instead of relying on external .css,
+        # we embed a minimal style block that sets TNR, 12pt, double spacing, 1" margins:
+        # (You could also keep it external in apaStyle.css.)
+        style_block = """
+        <style>
+        /* Basic APA 7 styling embedded */
+        body {
+          font-family: "Times New Roman", serif;
+          font-size: 12pt;
+          line-height: 2;
+          margin: 1in; /* 1-inch margins all around */
+        }
+        .apa-page {
+          position: relative;
+          page-break-after: always;
+          margin-bottom: 2em;
+        }
+        .apa-running-head {
+          position: absolute;
+          top: 0.5in;
+          left: 1in;
+          font-weight: bold;
+          text-transform: uppercase;
+          font-size: 12pt;
+        }
+        .apa-page-number {
+          position: absolute;
+          top: 0.5in;
+          right: 1in;
+          font-size: 12pt;
+        }
+        .apa-title {
+          text-align: center;
+          margin-top: 3in; /* push it down */
+          font-weight: bold;
+          font-size: 16pt;
+        }
+        .apa-heading-1 {
+          text-align: center;
+          font-size: 14pt;
+          font-weight: bold;
+          margin-top: 2em;
+          margin-bottom: 0.5em;
+        }
+        .apa-heading-2 {
+          text-align: left;
+          font-size: 12pt;
+          font-weight: bold;
+          margin-top: 1.5em;
+          margin-bottom: 0.5em;
+        }
+        .apa-paragraph {
+          text-indent: 0.5in;
+          text-align: justify;
+          margin-bottom: 1em;
+        }
+        .apa-abstract {
+          text-align: left;
+          margin: 0.5in 1in;
+          text-indent: 0.5in;
+        }
+        /* references with hanging indent */
+        .apa-references {
+          margin-left: 0.5in;
+        }
+        .apa-reference-entry {
+          text-indent: -0.5in;
+          margin-left: 0.5in;
+          margin-bottom: 1em;
+        }
+        /* etc. for other specialized classes */
+        </style>
+        """
 
-        # Add Title Page
-        add_title_page(doc, thesis_data)
+        html_parts = [f"<!DOCTYPE html><html><head>{style_block}</head><body>"]
 
-        # Add Abstract Section
-        if thesis_data.get("abstract"):
-            add_abstract_section(doc, thesis_data["abstract"])
-
-        # Add Content Section
-        if thesis_data.get("content"):
-            add_main_body(doc, thesis_data["title"], thesis_data["content"])
-
-        # Add References Section
-        if references:
-            add_references_section(doc, references)
-
-        # Apply double-spacing
-        apply_double_spacing(doc)
-
-        # Save document to a temporary location
-        temp_file = "/tmp/apa_formatted_thesis.docx"
-        if os.path.exists(temp_file):
-            os.remove(temp_file)
-
-        doc.save(temp_file)
-
-        logger.info(f"APA-formatted document saved at {temp_file}")
-        return temp_file
-
-    except Exception as e:
-        logger.error(f"An error occurred while formatting the APA document: {e}")
-        raise RuntimeError("Failed to format the APA document.") from e
-
-
-def validate_thesis_data(thesis_data):
-    """
-    Validates the thesis metadata.
-    :param thesis_data: Dictionary containing thesis metadata.
-    """
-    required_fields = [
-        "title",
-        "student",
-        "institution",
-        "instructor",
-        "course",
-        "abstract",
-        "submission_date",
-    ]
-    missing_fields = [field for field in required_fields if not thesis_data.get(field)]
-    if missing_fields:
-        raise ValueError(
-            f"Missing required thesis data fields: {', '.join(missing_fields)}"
+        # 1) Cover Page
+        # In APA 7 for student papers, running head is optional, but let's keep it for professional
+        running_head_txt = f"Running head: {cover.get('title','').upper()}"
+        html_parts.append(
+            f"""
+        <div class="apa-page" style="text-align:center;">
+           <div class="apa-running-head">{running_head_txt}</div>
+           <div class="apa-page-number">1</div>
+           <h1 class="apa-title">{cover.get('title','')}</h1>
+           <p>{cover.get('author','')}</p>
+           <p>{cover.get('affiliation','')}</p>
+           <p>{cover.get('course','')}</p>
+           <p>{cover.get('instructor','')}</p>
+           <p>{cover.get('due_date','')}</p>
+        </div>
+        """
         )
 
-
-def validate_references(references):
-    """
-    Validates the reference metadata.
-    :param references: List of dictionaries containing reference metadata.
-    """
-    if not isinstance(references, list):
-        raise ValueError("References should be a list of dictionaries.")
-    for i, ref in enumerate(references):
-        if not isinstance(ref, dict):
-            raise ValueError(f"Reference at index {i} is not a dictionary.")
-        required_fields = ["author", "title", "publication_year"]
-        for field in required_fields:
-            if field not in ref:
-                raise ValueError(
-                    f"Reference {i} is missing the required field: {field}."
-                )
-        if not isinstance(ref["publication_year"], int):
-            raise ValueError(
-                f"Reference {i}: 'publication_year' must be an integer. Got {type(ref['publication_year']).__name__}."
+        # 2) Table of Contents (2nd page)
+        page_counter = 2
+        toc_html = []
+        for entry in toc_list:
+            toc_html.append(
+                f"<p>{entry['section_title']} ....... {entry.get('page_number','')}</p>"
             )
+        if toc_html:
+            html_parts.append(
+                f"""
+            <div class="apa-page">
+              <div class="apa-running-head">{running_head_txt}</div>
+              <div class="apa-page-number">{page_counter}</div>
+              <h2 class="apa-heading-1">Table of Contents</h2>
+              {''.join(toc_html)}
+            </div>
+            """
+            )
+            page_counter += 1
 
+        # 3) Abstract
+        abs_data = data.get("abstract", {})
+        if abs_data.get("text"):
+            html_parts.append(
+                f"""
+            <div class="apa-page">
+              <div class="apa-running-head">{running_head_txt}</div>
+              <div class="apa-page-number">{page_counter}</div>
+              <h2 class="apa-heading-1">Abstract</h2>
+              <p class="apa-abstract">{abs_data['text']}</p>
+            </div>
+            """
+            )
+            page_counter += 1
 
-def add_title_page(doc, thesis_data):
-    """
-    Adds the title page as per APA guidelines.
-    """
-    section = doc.sections[0]
-    header = section.header
-    header_paragraph = header.paragraphs[0]
-    header_paragraph.text = f"Running head: {thesis_data['title'].upper()[:50]}"
-    header_paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        # 4) Body (Chapters)
+        body = data.get("body", [])
+        for bp in body:
+            page_number = bp.get("page_number", "")
+            content = bp.get("content", "")
+            html_parts.append(
+                f"""
+            <div class="apa-page">
+              <div class="apa-running-head">{running_head_txt}</div>
+              <div class="apa-page-number">{page_counter}</div>
+              <h3 class="apa-heading-2">Chapter {page_number}</h3>
+              <div class="apa-paragraph">{content}</div>
+            </div>
+            """
+            )
+            page_counter += 1
 
-    # Add the title, bold and centered
-    title_paragraph = doc.add_paragraph()
-    title_run = title_paragraph.add_run(thesis_data["title"])
-    title_run.bold = True
-    title_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        # 5) References
+        refs = data.get("references", [])
+        if refs:
+            ref_entries = []
+            for r in refs:
+                author = r.get("author", "")
+                year = r.get("year", "")
+                title = r.get("title", "")
+                # naive example
+                ref_entries.append(
+                    f"""
+                  <div class="apa-reference-entry">
+                    {author} ({year}). <i>{title}</i>.
+                  </div>
+                """
+                )
+            html_parts.append(
+                f"""
+            <div class="apa-page">
+              <div class="apa-running-head">{running_head_txt}</div>
+              <div class="apa-page-number">{page_counter}</div>
+              <h2 class="apa-heading-1">References</h2>
+              <div class="apa-references">
+                {''.join(ref_entries)}
+              </div>
+            </div>
+            """
+            )
+            page_counter += 1
 
-    # Add the rest of the title page information, centered
-    doc.add_paragraph(f"{thesis_data['student']}").alignment = WD_ALIGN_PARAGRAPH.CENTER
-    doc.add_paragraph(f"{thesis_data['institution']}").alignment = (
-        WD_ALIGN_PARAGRAPH.CENTER
-    )
-    doc.add_paragraph(f"{thesis_data['course']}").alignment = WD_ALIGN_PARAGRAPH.CENTER
-    doc.add_paragraph(f"Instructor: {thesis_data['instructor']}").alignment = (
-        WD_ALIGN_PARAGRAPH.CENTER
-    )
-    doc.add_paragraph(
-        f"Submission Date: {thesis_data['submission_date']}"
-    ).alignment = WD_ALIGN_PARAGRAPH.CENTER
+        # ... plus signature, dedication, appendices, figures, tables, etc.
 
+        html_parts.append("</body></html>")
+        return "".join(html_parts)
 
-def add_abstract_section(doc, abstract):
-    """
-    Adds the abstract section as per APA guidelines.
-    """
-    doc.add_page_break()
-    doc.add_heading("Abstract", level=1).alignment = WD_ALIGN_PARAGRAPH.CENTER
-    abstract_paragraph = doc.add_paragraph(abstract)
-    abstract_paragraph.paragraph_format.first_line_indent = None
-    abstract_paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    # end to_html
 
+    @staticmethod
+    def to_docx(data: dict) -> io.BytesIO:
+        """
+        Creates a Word doc with:
+          - 1" margins
+          - Times New Roman, 12pt
+          - Double-spacing
+          - Running head, page numbering
+          - Title page, separate pages for each section
+        """
+        return create_apa_docx(data)
 
-def add_heading(doc, text, level):
-    """
-    Adds a heading with APA formatting.
-    :param doc: Word document object.
-    :param text: Heading text.
-    :param level: APA heading level (1-5).
-    """
-    heading = doc.add_heading(level=level)
-    heading.text = text
-    heading.bold = True
-    if level == 1:
-        heading.alignment = 1  # Centered
-    else:
-        heading.alignment = 0  # Left-aligned
-
-
-def add_main_body(doc, title, content):
-    """
-    Adds the main body as per APA guidelines.
-    """
-    doc.add_page_break()
-    doc.add_paragraph(title).bold = True
-    doc.add_paragraph(content).alignment = WD_ALIGN_PARAGRAPH.LEFT
-    doc.paragraphs[-1].paragraph_format.first_line_indent = 720  # 0.5 inch indent
-
-
-def add_references_section(doc, references):
-    """
-    Adds the references section to the document as per APA guidelines.
-    :param doc: Word document object.
-    :param references: List of dictionaries containing reference metadata.
-    """
-    doc.add_page_break()
-    doc.add_heading("References", level=1).alignment = WD_ALIGN_PARAGRAPH.CENTER
-    for i, ref in enumerate(references):
-        try:
-            # Build citation string
-            citation = f"{ref['author']} ({ref['publication_year']}). {ref['title']}."
-            if ref.get("journal"):
-                citation += f" {ref['journal']}."
-            if ref.get("doi"):
-                citation += f" DOI: {ref['doi']}"
-
-            # Add reference paragraph
-            ref_paragraph = doc.add_paragraph(citation)
-            ref_paragraph.style = doc.styles["Normal"]
-
-            # Apply hanging indent (720 twips = 0.5 inch)
-            if ref_paragraph.paragraph_format.left_indent is None:
-                ref_paragraph.paragraph_format.left_indent = 0
-            ref_paragraph.paragraph_format.left_indent += 720  # Hanging indent in twips
-
-        except KeyError as e:
-            logger.error(f"Missing key in reference {i}: {e}. Reference: {ref}")
-            raise ValueError(f"Reference {i} is missing required fields.") from e
-        except Exception as e:
-            logger.error(f"Error adding reference {i}: {e}. Reference: {ref}")
-            raise RuntimeError("Failed to add references section.") from e
-
-
-def apply_global_styles(doc):
-    """
-    Applies global APA styles (double-spacing, margins) to the document.
-    :param doc: Word document object.
-    """
-    # Double-spacing
-    for paragraph in doc.paragraphs:
-        paragraph.paragraph_format.line_spacing = 2.0
-
-    # Margins
-    sections = doc.sections
-    for section in sections:
-        section.top_margin = 1
-        section.bottom_margin = 1
-        section.left_margin = 1
-        section.right_margin = 1
-
-
-def apply_double_spacing(doc):
-    """
-    Applies double-spacing to all paragraphs in the document.
-    :param doc: Word document object.
-    """
-    for paragraph in doc.paragraphs:
-        paragraph.paragraph_format.line_spacing = 2.0
+    @staticmethod
+    def to_pdf(data: dict) -> io.BytesIO:
+        """
+        Convert the same aggregator data to PDF by using the HTML approach
+        then passing it to pdfkit or weasyprint.
+        """
+        html_str = APAFormatter.to_html(data)
+        pdf_bytes = pdfkit.from_string(html_str, False)
+        return io.BytesIO(pdf_bytes)

@@ -1,27 +1,27 @@
 .notfound-container {
-    text-align: center;
-    margin-top: 50px;
+  text-align: center;
+  margin-top: 50px;
 }
 
 .notfound-container h1 {
-    font-size: 3rem;
-    color: #ff4b4b;
+  font-size: 3rem;
+  color: #ff4b4b;
 }
 
 .notfound-container p {
-    font-size: 1.2rem;
-    margin: 20px 0;
+  font-size: 1.2rem;
+  margin: 20px 0;
 }
 
 .back-link {
-    text-decoration: none;
-    color: white;
-    background-color: #282c34;
-    padding: 10px 20px;
-    border-radius: 5px;
-    font-size: 1rem;
+  text-decoration: none;
+  color: white;
+  background-color: #282c34;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-size: 1rem;
 }
 
 .back-link:hover {
-    background-color: #4b5d67;
+  background-color: #4b5d67;
 }
